@@ -8,6 +8,7 @@ using System.Xml;
 using System.Management;
 using System.Threading;
 using Xunit.Abstractions;
+using System.Diagnostics;
 
 namespace AspNetCoreModule.Test.Utility
 {
@@ -19,38 +20,16 @@ namespace AspNetCoreModule.Test.Utility
         {
             if (File.Exists(filePath))
             {
-                File.Delete(filePath);
+                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c del \"" + filePath + "\"");
+                Process myProc = Process.Start(myProcessStartInfo);
+                myProc.WaitForExit();
             }
             if (File.Exists(filePath))
             {
                 throw new ApplicationException("Failed to delete file: " + filePath);
             }
         }
-
-        public static void FileMove(string from, string to, bool overWrite = true)
-        {
-            if (overWrite)
-            {
-                DeleteFile(to);
-            }
-            if (File.Exists(from))
-            {
-                if (File.Exists(to) && overWrite == false)
-                {
-                    return;
-                }
-                File.Move(from, to);
-                if (!File.Exists(to))
-                {
-                    throw new ApplicationException("Failed to rename from : " + from + ", to : " + to);
-                }
-            }
-            else
-            {
-                TestUtility.LogMessage("File not found " + from);
-            }
-        }
-
+        
         public static void FileCopy(string from, string to, bool overWrite = true)
         {
             if (overWrite)
@@ -63,7 +42,10 @@ namespace AspNetCoreModule.Test.Utility
                 {
                     return;                
                 }
-                File.Copy(from, to);
+                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c copy /y \"" + from + "\" \"" + to + "\"");
+                Process myProc = Process.Start(myProcessStartInfo);
+                myProc.WaitForExit();
+
                 if (!File.Exists(to))
                 {
                     throw new ApplicationException("Failed to move from : " + from + ", to : " + to);
@@ -72,6 +54,58 @@ namespace AspNetCoreModule.Test.Utility
             else
             {
                 TestUtility.LogMessage("File not found " + from);
+            }
+        }
+
+        public static void DeleteDirectory(string directoryPath)
+        {
+            if (Directory.Exists(directoryPath))
+            {
+                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c rm  \"" + directoryPath + "\" /s");
+                Process myProc = Process.Start(myProcessStartInfo);
+                myProc.WaitForExit();
+            }
+            if (Directory.Exists(directoryPath))
+            {
+                throw new ApplicationException("Failed to delete directory: " + directoryPath);
+            }
+        }
+
+        public static void CreateDirectory(string directoryPath)
+        {
+            if (!Directory.Exists(directoryPath))
+            {
+                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c md \"" + directoryPath + "\"");
+                Process myProc = Process.Start(myProcessStartInfo);
+                myProc.WaitForExit();
+            }
+            if (!Directory.Exists(directoryPath))
+            {
+                throw new ApplicationException("Failed to create directory: " + directoryPath);
+            }
+        }
+
+        public static void DirectoryCopy(string from, string to)
+        {
+            if (!Directory.Exists(to))
+            {
+                DeleteDirectory(to);
+            }
+
+            if (!Directory.Exists(to))
+            {
+                CreateDirectory(to);
+            }
+
+            if (Directory.Exists(from))
+            {
+                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c copy \"" + from + "\" \"" + to + "\"");
+                Process myProc = Process.Start(myProcessStartInfo);
+                myProc.WaitForExit();
+            }
+            else
+            {
+                TestUtility.LogMessage("Directory not found " + from);
             }
         }
 

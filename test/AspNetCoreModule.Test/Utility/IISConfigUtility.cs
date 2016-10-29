@@ -31,7 +31,6 @@ namespace AspNetCoreModule.Test.Utility
 
         public void Dispose()
         {
-            RestoreAppHostConfig(false);
         }
 
         public IISConfigUtility(ServerType type)
@@ -75,6 +74,22 @@ namespace AspNetCoreModule.Test.Utility
             using (ServerManager serverManager = GetServerManager())
             {
                 serverManager.ApplicationPools[appPoolName].Recycle();
+            }
+        }
+
+        public void StopAppPool(string appPoolName)
+        {
+            using (ServerManager serverManager = GetServerManager())
+            {
+                serverManager.ApplicationPools[appPoolName].Stop();
+            }
+        }
+
+        public void StartAppPool(string appPoolName)
+        {
+            using (ServerManager serverManager = GetServerManager())
+            {
+                serverManager.ApplicationPools[appPoolName].Start();
             }
         }
 
@@ -128,7 +143,9 @@ namespace AspNetCoreModule.Test.Utility
                 ConfigurationElementCollection siteCollection = siteElement.GetCollection();
 
                 ConfigurationElement applicationElement = siteCollection.CreateElement("application");
-                applicationElement["path"] = @"/" + appName;
+                string appPath = @"/" + appName;
+                appPath = appPath.Replace("//", "/");
+                applicationElement["path"] = appPath;
 
                 ConfigurationElementCollection applicationCollection = applicationElement.GetCollection();
 
@@ -232,12 +249,9 @@ namespace AspNetCoreModule.Test.Utility
         {
             string fromfile = Strings.AppHostConfigPath;
             string tofile = Strings.AppHostConfigPath + ".ancmtest.bak";
-            if (File.Exists(tofile))
+            if (File.Exists(fromfile))
             {
-                if (File.Exists(fromfile))
-                {
-                    TestUtility.FileCopy(fromfile, tofile, overWrite: false);
-                }
+                TestUtility.FileCopy(fromfile, tofile, overWrite: false);
             }
         }
 
@@ -245,28 +259,20 @@ namespace AspNetCoreModule.Test.Utility
         {
             string fromfile = Strings.AppHostConfigPath + ".ancmtest.bak";
             string tofile = Strings.AppHostConfigPath;
-            if (File.Exists(tofile))
+            
+            if (!File.Exists(fromfile))
             {
-                if (!File.Exists(fromfile))
-                {
-                    BackupAppHostConfig();
-                }
+                BackupAppHostConfig();
+            }
 
-                if (File.GetCreationTime(fromfile) != File.GetCreationTime(tofile))
+            if (File.Exists(fromfile))
+            {
+                TestUtility.FileCopy(fromfile, tofile);
+                if (restartIISServices)
                 {
-                    TestUtility.FileCopy(fromfile, tofile);
-                    if (restartIISServices)
-                    {
-                        RestartServices(2);
-                    }
-                    TestUtility.FileCopy(fromfile, tofile);
-
-                    if (File.GetCreationTime(fromfile) != File.GetCreationTime(tofile))
-                    {
-                        RestartServices(1);
-                        TestUtility.FileCopy(fromfile, tofile);
-                    }
+                    RestartServices(2);
                 }
+                TestUtility.FileCopy(fromfile, tofile);
             }
         }
 

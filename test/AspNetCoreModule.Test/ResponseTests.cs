@@ -48,10 +48,18 @@ namespace AspNetCoreModule.FunctionalTests
         
         public async Task ResponseFormats(AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
         {
+            if (serverType == ServerType.IIS)
+            {
+                IISConfigUtility.RestoreAppHostConfig(true);
+            }
+
             var logger = new LoggerFactory()
                             .AddConsole()
                             .CreateLogger(string.Format("ResponseFormats:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
 
+            string solutionPath = UseLatestAncm.GetSolutionDirectory();
+            string publishedApplicationRootPathBackup = Path.Combine(solutionPath, ".build", "publishedApplicationRootPath");
+            
             using (logger.BeginScope("ResponseFormatsTest"))
             {
                 string applicationPath = Helpers.GetApplicationPath(applicationType);
@@ -66,12 +74,15 @@ namespace AspNetCoreModule.FunctionalTests
                     ApplicationType = applicationType,
                     PublishApplicationBeforeDeployment = true
                 };
-
-                string publishedApplicationRootPath = null;
+                
                 using (var deployer = ApplicationDeployerFactory.Create(deploymentParameters, logger))
                 {
                     var deploymentResult = deployer.Deploy();
-                    publishedApplicationRootPath = deploymentParameters.PublishedApplicationRootPath;
+
+                    if (!Directory.Exists(publishedApplicationRootPathBackup))
+                    {
+                        TestUtility.DirectoryCopy(deploymentParameters.PublishedApplicationRootPath, publishedApplicationRootPathBackup);
+                    }
                     var applicationBaseAddress = new Uri(deploymentResult.ApplicationBaseUri);
 
                     var httpClientHandler = new HttpClientHandler();
@@ -100,38 +111,39 @@ namespace AspNetCoreModule.FunctionalTests
                     }
 
                     await scenario(httpClient, logger);
-                }
 
-                if (serverType == ServerType.IIS)
-                {
-                    using (var iisConfig = new IISConfigUtility(serverType))
+                    if (serverType == ServerType.IIS)
                     {
-                        iisConfig.EnableUrlRewriteToIIS();
-
-                        var testsiteContext = new SiteContext("localhost", "StandardTestSite", 1234);
-                        string solutionPath = UseLatestAncm.GetSolutionDirectory();
-                        string webRootPath = Path.Combine(solutionPath, "test", "WebRoot", "WebSite1");
-
-                        var rootApp = new AppContext("/", webRootPath, testsiteContext);
-                        iisConfig.CreateSite(testsiteContext.SiteName, rootApp.PhysicalPath, 555, testsiteContext.TcpPort, rootApp.AppPoolName);
-
-                        if (appPoolSetting == AppPoolSettings.enable32BitAppOnWin64)
+                        using (var iisConfig = new IISConfigUtility(serverType))
                         {
-                            iisConfig.SetAppPoolSetting(rootApp.AppPoolName, AppPoolSettings.enable32BitAppOnWin64, true);
-                            iisConfig.RecycleAppPool(rootApp.AppPoolName);
+                            iisConfig.EnableUrlRewriteToIIS();
+
+                            var testsiteContext = new SiteContext("localhost", "StandardTestSite", 1234);
+                            string webRootPath = Path.Combine(solutionPath, "test", "WebRoot", "WebSite1");
+
+                            var rootApp = new AppContext("/", webRootPath, testsiteContext);
+                            iisConfig.CreateSite(testsiteContext.SiteName, rootApp.PhysicalPath, 555, testsiteContext.TcpPort, rootApp.AppPoolName);
+
+                            if (appPoolSetting == AppPoolSettings.enable32BitAppOnWin64)
+                            {
+                                iisConfig.StopAppPool(rootApp.AppPoolName);
+                                iisConfig.SetAppPoolSetting(rootApp.AppPoolName, AppPoolSettings.enable32BitAppOnWin64, true);
+                                iisConfig.StartAppPool(rootApp.AppPoolName);
+                                //IISConfigUtility.RestartServices(2);
+                            }
+
+                            var fooApp = new AppContext("/foo", publishedApplicationRootPathBackup, testsiteContext);
+                            iisConfig.CreateApp(testsiteContext.SiteName, fooApp.Name, fooApp.PhysicalPath);
+
+                            var httpClientHandler2 = new HttpClientHandler();
+                            var httpClient2 = new HttpClient(httpClientHandler2)
+                            {
+                                BaseAddress = fooApp.GetHttpUri(),
+                                Timeout = TimeSpan.FromSeconds(5),
+                            };
+
+                            await scenario(httpClient2, logger);
                         }
-
-                        var fooApp = new AppContext("/foo", publishedApplicationRootPath, testsiteContext);
-                        iisConfig.CreateApp(testsiteContext.SiteName, fooApp.Name, fooApp.PhysicalPath);
-                        
-                        var httpClientHandler = new HttpClientHandler();
-                        var httpClient = new HttpClient(httpClientHandler)
-                        {
-                            BaseAddress = fooApp.GetHttpUri(),
-                            Timeout = TimeSpan.FromSeconds(5),
-                        };
-
-                        await scenario(httpClient, logger);
                     }
                 }
             }

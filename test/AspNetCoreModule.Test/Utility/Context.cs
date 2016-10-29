@@ -104,6 +104,7 @@ namespace AspNetCoreModule.Test.Utility
             else
             {
                 _url = "/" + name;
+                _url.Replace("//", "/");
             }
 
             BackupFile("web.config");
@@ -156,7 +157,7 @@ namespace AspNetCoreModule.Test.Utility
 
         public Uri GetHttpUri()
         {
-            return new Uri("http:\\" + SiteContext.HostName + URL);
+            return new Uri("http://" + SiteContext.HostName + ":" +  _siteContext.TcpPort.ToString()  + URL);
         }
 
         public string _appPoolName = null;
@@ -213,13 +214,6 @@ namespace AspNetCoreModule.Test.Utility
             string fromfile = Path.Combine(_physicalPath, from + ".bak");
             string tofile = Path.Combine(_physicalPath, from);
             TestUtility.FileCopy(fromfile, tofile);
-        }
-
-        public void MoveFile(string from, string to)
-        {
-            string fromfile = Path.Combine(_physicalPath, from);
-            string tofile = Path.Combine(_physicalPath, to);
-            TestUtility.FileMove(fromfile, tofile);
         }
 
         public void DeleteFile(string file = "app_offline.htm")
