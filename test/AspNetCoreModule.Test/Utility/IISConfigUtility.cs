@@ -20,7 +20,7 @@ namespace AspNetCoreModule.Test.Utility
             public static string IIS64BitPath = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv");
             public static string IIS32BitPath = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "syswow64", "inetsrv");
             public static string IISExpress64BitPath = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles%"), "IIS Express");
-            public static string IISExpress32BitPath = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles (x86)%"), "IIS Express");
+            public static string IISExpress32BitPath = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%"), "IIS Express");
         }
 
         public enum AppPoolSettings
@@ -162,21 +162,21 @@ namespace AspNetCoreModule.Test.Utility
         public void EnableUrlRewriteToIIS()
         {
             var fromRewrite64 = Path.Combine(Strings.IISExpress64BitPath, "rewrite.dll");
-            var fromRewrite32 = Path.Combine(Strings.IISExpress64BitPath, "rewrite.dll");
+            var fromRewrite32 = Path.Combine(Strings.IISExpress32BitPath, "rewrite.dll");
             var toRewrite64 = Path.Combine(Strings.IIS64BitPath, "rewrite.dll");
             var toRewrite32 = Path.Combine(Strings.IIS32BitPath, "rewrite.dll");
             if (!File.Exists(toRewrite64))
             {
                 if (File.Exists(fromRewrite64))
                 {
-                    File.Copy(fromRewrite64, toRewrite64);
+                    TestUtility.FileCopy(fromRewrite64, toRewrite64);
                 }
             }
             if (!File.Exists(toRewrite32))
             {
                 if (File.Exists(fromRewrite32))
                 {
-                    File.Copy(fromRewrite32, toRewrite32);
+                    TestUtility.FileCopy(fromRewrite32, toRewrite32);
                 }
             }
 
@@ -255,7 +255,7 @@ namespace AspNetCoreModule.Test.Utility
             }
         }
 
-        public static void RestoreAppHostConfig(bool restartIISServices = true)
+        public static void RestoreAppHostConfig(bool restartIISServices = false)
         {
             string fromfile = Strings.AppHostConfigPath + ".ancmtest.bak";
             string tofile = Strings.AppHostConfigPath;
@@ -270,7 +270,7 @@ namespace AspNetCoreModule.Test.Utility
                 TestUtility.FileCopy(fromfile, tofile);
                 if (restartIISServices)
                 {
-                    RestartServices(2);
+                    RestartServices(4);
                 }
                 TestUtility.FileCopy(fromfile, tofile);
             }
@@ -295,7 +295,38 @@ namespace AspNetCoreModule.Test.Utility
                     StopW3svc();
                     StartW3svc();
                     break;
+                case 4:
+                    KillWorkerProcess();
+                    break;
             };
+        }
+
+        public static void KillWorkerProcess(string owner = null)
+        {
+            string query = "Select * from Win32_Process Where Name = \"w3wp.exe\"";
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+            ManagementObjectCollection processList = searcher.Get();
+
+            foreach (ManagementObject obj in processList)
+            {
+                string[] argList = new string[] { string.Empty, string.Empty };
+                int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                if (returnVal == 0)
+                {
+                    bool foundProcess = true;
+                    if (owner != null)
+                    {
+                        if (String.Compare(argList[0], owner, true) != 0)
+                        {
+                            foundProcess = false;
+                        }
+                    }
+                    if (foundProcess)
+                    {
+                        obj.InvokeMethod("Terminate", null);
+                    }
+                }
+            }
         }
 
         public static void RestartIis()

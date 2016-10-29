@@ -196,28 +196,7 @@ namespace AspNetCoreModule.Test.HttpClient
             Thread.Sleep(sleepMs);
         }
 
-        public void KillWorkerProcess(string owner)
-        {
-            TestUtility.LogMessage(String.Format("######## Killing worker process with owner {0} ########", owner));
-            string query = "Select * from Win32_Process Where Name = \"w3wp.exe\"";
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
-            ManagementObjectCollection processList = searcher.Get();
-
-            foreach (ManagementObject obj in processList)
-            {
-                string[] argList = new string[] { string.Empty, string.Empty };
-                int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
-                if (returnVal == 0)
-                {
-                    // return DOMAIN\user
-                    //string owner = argList[1] + "\\" + argList[0];
-                    //return owner;
-                    if (String.Compare(argList[0], owner, true) == 0)
-                        obj.InvokeMethod("Terminate", null);
-                }
-            }
-        }
-
+        
 
         public string VerifyRunningWpOwners(string[] owners)
         {

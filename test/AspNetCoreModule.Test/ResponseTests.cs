@@ -126,10 +126,8 @@ namespace AspNetCoreModule.FunctionalTests
 
                             if (appPoolSetting == AppPoolSettings.enable32BitAppOnWin64)
                             {
-                                iisConfig.StopAppPool(rootApp.AppPoolName);
                                 iisConfig.SetAppPoolSetting(rootApp.AppPoolName, AppPoolSettings.enable32BitAppOnWin64, true);
-                                iisConfig.StartAppPool(rootApp.AppPoolName);
-                                //IISConfigUtility.RestartServices(2);
+                                iisConfig.RecycleAppPool(rootApp.AppPoolName);
                             }
 
                             var fooApp = new AppContext("/foo", publishedApplicationRootPathBackup, testsiteContext);
