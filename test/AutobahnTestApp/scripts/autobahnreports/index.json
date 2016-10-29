@@ -1,0 +1,11 @@
+{
+   "Server": {
+      "5.7": {
+         "behavior": "FAILED",
+         "behaviorClose": "OK",
+         "duration": 5010,
+         "remoteCloseCode": null,
+         "reportfile": "server_case_5_7.json"
+      }
+   }
+}

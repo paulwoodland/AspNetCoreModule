@@ -95,15 +95,7 @@ namespace AspNetCoreModule.Test.HttpClient
 
 
         #region HELPERS
-
-        public void Cleanup()
-        {
-            DeleteAllSites();
-            DeleteAllAppPools();
-            SetDynamicSiteRegistrationThreshold(100);
-            RestartIis();
-        }
-
+        
         public void Setup(int dynamicRegistrationThreshold)
         {
             DeleteAllAppPools();
@@ -272,84 +264,7 @@ namespace AspNetCoreModule.Test.HttpClient
             return null;
         }
 
-        public void RestartServices(int option)
-        {
-            switch (option)
-            {
-                case 0:
-                    RestartIis();
-                    break;
-                case 1:
-                    StopHttp();
-                    StartW3svc();
-                    break;
-                case 2:
-                    StopWas();
-                    StartW3svc();
-                    break;
-                case 3:
-                    StopW3svc();
-                    StartW3svc();
-                    break;
-            };
-        }
-
-        public void RestartIis()
-        {
-            Thread.Sleep(2000);
-
-            TestUtility.LogMessage(String.Format("#################### Restarting IIS ####################"));
-
-            Process myProc = Process.Start("iisreset");
-            myProc.WaitForExit();
-        }
-
-        public void StopHttp()
-        {
-            TestUtility.LogMessage(String.Format("#################### Stopping HTTP Service ####################"));
-
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop http /y");
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
-        }
-
-        public void StopWas()
-        {
-            TestUtility.LogMessage(String.Format("#################### Stopping WAS Service ####################"));
-
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop was /y");
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
-        }
-
-        public void StartWas()
-        {
-            TestUtility.LogMessage(String.Format("#################### Starting WAS Service ####################"));
-
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start was");
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
-        }
-
-        public void StopW3svc()
-        {
-            TestUtility.LogMessage(String.Format("#################### Stopping W3SVC Service ####################"));
-
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop w3svc /y");
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
-        }
-
-        public void StartW3svc()
-        {
-            TestUtility.LogMessage(String.Format("#################### Starting W3SVC ####################"));
-
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start w3svc");
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
-        }
-
-        public void CreateAppPool(string poolName, bool alwaysRunning = false)
+       public void CreateAppPool(string poolName, bool alwaysRunning = false)
         {
             try
             {

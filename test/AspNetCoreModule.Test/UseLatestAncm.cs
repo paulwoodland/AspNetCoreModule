@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.PlatformAbstractions;
+﻿using AspNetCoreModule.Test.Utility;
+using Microsoft.Extensions.PlatformAbstractions;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -16,6 +17,9 @@ namespace AspNetCoreModule.FunctionalTests
         
         public UseLatestAncm()
         {
+            // restore IIS AppHostConfig
+            IISConfigUtility.RestoreAppHostConfig(true);
+
             string aspnetCoreModulePackagePath = GetLatestAncmPackage();
             _extractDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             ZipFile.ExtractToDirectory(aspnetCoreModulePackagePath, _extractDirectory);

@@ -3,6 +3,7 @@ using Microsoft.Web.Administration;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management;
@@ -30,13 +31,12 @@ namespace AspNetCoreModule.Test.Utility
 
         public void Dispose()
         {
-            RestoreAppHostConfig();
+            RestoreAppHostConfig(false);
         }
 
         public IISConfigUtility(ServerType type)
         {
             this.ServerType = type;
-            BackupAppHostConfig();
         }
         public ServerType ServerType = ServerType.IIS;
          
@@ -169,7 +169,8 @@ namespace AspNetCoreModule.Test.Utility
                 Configuration config = serverManager.GetApplicationHostConfiguration();
                 ConfigurationSection globalModulesSection = config.GetSection("system.webServer/globalModules");
                 ConfigurationElementCollection globalModulesCollection = globalModulesSection.GetCollection();
-                if (globalModulesCollection["RewriteModule"] == null)
+
+                if (FindElement(globalModulesCollection, "add", "name", "RewriteModule") == null)
                 {
                     ConfigurationElement addElement = globalModulesCollection.CreateElement("add");
                     addElement["name"] = @"RewriteModule";
@@ -180,7 +181,8 @@ namespace AspNetCoreModule.Test.Utility
 
                 ConfigurationSection modulesSection = config.GetSection("system.webServer/modules");
                 ConfigurationElementCollection modulesCollection = modulesSection.GetCollection();
-                if (modulesCollection["RewriteModule"] == null)
+
+                if (FindElement(modulesCollection, "add", "name", "RewriteModule") == null)
                 {
                     ConfigurationElement addElement = modulesCollection.CreateElement("add");
                     addElement["name"] = @"RewriteModule";
@@ -226,24 +228,109 @@ namespace AspNetCoreModule.Test.Utility
             return null;
         }
 
-        public void BackupAppHostConfig()
+        public static void BackupAppHostConfig()
         {
             string fromfile = Strings.AppHostConfigPath;
             string tofile = Strings.AppHostConfigPath + ".ancmtest.bak";
-            if (File.Exists(fromfile))
+            if (File.Exists(tofile))
             {
-                TestUtility.FileCopy(fromfile, tofile, overWrite: false);
+                if (File.Exists(fromfile))
+                {
+                    TestUtility.FileCopy(fromfile, tofile, overWrite: false);
+                }
             }
         }
 
-        public void RestoreAppHostConfig()
+        public static void RestoreAppHostConfig(bool restartIISServices = true)
         {
             string fromfile = Strings.AppHostConfigPath + ".ancmtest.bak";
             string tofile = Strings.AppHostConfigPath;
-            if (File.Exists(fromfile))
+            if (File.Exists(tofile))
             {
-                TestUtility.FileCopy(fromfile, tofile);
+                if (!File.Exists(fromfile))
+                {
+                    BackupAppHostConfig();
+                }
+
+                if (File.GetCreationTime(fromfile) != File.GetCreationTime(tofile))
+                {
+                    TestUtility.FileCopy(fromfile, tofile);
+                    if (restartIISServices)
+                    {
+                        RestartServices(2);
+                    }
+                    TestUtility.FileCopy(fromfile, tofile);
+
+                    if (File.GetCreationTime(fromfile) != File.GetCreationTime(tofile))
+                    {
+                        RestartServices(1);
+                        TestUtility.FileCopy(fromfile, tofile);
+                    }
+                }
             }
-        }        
+        }
+
+        public static void RestartServices(int option)
+        {
+            switch (option)
+            {
+                case 0:
+                    RestartIis();
+                    break;
+                case 1:
+                    StopHttp();
+                    StartW3svc();
+                    break;
+                case 2:
+                    StopWas();
+                    StartW3svc();
+                    break;
+                case 3:
+                    StopW3svc();
+                    StartW3svc();
+                    break;
+            };
+        }
+
+        public static void RestartIis()
+        {
+            Process myProc = Process.Start("iisreset");
+            myProc.WaitForExit();
+        }
+
+        public static void StopHttp()
+        {
+            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop http /y");
+            Process myProc = Process.Start(myProcessStartInfo);
+            myProc.WaitForExit();
+        }
+
+        public static void StopWas()
+        {
+            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop was /y");
+            Process myProc = Process.Start(myProcessStartInfo);
+            myProc.WaitForExit();
+        }
+
+        public static void StartWas()
+        {
+            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start was");
+            Process myProc = Process.Start(myProcessStartInfo);
+            myProc.WaitForExit();
+        }
+
+        public static void StopW3svc()
+        {
+            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop w3svc /y");
+            Process myProc = Process.Start(myProcessStartInfo);
+            myProc.WaitForExit();
+        }
+
+        public static void StartW3svc()
+        {
+            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start w3svc");
+            Process myProc = Process.Start(myProcessStartInfo);
+            myProc.WaitForExit();
+        }
     }
 }

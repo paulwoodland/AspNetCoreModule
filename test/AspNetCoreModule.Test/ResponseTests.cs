@@ -36,8 +36,8 @@ namespace AspNetCoreModule.FunctionalTests
             throw new NotImplementedException();
         }
 
-        [ConditionalTheory]
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(AppPoolSettings.enable32BitAppOnWin64, ServerType.IIS, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5093/")]
@@ -52,7 +52,6 @@ namespace AspNetCoreModule.FunctionalTests
                             .AddConsole()
                             .CreateLogger(string.Format("ResponseFormats:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
 
-            
             using (logger.BeginScope("ResponseFormatsTest"))
             {
                 string applicationPath = Helpers.GetApplicationPath(applicationType);
@@ -111,7 +110,7 @@ namespace AspNetCoreModule.FunctionalTests
 
                         var testsiteContext = new SiteContext("localhost", "StandardTestSite", 1234);
                         string solutionPath = UseLatestAncm.GetSolutionDirectory();
-                        string webRootPath = Path.Combine(solutionPath, "test", "WebRoot");
+                        string webRootPath = Path.Combine(solutionPath, "test", "WebRoot", "WebSite1");
 
                         var rootApp = new AppContext("/", webRootPath, testsiteContext);
                         iisConfig.CreateSite(testsiteContext.SiteName, rootApp.PhysicalPath, 555, testsiteContext.TcpPort, rootApp.AppPoolName);
