@@ -159,58 +159,40 @@ namespace AspNetCoreModule.Test.Utility
             }
         }
 
-        public void EnableUrlRewriteToIIS()
+        public bool IsUrlRewriteInstalledForIIS()
         {
-            var fromRewrite64 = Path.Combine(Strings.IISExpress64BitPath, "rewrite.dll");
-            var fromRewrite32 = Path.Combine(Strings.IISExpress32BitPath, "rewrite.dll");
+            bool result = true;
             var toRewrite64 = Path.Combine(Strings.IIS64BitPath, "rewrite.dll");
             var toRewrite32 = Path.Combine(Strings.IIS32BitPath, "rewrite.dll");
             if (!File.Exists(toRewrite64))
             {
-                if (File.Exists(fromRewrite64))
-                {
-                    TestUtility.FileCopy(fromRewrite64, toRewrite64);
-                }
+                result = false;
             }
+
             if (!File.Exists(toRewrite32))
             {
-                if (File.Exists(fromRewrite32))
-                {
-                    TestUtility.FileCopy(fromRewrite32, toRewrite32);
-                }
+                result = false;
             }
 
             using (ServerManager serverManager = GetServerManager())
             {
-                bool commitChange = false;
                 Configuration config = serverManager.GetApplicationHostConfiguration();
                 ConfigurationSection globalModulesSection = config.GetSection("system.webServer/globalModules");
                 ConfigurationElementCollection globalModulesCollection = globalModulesSection.GetCollection();
 
                 if (FindElement(globalModulesCollection, "add", "name", "RewriteModule") == null)
                 {
-                    ConfigurationElement addElement = globalModulesCollection.CreateElement("add");
-                    addElement["name"] = @"RewriteModule";
-                    addElement["image"] = @"%windir%\system32\inetsrv\rewrite.dll";
-                    globalModulesCollection.Add(addElement);
-                    commitChange = true;
+                    result = false;
                 }
 
                 ConfigurationSection modulesSection = config.GetSection("system.webServer/modules");
                 ConfigurationElementCollection modulesCollection = modulesSection.GetCollection();
-
                 if (FindElement(modulesCollection, "add", "name", "RewriteModule") == null)
                 {
-                    ConfigurationElement addElement = modulesCollection.CreateElement("add");
-                    addElement["name"] = @"RewriteModule";
-                    modulesCollection.Add(addElement);
-                    commitChange = true;
-                }
-                if (commitChange)
-                {
-                    serverManager.CommitChanges();
-                }
+                    result = false;
+                }                
             }
+            return result;
         }
 
         private static ConfigurationElement FindElement(ConfigurationElementCollection collection, string elementTagName, params string[] keyValues)

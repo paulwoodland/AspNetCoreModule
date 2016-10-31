@@ -116,7 +116,10 @@ namespace AspNetCoreModule.FunctionalTests
                     {
                         using (var iisConfig = new IISConfigUtility(serverType))
                         {
-                            iisConfig.EnableUrlRewriteToIIS();
+                            if (!iisConfig.IsUrlRewriteInstalledForIIS())
+                            {
+                                throw new ApplicationException("IIS UrlRewrite module is not installed; You can install it with WebPI");
+                            }
 
                             var testsiteContext = new SiteContext("localhost", "StandardTestSite", 1234);
                             string webRootPath = Path.Combine(solutionPath, "test", "WebRoot", "WebSite1");

@@ -10,16 +10,13 @@ namespace AspNetCoreModule.FunctionalTests
 {
     public class UseLatestAncm : IDisposable
     {
-        private readonly string _extractDirectory = null;
+        private string _setupScriptPath = null;
         
         // Set this flag true if the nuget package contains out-dated aspnetcore.dll and you want to use the solution output path instead to apply the laetst ANCM files
         public static bool UseSolutionOutputFiles = true; 
         
         public UseLatestAncm()
         {
-            string aspnetCoreModulePackagePath = GetLatestAncmPackage();
-            _extractDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            ZipFile.ExtractToDirectory(aspnetCoreModulePackagePath, _extractDirectory);
             InvokeInstallScript();
         }
 
@@ -27,22 +24,24 @@ namespace AspNetCoreModule.FunctionalTests
         {
             var solutionRoot = GetSolutionDirectory();
             string outputPath = string.Empty;
-            string setupScriptPath = string.Empty;
+            _setupScriptPath = Path.Combine(solutionRoot, "tools"); 
 
-            if (UseSolutionOutputFiles)
+            if (!UseSolutionOutputFiles)
             {
-                setupScriptPath = _extractDirectory;
-                outputPath = Path.Combine(solutionRoot, "artifacts", "build", "AspNetCore", "bin", "Debug");
+                string aspnetCoreModulePackagePath = GetLatestAncmPackage();
+                _setupScriptPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                ZipFile.ExtractToDirectory(aspnetCoreModulePackagePath, _setupScriptPath);
+
+                outputPath = Path.Combine(_setupScriptPath, "ancm", "Debug");
             }
             else
             {
-                setupScriptPath = Path.Combine(solutionRoot, "tools");
-                outputPath = Path.Combine(_extractDirectory, "ancm", "Debug");
+                outputPath = Path.Combine(solutionRoot, "artifacts", "build", "AspNetCore", "bin", "Debug");
             }
 
             Process p = new Process();
             p.StartInfo.FileName = "powershell.exe";
-            p.StartInfo.Arguments = $"\"{setupScriptPath}\\installancm.ps1\" \"" + outputPath + "\"";
+            p.StartInfo.Arguments = $"\"{_setupScriptPath}\\installancm.ps1\" \"" + outputPath + "\"";
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
             p.StartInfo.UseShellExecute = false;
@@ -96,9 +95,13 @@ namespace AspNetCoreModule.FunctionalTests
 
         private void InvokeRollbackScript()
         {
+            var solutionRoot = GetSolutionDirectory();
+            string outputPath = string.Empty;
+            string setupScriptPath = string.Empty;
+
             Process p = new Process();
             p.StartInfo.FileName = "powershell.exe";
-            p.StartInfo.Arguments = $"\"{_extractDirectory}\\installancm.ps1\" -Rollback";
+            p.StartInfo.Arguments = $"\"{_setupScriptPath}\\installancm.ps1\" -Rollback";
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
             p.StartInfo.UseShellExecute = false;
@@ -112,7 +115,7 @@ namespace AspNetCoreModule.FunctionalTests
             }
             try
             {
-                Directory.Delete(_extractDirectory);
+                Directory.Delete(_setupScriptPath);
             }
             catch
             {
