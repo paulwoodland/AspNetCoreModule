@@ -51,7 +51,19 @@ namespace AspNetCoreModule.FunctionalTests
         {
             if (serverType == ServerType.IIS)
             {
+                // kill existing worker processes
+                RestartServices(4);
+
+                // kill vsjitdebugger processes
+                RestartServices(5);
+
                 IISConfigUtility.RestoreAppHostConfig(true);
+
+                // Start DefaultAppPool
+                using (var iisConfig = new IISConfigUtility(serverType))
+                {
+                    iisConfig.StartAppPool(IISConfigUtility.Strings.DefaultAppPool);
+                }
             }
 
             var logger = new LoggerFactory()

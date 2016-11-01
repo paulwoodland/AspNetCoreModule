@@ -21,6 +21,7 @@ namespace AspNetCoreModule.Test.Utility
             public static string IIS32BitPath = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "syswow64", "inetsrv");
             public static string IISExpress64BitPath = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles%"), "IIS Express");
             public static string IISExpress32BitPath = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%"), "IIS Express");
+            public static string DefaultAppPool = "DefaultAppPool";
         }
 
         public enum AppPoolSettings
@@ -241,13 +242,14 @@ namespace AspNetCoreModule.Test.Utility
         {
             string fromfile = Strings.AppHostConfigPath + ".ancmtest.bak";
             string tofile = Strings.AppHostConfigPath;
-            
+
+            // backup first if the backup file is not available
             if (!File.Exists(fromfile))
             {
-                RestartServices(4);
                 BackupAppHostConfig();
             }
 
+            // try again after the ininial clean up 
             if (File.Exists(fromfile))
             {
                 TestUtility.FileCopy(fromfile, tofile);
