@@ -16,6 +16,7 @@ using AspNetCoreModule.Test;
 using AspNetCoreModule.Test.Utility;
 using static AspNetCoreModule.Test.Utility.IISConfigUtility;
 using System.IO;
+using System.Threading;
 
 namespace AspNetCoreModule.FunctionalTests
 {
@@ -43,7 +44,7 @@ namespace AspNetCoreModule.FunctionalTests
         [InlineData(AppPoolSettings.enable32BitAppOnWin64, ServerType.IIS, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5093/")]
         public Task BasicTestForIIS(AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
         {
-            return ResponseFormats(appPoolSetting, serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChangeNotificationAsync, ApplicationType.Portable);
+            return ResponseFormats(appPoolSetting, serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
         }
         
         public async Task ResponseFormats(AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
@@ -116,38 +117,65 @@ namespace AspNetCoreModule.FunctionalTests
                     {
                         using (var iisConfig = new IISConfigUtility(serverType))
                         {
+                            bool readyToTestForIIS = true;
                             if (!iisConfig.IsUrlRewriteInstalledForIIS())
                             {
-                                throw new ApplicationException("IIS UrlRewrite module is not installed; You can install it with WebPI");
+                                logger.LogWarning("IIS UrlRewrite module is not installed; Install it with WebPI and try it again");
+                                readyToTestForIIS = false;
                             }
 
-                            var testsiteContext = new SiteContext("localhost", "StandardTestSite", 1234);
-                            string webRootPath = Path.Combine(solutionPath, "test", "WebRoot", "WebSite1");
-
-                            var rootApp = new AppContext("/", webRootPath, testsiteContext);
-                            iisConfig.CreateSite(testsiteContext.SiteName, rootApp.PhysicalPath, 555, testsiteContext.TcpPort, rootApp.AppPoolName);
-
-                            if (appPoolSetting == AppPoolSettings.enable32BitAppOnWin64)
+                            if (readyToTestForIIS)
                             {
-                                iisConfig.SetAppPoolSetting(rootApp.AppPoolName, AppPoolSettings.enable32BitAppOnWin64, true);
-                                iisConfig.RecycleAppPool(rootApp.AppPoolName);
+                                var testsiteContext = new SiteContext("localhost", "StandardTestSite", 1234);
+                                string webRootPath = Path.Combine(solutionPath, "test", "WebRoot", "WebSite1");
+
+                                var rootApp = new AppContext("/", webRootPath, testsiteContext);
+                                iisConfig.CreateSite(testsiteContext.SiteName, rootApp.PhysicalPath, 555, testsiteContext.TcpPort, rootApp.AppPoolName);
+
+                                if (appPoolSetting == AppPoolSettings.enable32BitAppOnWin64)
+                                {
+                                    iisConfig.SetAppPoolSetting(rootApp.AppPoolName, AppPoolSettings.enable32BitAppOnWin64, true);
+                                    Thread.Sleep(1000);
+                                    iisConfig.RecycleAppPool(rootApp.AppPoolName);
+                                }
+
+                                var fooApp = new AppContext("/foo", publishedApplicationRootPathBackup, testsiteContext);
+                                iisConfig.CreateApp(testsiteContext.SiteName, fooApp.Name, fooApp.PhysicalPath);
+
+                                var baseAddress = fooApp.GetHttpUri();
+                                await CheckChangeNotificationAsync(baseAddress, logger, deploymentResult);
                             }
-
-                            var fooApp = new AppContext("/foo", publishedApplicationRootPathBackup, testsiteContext);
-                            iisConfig.CreateApp(testsiteContext.SiteName, fooApp.Name, fooApp.PhysicalPath);
-
-                            var httpClientHandler2 = new HttpClientHandler();
-                            var httpClient2 = new HttpClient(httpClientHandler2)
-                            {
-                                BaseAddress = fooApp.GetHttpUri(),
-                                Timeout = TimeSpan.FromSeconds(5),
-                            };
-
-                            await scenario(httpClient2, logger);
                         }
                     }
                 }
             }
+        }
+
+        private static async Task CheckChangeNotificationAsync(Uri baseAddress, ILogger logger, DeploymentResult deploymentResult)
+        {
+            var httpClientHandler = new HttpClientHandler();
+            var httpClient = new HttpClient(httpClientHandler)
+            {
+                BaseAddress = baseAddress,
+                Timeout = TimeSpan.FromSeconds(5),
+            };
+
+            var response = await RetryHelper.RetryRequest(() =>
+            {
+                return httpClient.GetAsync(string.Empty);
+            }, logger, deploymentResult.HostShutdownToken);
+
+            var responseText = await response.Content.ReadAsStringAsync();
+            try
+            {
+                Assert.Equal("Running", responseText);
+            }
+            catch (XunitException)
+            {
+                logger.LogWarning(response.ToString());
+                logger.LogWarning(responseText);
+                throw;
+            }            
         }
 
         private static async Task CheckChunkedAsync(HttpClient client, ILogger logger)
@@ -169,25 +197,6 @@ namespace AspNetCoreModule.FunctionalTests
             }
         }
 
-        private static async Task CheckChangeNotificationAsync(HttpClient client, ILogger logger)
-        {
-            var response = await client.GetAsync("manuallychunked");
-            var responseText = await response.Content.ReadAsStringAsync();
-            try
-            {
-                Assert.Equal("Manually Chunked", responseText);
-                Assert.True(response.Headers.TransferEncodingChunked, "/manuallychunked, chunked?");
-                Assert.Null(response.Headers.ConnectionClose);
-                Assert.Null(GetContentLength(response));
-            }
-            catch (XunitException)
-            {
-                logger.LogWarning(response.ToString());
-                logger.LogWarning(responseText);
-                throw;
-            }
-        }
-        
         private static string GetContentLength(HttpResponseMessage response)
         {
             // Don't use response.Content.Headers.ContentLength, it will dynamically calculate the value if it can.

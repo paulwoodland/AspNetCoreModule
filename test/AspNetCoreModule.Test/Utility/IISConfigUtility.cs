@@ -244,6 +244,7 @@ namespace AspNetCoreModule.Test.Utility
             
             if (!File.Exists(fromfile))
             {
+                RestartServices(4);
                 BackupAppHostConfig();
             }
 
@@ -280,7 +281,27 @@ namespace AspNetCoreModule.Test.Utility
                 case 4:
                     KillWorkerProcess();
                     break;
+                case 5:
+                    KillVSJitDebugger();
+                    break;
             };
+        }
+
+        public static void KillVSJitDebugger()
+        {
+            string query = "Select * from Win32_Process Where Name = \"vsjitdebugger.exe\"";
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+            ManagementObjectCollection processList = searcher.Get();
+
+            foreach (ManagementObject obj in processList)
+            {
+                string[] argList = new string[] { string.Empty, string.Empty };
+                bool foundProcess = true;
+                if (foundProcess)
+                {
+                    obj.InvokeMethod("Terminate", null);
+                }
+            }
         }
 
         public static void KillWorkerProcess(string owner = null)

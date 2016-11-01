@@ -41,7 +41,7 @@ namespace AspNetCoreModule.FunctionalTests
 
             Process p = new Process();
             p.StartInfo.FileName = "powershell.exe";
-            p.StartInfo.Arguments = $"\"{_setupScriptPath}\\installancm.ps1\" \"" + outputPath + "\"";
+            p.StartInfo.Arguments = $"\"{_setupScriptPath}\\installancm.ps1\" \"" + outputPath + "\" -ForceToBackup";
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
             p.StartInfo.UseShellExecute = false;

@@ -99,7 +99,7 @@ namespace AspNetCoreModule.Test.Utility
 
             if (Directory.Exists(from))
             {
-                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c copy \"" + from + "\" \"" + to + "\"");
+                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c xcopy \"" + from + "\" \"" + to + "\" /s");
                 Process myProc = Process.Start(myProcessStartInfo);
                 myProc.WaitForExit();
             }
