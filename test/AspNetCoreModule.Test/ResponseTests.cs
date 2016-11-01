@@ -51,15 +51,16 @@ namespace AspNetCoreModule.FunctionalTests
         {
             if (serverType == ServerType.IIS)
             {
-                // kill existing worker processes
-                RestartServices(4);
-
-                // kill vsjitdebugger processes
+                // clean up vsjitdebugger processes 
                 RestartServices(5);
-
+                
+                // clean up IIS worker processes
+                RestartServices(4);
+                
+                // restore the backup of applicationhost.config file
                 IISConfigUtility.RestoreAppHostConfig(true);
 
-                // Start DefaultAppPool
+                // start DefaultAppPool
                 using (var iisConfig = new IISConfigUtility(serverType))
                 {
                     iisConfig.StartAppPool(IISConfigUtility.Strings.DefaultAppPool);
@@ -147,8 +148,9 @@ namespace AspNetCoreModule.FunctionalTests
                                 if (appPoolSetting == AppPoolSettings.enable32BitAppOnWin64)
                                 {
                                     iisConfig.SetAppPoolSetting(rootApp.AppPoolName, AppPoolSettings.enable32BitAppOnWin64, true);
-                                    Thread.Sleep(1000);
+                                    Thread.Sleep(500);
                                     iisConfig.RecycleAppPool(rootApp.AppPoolName);
+                                    Thread.Sleep(500);
                                 }
 
                                 var fooApp = new AppContext("/foo", publishedApplicationRootPathBackup, testsiteContext);
