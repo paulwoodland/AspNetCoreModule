@@ -1,14 +1,9 @@
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Web.Administration;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Management;
-using System.Text;
-using static AspNetCoreModule.Test.Utility.IISServer;
 
 namespace AspNetCoreModule.Test.Utility
 {
@@ -158,6 +153,20 @@ namespace AspNetCoreModule.Test.Utility
 
                 serverManager.CommitChanges();
             }
+        }
+
+        public bool IsIISInstalled()
+        {
+            bool result = true;
+            if (!File.Exists(Path.Combine(Strings.IIS64BitPath, "iiscore.dll")))
+            {
+                result = false;
+            }
+            if (!File.Exists(Path.Combine(Strings.IIS64BitPath, "config", "applicationhost.config")))
+            {
+                result = false;
+            }
+            return result;
         }
 
         public bool IsUrlRewriteInstalledForIIS()

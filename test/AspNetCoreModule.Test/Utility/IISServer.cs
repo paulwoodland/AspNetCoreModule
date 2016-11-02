@@ -1,12 +1,4 @@
-using Microsoft.AspNetCore.Server.IntegrationTesting;
-using Microsoft.Web.Administration;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Management;
-using System.Text;
 
 namespace AspNetCoreModule.Test.Utility
 {

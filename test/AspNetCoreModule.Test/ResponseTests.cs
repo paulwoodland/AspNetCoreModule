@@ -37,7 +37,7 @@ namespace AspNetCoreModule.FunctionalTests
             throw new NotImplementedException();
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")] 
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -49,27 +49,42 @@ namespace AspNetCoreModule.FunctionalTests
         
         public async Task ResponseFormats(AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
         {
-            if (serverType == ServerType.IIS)
-            {
-                // clean up vsjitdebugger processes 
-                RestartServices(5);
-                
-                // clean up IIS worker processes
-                RestartServices(4);
-                
-                // restore the backup of applicationhost.config file
-                IISConfigUtility.RestoreAppHostConfig(true);
-
-                // start DefaultAppPool
-                using (var iisConfig = new IISConfigUtility(serverType))
-                {
-                    iisConfig.StartAppPool(IISConfigUtility.Strings.DefaultAppPool);
-                }
-            }
-
             var logger = new LoggerFactory()
                             .AddConsole()
                             .CreateLogger(string.Format("ResponseFormats:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
+
+            if (serverType == ServerType.IIS)
+            {
+                using (var iisConfig = new IISConfigUtility(serverType))
+                {
+                    if (!iisConfig.IsIISInstalled())
+                    {
+                        logger.LogWarning("IIS is not installed on this machine. Skipping!!!");
+                        return;
+                    }
+
+                    if (!iisConfig.IsUrlRewriteInstalledForIIS())
+                    {
+                        logger.LogWarning("IIS UrlRewrite module is not installed on this machine. Skipping!!!");
+                        return;
+                    }
+
+                    // kill vsjitdebugger processes if it happened in the previous test
+                    IISConfigUtility.RestartServices(5);
+
+                    // kill IIS worker processes to unlock file handle for applicationhost.config file
+                    IISConfigUtility.RestartServices(4);
+
+                    // restore the applicationhost.config file with the backup file; if the backup file does not exist, it will be created here as well.
+                    IISConfigUtility.RestoreAppHostConfig(true);
+
+                    // start DefaultAppPool in case it is stopped
+                    iisConfig.StartAppPool(IISConfigUtility.Strings.DefaultAppPool);
+
+                    // start w3svc service in case it is not started
+                    IISConfigUtility.StartW3svc();
+                }
+            }
 
             string solutionPath = UseLatestAncm.GetSolutionDirectory();
             string publishedApplicationRootPathBackup = Path.Combine(solutionPath, ".build", "publishedApplicationRootPath");
@@ -130,35 +145,25 @@ namespace AspNetCoreModule.FunctionalTests
                     {
                         using (var iisConfig = new IISConfigUtility(serverType))
                         {
-                            bool readyToTestForIIS = true;
-                            if (!iisConfig.IsUrlRewriteInstalledForIIS())
+                            var testsiteContext = new SiteContext("localhost", "StandardTestSite", 1234);
+                            string webRootPath = Path.Combine(solutionPath, "test", "WebRoot", "WebSite1");
+
+                            var rootApp = new AppContext("/", webRootPath, testsiteContext);
+                            iisConfig.CreateSite(testsiteContext.SiteName, rootApp.PhysicalPath, 555, testsiteContext.TcpPort, rootApp.AppPoolName);
+
+                            if (appPoolSetting == AppPoolSettings.enable32BitAppOnWin64)
                             {
-                                logger.LogWarning("IIS UrlRewrite module is not installed; Install it with WebPI and try it again");
-                                readyToTestForIIS = false;
+                                iisConfig.SetAppPoolSetting(rootApp.AppPoolName, AppPoolSettings.enable32BitAppOnWin64, true);
+                                Thread.Sleep(500);
+                                iisConfig.RecycleAppPool(rootApp.AppPoolName);
+                                Thread.Sleep(500);
                             }
 
-                            if (readyToTestForIIS)
-                            {
-                                var testsiteContext = new SiteContext("localhost", "StandardTestSite", 1234);
-                                string webRootPath = Path.Combine(solutionPath, "test", "WebRoot", "WebSite1");
+                            var fooApp = new AppContext("/foo", publishedApplicationRootPathBackup, testsiteContext);
+                            iisConfig.CreateApp(testsiteContext.SiteName, fooApp.Name, fooApp.PhysicalPath);
 
-                                var rootApp = new AppContext("/", webRootPath, testsiteContext);
-                                iisConfig.CreateSite(testsiteContext.SiteName, rootApp.PhysicalPath, 555, testsiteContext.TcpPort, rootApp.AppPoolName);
-
-                                if (appPoolSetting == AppPoolSettings.enable32BitAppOnWin64)
-                                {
-                                    iisConfig.SetAppPoolSetting(rootApp.AppPoolName, AppPoolSettings.enable32BitAppOnWin64, true);
-                                    Thread.Sleep(500);
-                                    iisConfig.RecycleAppPool(rootApp.AppPoolName);
-                                    Thread.Sleep(500);
-                                }
-
-                                var fooApp = new AppContext("/foo", publishedApplicationRootPathBackup, testsiteContext);
-                                iisConfig.CreateApp(testsiteContext.SiteName, fooApp.Name, fooApp.PhysicalPath);
-
-                                var baseAddress = fooApp.GetHttpUri();
-                                await CheckChangeNotificationAsync(baseAddress, logger, deploymentResult);
-                            }
+                            var baseAddress = fooApp.GetHttpUri();
+                            await CheckChangeNotificationAsync(baseAddress, logger, deploymentResult);
                         }
                     }
                 }

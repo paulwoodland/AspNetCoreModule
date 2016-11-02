@@ -1,14 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Net;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
-using System.Collections;
-using System.Diagnostics;
-using System.Reflection;
 using AspNetCoreModule.Test.Utility;
 
 namespace AspNetCoreModule.Test.HttpClient
