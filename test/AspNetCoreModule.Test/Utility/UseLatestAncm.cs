@@ -6,7 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 
-namespace AspNetCoreModule.FunctionalTests
+namespace AspNetCoreModule.Test.Utility
 {
     public class UseLatestAncm : IDisposable
     {

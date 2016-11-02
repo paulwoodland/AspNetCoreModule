@@ -6,6 +6,8 @@ using System.Management;
 using System.Threading;
 using Xunit.Abstractions;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Server.IntegrationTesting;
+using Microsoft.Extensions.PlatformAbstractions;
 
 namespace AspNetCoreModule.Test.Utility
 {
@@ -255,6 +257,193 @@ namespace AspNetCoreModule.Test.Utility
         public static void LogPass(string message)
         {
             throw new ApplicationException("Not implemented");
+        }
+
+        public static void RestartServices(int option)
+        {
+            switch (option)
+            {
+                case 0:
+                    RestartIis();
+                    break;
+                case 1:
+                    StopHttp();
+                    StartW3svc();
+                    break;
+                case 2:
+                    StopWas();
+                    StartW3svc();
+                    break;
+                case 3:
+                    StopW3svc();
+                    StartW3svc();
+                    break;
+                case 4:
+                    KillWorkerProcess();
+                    break;
+                case 5:
+                    KillVSJitDebugger();
+                    break;
+            };
+        }
+
+        public static void KillVSJitDebugger()
+        {
+            string query = "Select * from Win32_Process Where Name = \"vsjitdebugger.exe\"";
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+            ManagementObjectCollection processList = searcher.Get();
+
+            foreach (ManagementObject obj in processList)
+            {
+                string[] argList = new string[] { string.Empty, string.Empty };
+                bool foundProcess = true;
+                if (foundProcess)
+                {
+                    obj.InvokeMethod("Terminate", null);
+                }
+            }
+        }
+
+        public static void KillWorkerProcess(string owner = null)
+        {
+            string query = "Select * from Win32_Process Where Name = \"w3wp.exe\"";
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+            ManagementObjectCollection processList = searcher.Get();
+
+            foreach (ManagementObject obj in processList)
+            {
+                string[] argList = new string[] { string.Empty, string.Empty };
+                int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                if (returnVal == 0)
+                {
+                    bool foundProcess = true;
+                    if (owner != null)
+                    {
+                        if (String.Compare(argList[0], owner, true) != 0)
+                        {
+                            foundProcess = false;
+                        }
+                    }
+                    if (foundProcess)
+                    {
+                        obj.InvokeMethod("Terminate", null);
+                    }
+                }
+            }
+        }
+
+        public static void RestartIis()
+        {
+            Process myProc = Process.Start("iisreset");
+            myProc.WaitForExit();
+        }
+
+        public static void StopHttp()
+        {
+            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop http /y");
+            Process myProc = Process.Start(myProcessStartInfo);
+            myProc.WaitForExit();
+        }
+
+        public static void StopWas()
+        {
+            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop was /y");
+            Process myProc = Process.Start(myProcessStartInfo);
+            myProc.WaitForExit();
+        }
+
+        public static void StartWas()
+        {
+            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start was");
+            Process myProc = Process.Start(myProcessStartInfo);
+            myProc.WaitForExit();
+        }
+
+        public static void StopW3svc()
+        {
+            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop w3svc /y");
+            Process myProc = Process.Start(myProcessStartInfo);
+            myProc.WaitForExit();
+        }
+
+        public static void StartW3svc()
+        {
+            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start w3svc");
+            Process myProc = Process.Start(myProcessStartInfo);
+            myProc.WaitForExit();
+        }
+
+        public static string GetApplicationPath(ApplicationType applicationType)
+        {
+            var applicationBasePath = PlatformServices.Default.Application.ApplicationBasePath;
+            string solutionPath = UseLatestAncm.GetSolutionDirectory();
+            string applicationPath = string.Empty;
+            applicationPath = Path.Combine(solutionPath, "test", "AspNetCoreModule.TestSites");
+            if (applicationType == ApplicationType.Standalone)
+            {
+                // NA
+            }
+            return applicationPath;
+        }
+
+        public static string GetConfigContent(ServerType serverType, string iisConfig)
+        {
+            string content = null;
+            if (serverType == ServerType.IISExpress)
+            {
+                content = File.ReadAllText(iisConfig);
+            }
+            return content;
+        }
+        
+        public static void ClearSystemLog()
+        {
+            using (EventLog eventLog = new EventLog("System"))
+            {
+                eventLog.Clear();
+            }
+        }
+
+        public static void VerifySystemEvent(int id, string runningMode = null, string configReader = null)
+        {
+            try
+            {
+                TestUtility.LogMessage("Waiting 5 seconds for logfile to update...");
+                Thread.Sleep(5000);
+                EventLog systemLog = new EventLog("System");
+                foreach (EventLogEntry entry in systemLog.Entries)
+                {
+                    // ToDo: Clean up 
+                    // if (entry.EventID == id)
+                    if (entry.InstanceId == id)
+                    {
+                        if (id != 5211)
+                        {
+                            TestUtility.LogPass(String.Format("Found EVENT {0}", id));
+                            return;
+                        }
+                        else
+                        {
+                            if (entry.ReplacementStrings[0] != runningMode || entry.ReplacementStrings[1] != configReader)
+                                TestUtility.LogFail(String.Format("EVENT {0} had incorrect properties. RunningMode: {1}, ConfigReader: {2}", id, entry.ReplacementStrings[0], entry.ReplacementStrings[1]));
+                            else
+                                TestUtility.LogPass(String.Format("Found EVENT {0} with RunningMode {1} and ConfigReader {2}", id, entry.ReplacementStrings[0], entry.ReplacementStrings[1]));
+                            return;
+                        }
+                    }
+                }
+                TestUtility.LogFail(String.Format("Event {0} not found", id));
+            }
+            catch (Exception ex)
+            {
+                TestUtility.LogFail("Verifying events in event log failed:" + ex.ToString());
+            }
+        }
+        
+        public static string ConvertToPunycode(string domain)
+        {
+            Uri uri = new Uri("http://" + domain);
+            return uri.DnsSafeHost;
         }
     }
 }

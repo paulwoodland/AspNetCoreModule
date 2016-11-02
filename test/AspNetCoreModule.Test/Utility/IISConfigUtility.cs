@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Management;
+using System.ServiceProcess;
 
 namespace AspNetCoreModule.Test.Utility
 {
@@ -169,6 +170,27 @@ namespace AspNetCoreModule.Test.Utility
             return result;
         }
 
+        public string GetServiceStatus(string serviceName)
+        {
+            ServiceController sc = new ServiceController(serviceName);
+
+            switch (sc.Status)
+            {
+                case ServiceControllerStatus.Running:
+                    return "Running";
+                case ServiceControllerStatus.Stopped:
+                    return "Stopped";
+                case ServiceControllerStatus.Paused:
+                    return "Paused";
+                case ServiceControllerStatus.StopPending:
+                    return "Stopping";
+                case ServiceControllerStatus.StartPending:
+                    return "Starting";
+                default:
+                    return "Status Changing";
+            }
+        }
+
         public bool IsUrlRewriteInstalledForIIS()
         {
             bool result = true;
@@ -264,124 +286,12 @@ namespace AspNetCoreModule.Test.Utility
                 TestUtility.FileCopy(fromfile, tofile);
                 if (restartIISServices)
                 {
-                    RestartServices(4);
+                    TestUtility.RestartServices(4);
                 }
                 TestUtility.FileCopy(fromfile, tofile);
             }
         }
 
-        public static void RestartServices(int option)
-        {
-            switch (option)
-            {
-                case 0:
-                    RestartIis();
-                    break;
-                case 1:
-                    StopHttp();
-                    StartW3svc();
-                    break;
-                case 2:
-                    StopWas();
-                    StartW3svc();
-                    break;
-                case 3:
-                    StopW3svc();
-                    StartW3svc();
-                    break;
-                case 4:
-                    KillWorkerProcess();
-                    break;
-                case 5:
-                    KillVSJitDebugger();
-                    break;
-            };
-        }
-
-        public static void KillVSJitDebugger()
-        {
-            string query = "Select * from Win32_Process Where Name = \"vsjitdebugger.exe\"";
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
-            ManagementObjectCollection processList = searcher.Get();
-
-            foreach (ManagementObject obj in processList)
-            {
-                string[] argList = new string[] { string.Empty, string.Empty };
-                bool foundProcess = true;
-                if (foundProcess)
-                {
-                    obj.InvokeMethod("Terminate", null);
-                }
-            }
-        }
-
-        public static void KillWorkerProcess(string owner = null)
-        {
-            string query = "Select * from Win32_Process Where Name = \"w3wp.exe\"";
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
-            ManagementObjectCollection processList = searcher.Get();
-
-            foreach (ManagementObject obj in processList)
-            {
-                string[] argList = new string[] { string.Empty, string.Empty };
-                int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
-                if (returnVal == 0)
-                {
-                    bool foundProcess = true;
-                    if (owner != null)
-                    {
-                        if (String.Compare(argList[0], owner, true) != 0)
-                        {
-                            foundProcess = false;
-                        }
-                    }
-                    if (foundProcess)
-                    {
-                        obj.InvokeMethod("Terminate", null);
-                    }
-                }
-            }
-        }
-
-        public static void RestartIis()
-        {
-            Process myProc = Process.Start("iisreset");
-            myProc.WaitForExit();
-        }
-
-        public static void StopHttp()
-        {
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop http /y");
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
-        }
-
-        public static void StopWas()
-        {
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop was /y");
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
-        }
-
-        public static void StartWas()
-        {
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start was");
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
-        }
-
-        public static void StopW3svc()
-        {
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop w3svc /y");
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
-        }
-
-        public static void StartW3svc()
-        {
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start w3svc");
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
-        }
+        
     }
 }

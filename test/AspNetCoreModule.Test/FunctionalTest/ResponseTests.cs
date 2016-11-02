@@ -18,7 +18,8 @@ using static AspNetCoreModule.Test.Utility.IISConfigUtility;
 using System.IO;
 using System.Threading;
 
-namespace AspNetCoreModule.FunctionalTests
+
+namespace AspNetCoreModule.Test.FunctionalTest
 {
     public class ResponseTests : IClassFixture<UseLatestAncm>
     {
@@ -70,10 +71,10 @@ namespace AspNetCoreModule.FunctionalTests
                     }
 
                     // kill vsjitdebugger processes if it happened in the previous test
-                    IISConfigUtility.RestartServices(5);
+                    TestUtility.RestartServices(5);
 
                     // kill IIS worker processes to unlock file handle for applicationhost.config file
-                    IISConfigUtility.RestartServices(4);
+                    TestUtility.RestartServices(4);
 
                     // restore the applicationhost.config file with the backup file; if the backup file does not exist, it will be created here as well.
                     IISConfigUtility.RestoreAppHostConfig(true);
@@ -82,7 +83,12 @@ namespace AspNetCoreModule.FunctionalTests
                     iisConfig.StartAppPool(IISConfigUtility.Strings.DefaultAppPool);
 
                     // start w3svc service in case it is not started
-                    IISConfigUtility.StartW3svc();
+                    TestUtility.StartW3svc();
+
+                    if (iisConfig.GetServiceStatus("w3svc") != "Running")
+                    {
+                        throw new System.ApplicationException("w3svc service is not runing. Skipping!!!");                        
+                    }
                 }
             }
 
@@ -91,13 +97,13 @@ namespace AspNetCoreModule.FunctionalTests
             
             using (logger.BeginScope("ResponseFormatsTest"))
             {
-                string applicationPath = Helpers.GetApplicationPath(applicationType);
+                string applicationPath = TestUtility.GetApplicationPath(applicationType);
                 string testSiteName = "ANCMTestSite"; // This is configured in the Http.config
                 var deploymentParameters = new DeploymentParameters(applicationPath, serverType, runtimeFlavor, architecture)
                 {
                     ApplicationBaseUriHint = applicationBaseUrl,
                     EnvironmentName = "Response",
-                    ServerConfigTemplateContent = Helpers.GetConfigContent(serverType, "Http.config"),
+                    ServerConfigTemplateContent = TestUtility.GetConfigContent(serverType, "Http.config"),
                     SiteName = testSiteName, 
                     TargetFramework = runtimeFlavor == RuntimeFlavor.Clr ? "net451" : "netcoreapp1.0",
                     ApplicationType = applicationType,

@@ -5,9 +5,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
 using AspNetCoreModule.Test.Utility;
 
-namespace AspNetCoreModule.Test.HttpClient
+namespace AspNetCoreModule.Test.HttpClientHelper
 {
-    public class HttpClient
+    public class HttpClientHelper
     {
         // callback used to validate the certificate in an SSL conversation
         public static bool ValidateRemoteCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors policyErrors)
