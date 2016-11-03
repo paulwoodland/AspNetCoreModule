@@ -396,25 +396,25 @@ namespace AspNetCoreModule.Test.Utility
             return content;
         }
         
-        public static void ClearSystemLog()
+        public static void ClearANCMEventLog()
         {
-            using (EventLog eventLog = new EventLog("System"))
-            {
-                eventLog.Clear();
-            }
+            //using (EventLog eventLog = new EventLog("Application"))
+            //{
+            //    eventLog.Clear();
+            //}
+            EventLog.DeleteEventSource("IIS AspNetCore Module");
+            EventLog.DeleteEventSource("IIS Express AspNetCore Module");            
         }
 
-        public static void VerifySystemEvent(int id, string runningMode = null, string configReader = null)
+        public static void VerifyApplicationEvent(int id, string runningMode = null, string configReader = null)
         {
             try
             {
                 TestUtility.LogMessage("Waiting 5 seconds for logfile to update...");
                 Thread.Sleep(5000);
-                EventLog systemLog = new EventLog("System");
+                EventLog systemLog = new EventLog("Application");
                 foreach (EventLogEntry entry in systemLog.Entries)
                 {
-                    // ToDo: Clean up 
-                    // if (entry.EventID == id)
                     if (entry.InstanceId == id)
                     {
                         if (id != 5211)

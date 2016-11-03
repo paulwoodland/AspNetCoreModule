@@ -54,6 +54,8 @@ namespace AspNetCoreModule.Test.FunctionalTest
                             .AddConsole()
                             .CreateLogger(string.Format("ResponseFormats:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
 
+            TestUtility.ClearANCMEventLog();
+
             if (serverType == ServerType.IIS)
             {
                 using (var iisConfig = new IISConfigUtility(serverType))
