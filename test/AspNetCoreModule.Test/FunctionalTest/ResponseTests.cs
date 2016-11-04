@@ -54,44 +54,11 @@ namespace AspNetCoreModule.Test.FunctionalTest
                             .AddConsole()
                             .CreateLogger(string.Format("ResponseFormats:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
 
-            TestUtility.ClearANCMEventLog();
+            TestUtility testUtility = new TestUtility(logger);
 
             if (serverType == ServerType.IIS)
             {
-                using (var iisConfig = new IISConfigUtility(serverType))
-                {
-                    if (!iisConfig.IsIISInstalled())
-                    {
-                        logger.LogWarning("IIS is not installed on this machine. Skipping!!!");
-                        return;
-                    }
-
-                    if (!iisConfig.IsUrlRewriteInstalledForIIS())
-                    {
-                        logger.LogWarning("IIS UrlRewrite module is not installed on this machine. Skipping!!!");
-                        return;
-                    }
-
-                    // kill vsjitdebugger processes if it happened in the previous test
-                    TestUtility.RestartServices(5);
-
-                    // kill IIS worker processes to unlock file handle for applicationhost.config file
-                    TestUtility.RestartServices(4);
-
-                    // restore the applicationhost.config file with the backup file; if the backup file does not exist, it will be created here as well.
-                    IISConfigUtility.RestoreAppHostConfig(true);
-
-                    // start DefaultAppPool in case it is stopped
-                    iisConfig.StartAppPool(IISConfigUtility.Strings.DefaultAppPool);
-
-                    // start w3svc service in case it is not started
-                    TestUtility.StartW3svc();
-
-                    if (iisConfig.GetServiceStatus("w3svc") != "Running")
-                    {
-                        throw new System.ApplicationException("w3svc service is not runing. Skipping!!!");                        
-                    }
-                }
+                testUtility.CleanupTestEnv(serverType);
             }
 
             string solutionPath = UseLatestAncm.GetSolutionDirectory();

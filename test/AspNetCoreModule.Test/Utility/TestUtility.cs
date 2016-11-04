@@ -8,13 +8,68 @@ using Xunit.Abstractions;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.Extensions.Logging;
 
 namespace AspNetCoreModule.Test.Utility
 {
     public class TestUtility
     {
-        public static bool DisplayLog = true;
-        public static ITestOutputHelper TestOutputHelper;
+        public TestUtility(ILogger logger)
+        {
+            _logger = logger;
+        }
+
+        private static ILogger _logger = null;
+        
+        public static void LogMessage(string format, params object[] parameters)
+        {
+            _logger.LogTrace(format);
+        }
+        public static void LogError(string format, params object[] parameters)
+        {
+            _logger.LogError(format);
+        }
+
+        public void CleanupTestEnv(ServerType serverType)
+        {
+            // clear Event logs
+            TestUtility.ClearApplicationEventLog();
+
+            using (var iisConfig = new IISConfigUtility(serverType))
+            {
+                if (!iisConfig.IsIISInstalled())
+                {
+                    _logger.LogWarning("IIS is not installed on this machine. Skipping!!!");
+                    return;
+                }
+
+                if (!iisConfig.IsUrlRewriteInstalledForIIS())
+                {
+                    _logger.LogWarning("IIS UrlRewrite module is not installed on this machine. Skipping!!!");
+                    return;
+                }
+
+                // kill vsjitdebugger processes if it happened in the previous test
+                TestUtility.RestartServices(5);
+
+                // kill IIS worker processes to unlock file handle for applicationhost.config file
+                TestUtility.RestartServices(4);
+
+                // restore the applicationhost.config file with the backup file; if the backup file does not exist, it will be created here as well.
+                IISConfigUtility.RestoreAppHostConfig(true);
+
+                // start DefaultAppPool in case it is stopped
+                iisConfig.StartAppPool(IISConfigUtility.Strings.DefaultAppPool);
+
+                // start w3svc service in case it is not started
+                TestUtility.StartW3svc();
+
+                if (iisConfig.GetServiceStatus("w3svc") != "Running")
+                {
+                    throw new System.ApplicationException("w3svc service is not runing. Skipping!!!");
+                }
+            }
+        }
         public static void DeleteFile(string filePath)
         {
             if (File.Exists(filePath))
@@ -52,7 +107,7 @@ namespace AspNetCoreModule.Test.Utility
             }
             else
             {
-                TestUtility.LogMessage("File not found " + from);
+                TestUtility.LogError("File not found " + from);
             }
         }
 
@@ -104,7 +159,7 @@ namespace AspNetCoreModule.Test.Utility
             }
             else
             {
-                TestUtility.LogMessage("Directory not found " + from);
+                _logger.LogTrace("Directory not found " + from);
             }
         }
 
@@ -236,29 +291,7 @@ namespace AspNetCoreModule.Test.Utility
 
             return builder.ToString();
         }
-
-        public static void LogVerbose(string format, params object[] parameters)
-        {
-            if (DisplayLog)
-            {
-                TestOutputHelper.WriteLine(format, parameters);
-            }
-        }
-
-        public static void LogMessage(string message)
-        {
-            //TestOutputHelper.WriteLine(message);
-        }
-
-        public static void LogFail(string message)
-        {
-            throw new ApplicationException("Not implemented");            
-        }
-        public static void LogPass(string message)
-        {
-            throw new ApplicationException("Not implemented");
-        }
-
+        
         public static void RestartServices(int option)
         {
             switch (option)
@@ -396,21 +429,19 @@ namespace AspNetCoreModule.Test.Utility
             return content;
         }
         
-        public static void ClearANCMEventLog()
+        public static void ClearApplicationEventLog()
         {
-            //using (EventLog eventLog = new EventLog("Application"))
-            //{
-            //    eventLog.Clear();
-            //}
-            EventLog.DeleteEventSource("IIS AspNetCore Module");
-            EventLog.DeleteEventSource("IIS Express AspNetCore Module");            
+            using (EventLog eventLog = new EventLog("Application"))
+            {
+                eventLog.Clear();
+            }
         }
 
         public static void VerifyApplicationEvent(int id, string runningMode = null, string configReader = null)
         {
             try
             {
-                TestUtility.LogMessage("Waiting 5 seconds for logfile to update...");
+                _logger.LogTrace("Waiting 5 seconds for logfile to update...");
                 Thread.Sleep(5000);
                 EventLog systemLog = new EventLog("Application");
                 foreach (EventLogEntry entry in systemLog.Entries)
@@ -419,24 +450,24 @@ namespace AspNetCoreModule.Test.Utility
                     {
                         if (id != 5211)
                         {
-                            TestUtility.LogPass(String.Format("Found EVENT {0}", id));
+                            _logger.LogTrace(String.Format("Found EVENT {0}", id));
                             return;
                         }
                         else
                         {
                             if (entry.ReplacementStrings[0] != runningMode || entry.ReplacementStrings[1] != configReader)
-                                TestUtility.LogFail(String.Format("EVENT {0} had incorrect properties. RunningMode: {1}, ConfigReader: {2}", id, entry.ReplacementStrings[0], entry.ReplacementStrings[1]));
+                                _logger.LogError(String.Format("EVENT {0} had incorrect properties. RunningMode: {1}, ConfigReader: {2}", id, entry.ReplacementStrings[0], entry.ReplacementStrings[1]));
                             else
-                                TestUtility.LogPass(String.Format("Found EVENT {0} with RunningMode {1} and ConfigReader {2}", id, entry.ReplacementStrings[0], entry.ReplacementStrings[1]));
+                                _logger.LogTrace(String.Format("Found EVENT {0} with RunningMode {1} and ConfigReader {2}", id, entry.ReplacementStrings[0], entry.ReplacementStrings[1]));
                             return;
                         }
                     }
                 }
-                TestUtility.LogFail(String.Format("Event {0} not found", id));
+                _logger.LogError(String.Format("Event {0} not found", id));
             }
             catch (Exception ex)
             {
-                TestUtility.LogFail("Verifying events in event log failed:" + ex.ToString());
+                _logger.LogError("Verifying events in event log failed:" + ex.ToString());
             }
         }
         
