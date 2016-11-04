@@ -1,23 +1,20 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using AspNetCoreModule.Test.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.IO;
+using System.Threading;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Testing.xunit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Xunit;
 using Xunit.Sdk;
-using AspNetCoreModule.Test;
-using AspNetCoreModule.Test.Framework;
-using static AspNetCoreModule.Test.Framework.IISConfigUtility;
-using System.IO;
-using System.Threading;
-
 
 namespace AspNetCoreModule.Test.FunctionalTest
 {
@@ -30,7 +27,7 @@ namespace AspNetCoreModule.Test.FunctionalTest
         [InlineData(ServerType.IISExpress, RuntimeFlavor.Clr, RuntimeArchitecture.x64, "http://localhost:5091/")]
         public Task BasicTest(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
         {
-            return ResponseFormats(AppPoolSettings.none, serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
+            return ResponseFormats(AspNetCoreModule.Test.Framework.IISConfigUtility.AppPoolSettings.none, serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
         }
 
         private Task ResponseFormats(object none, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> checkChunkedAsync, ApplicationType portable)
@@ -42,13 +39,13 @@ namespace AspNetCoreModule.Test.FunctionalTest
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
-        [InlineData(AppPoolSettings.enable32BitAppOnWin64, ServerType.IIS, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5093/")]
-        public Task BasicTestForIIS(AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
+        [InlineData(IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64, ServerType.IIS, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5093/")]
+        public Task BasicTestForIIS(IISConfigUtility.AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
         {
             return ResponseFormats(appPoolSetting, serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
         }
         
-        public async Task ResponseFormats(AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
+        public async Task ResponseFormats(IISConfigUtility.AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
         {
             var logger = new LoggerFactory()
                             .AddConsole()
@@ -126,9 +123,9 @@ namespace AspNetCoreModule.Test.FunctionalTest
                             var rootApp = new AppContext("/", webRootPath, testsiteContext);
                             iisConfig.CreateSite(testsiteContext.SiteName, rootApp.PhysicalPath, 555, testsiteContext.TcpPort, rootApp.AppPoolName);
 
-                            if (appPoolSetting == AppPoolSettings.enable32BitAppOnWin64)
+                            if (appPoolSetting == IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64)
                             {
-                                iisConfig.SetAppPoolSetting(rootApp.AppPoolName, AppPoolSettings.enable32BitAppOnWin64, true);
+                                iisConfig.SetAppPoolSetting(rootApp.AppPoolName, IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64, true);
                                 Thread.Sleep(500);
                                 iisConfig.RecycleAppPool(rootApp.AppPoolName);
                                 Thread.Sleep(500);
