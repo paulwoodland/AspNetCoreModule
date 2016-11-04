@@ -11,28 +11,32 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace AspNetCoreModule.Test.Framework
 {
     public class TestUtility
     {
-        public TestUtility(ILogger logger)
+        public static ILogger Logger = null;
+        public static void Initialize(ILogger logger)
         {
-            _logger = logger;
+            Logger = logger;
         }
-
-        private static ILogger _logger = null;
         
-        public static void LogMessage(string format, params object[] parameters)
+        public static void LogTrace(string format, params object[] parameters)
         {
-            _logger.LogTrace(format);
+            Logger.LogTrace(format);
         }
         public static void LogError(string format, params object[] parameters)
         {
-            _logger.LogError(format);
+            Logger.LogError(format);
+        }
+        public static void LogWarning(string format, params object[] parameters)
+        {
+            Logger.LogWarning(format);
         }
 
-        public void CleanupTestEnv(ServerType serverType)
+        public static void CleanupTestEnv(ServerType serverType)
         {
             // clear Event logs
             TestUtility.ClearApplicationEventLog();
@@ -41,13 +45,13 @@ namespace AspNetCoreModule.Test.Framework
             {
                 if (!iisConfig.IsIISInstalled())
                 {
-                    _logger.LogWarning("IIS is not installed on this machine. Skipping!!!");
+                    LogTrace("IIS is not installed on this machine. Skipping!!!");
                     return;
                 }
 
                 if (!iisConfig.IsUrlRewriteInstalledForIIS())
                 {
-                    _logger.LogWarning("IIS UrlRewrite module is not installed on this machine. Skipping!!!");
+                    LogTrace("IIS UrlRewrite module is not installed on this machine. Skipping!!!");
                     return;
                 }
 
@@ -161,7 +165,7 @@ namespace AspNetCoreModule.Test.Framework
             }
             else
             {
-                _logger.LogTrace("Directory not found " + from);
+                LogTrace("Directory not found " + from);
             }
         }
 
@@ -206,7 +210,7 @@ namespace AspNetCoreModule.Test.Framework
             processList = searcher.Get();
             if (processList.Count > 0)
             {
-                TestUtility.LogMessage("Failed to kill process " + processFileName);
+                TestUtility.LogTrace("Failed to kill process " + processFileName);
             }            
         }
 
@@ -230,7 +234,7 @@ namespace AspNetCoreModule.Test.Framework
             return result;
         }
 
-        public static string GetHttpUri(string Url, SiteContext siteContext)
+        public static string GetHttpUri(string Url, WebSiteContext siteContext)
         {
             string tempUrl = Url.TrimStart(new char[] { '/' });
             return "http://" + siteContext.HostName + ":" + siteContext.TcpPort + "/" + tempUrl;
@@ -437,42 +441,41 @@ namespace AspNetCoreModule.Test.Framework
             {
                 eventLog.Clear();
             }
+            for (int i = 0; i < 5; i++)
+            {
+                LogTrace("Waiting 1 seconds for eventlog to clear...");
+                Thread.Sleep(1000);
+                EventLog systemLog = new EventLog("Application");
+                if (systemLog.Entries.Count == 0)
+                {
+                    break;
+                }
+            }
         }
 
-        public static void VerifyApplicationEvent(int id, string runningMode = null, string configReader = null)
+        public static List<String> GetApplicationEvent(int id)
         {
-            try
+            var result = new List<String>();
+            for (int i = 0; i < 5; i++)
             {
-                _logger.LogTrace("Waiting 5 seconds for logfile to update...");
-                Thread.Sleep(5000);
+                LogTrace("Waiting 1 seconds for eventlog to update...");
+                Thread.Sleep(1000);
                 EventLog systemLog = new EventLog("Application");
                 foreach (EventLogEntry entry in systemLog.Entries)
                 {
                     if (entry.InstanceId == id)
                     {
-                        if (id != 5211)
-                        {
-                            _logger.LogTrace(String.Format("Found EVENT {0}", id));
-                            return;
-                        }
-                        else
-                        {
-                            if (entry.ReplacementStrings[0] != runningMode || entry.ReplacementStrings[1] != configReader)
-                                _logger.LogError(String.Format("EVENT {0} had incorrect properties. RunningMode: {1}, ConfigReader: {2}", id, entry.ReplacementStrings[0], entry.ReplacementStrings[1]));
-                            else
-                                _logger.LogTrace(String.Format("Found EVENT {0} with RunningMode {1} and ConfigReader {2}", id, entry.ReplacementStrings[0], entry.ReplacementStrings[1]));
-                            return;
-                        }
+                        result.Add(entry.ReplacementStrings[0]);
                     }
                 }
-                _logger.LogError(String.Format("Event {0} not found", id));
+                if (result.Count > 0)
+                {
+                    break;
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError("Verifying events in event log failed:" + ex.ToString());
-            }
+            return result;
         }
-        
+
         public static string ConvertToPunycode(string domain)
         {
             Uri uri = new Uri("http://" + domain);

@@ -6,67 +6,10 @@ using System.IO;
 
 namespace AspNetCoreModule.Test.Framework
 {
-    public class SiteContext : IDisposable
+    public class WebAppContext : IDisposable
     {
-        public SiteContext(string hostName, string siteName, int tcpPort)
-        {
-            _hostName = hostName;
-            _siteName = siteName;
-            _tcpPort = tcpPort;
-        }
-
-        public void Dispose()
-        {
-
-        }
-
-        public string _hostName = null;
-        public string HostName
-        {
-            get
-            {
-                if (_hostName == null)
-                {
-                    _hostName = "localhost";
-                }
-                return _hostName;
-            }
-            set
-            {
-                _hostName = value;
-            }
-        }
-
-        public string _siteName = null;
-        public string SiteName
-        {
-            get
-            {
-                return _siteName;
-            }
-            set
-            {
-                _siteName = value;
-            }
-        }
-
-        public int _tcpPort = 8080;
-        public int TcpPort
-        {
-            get
-            {
-                return _tcpPort;
-            }
-            set
-            {
-                _tcpPort = value;
-            }
-        }
-    }
-    public class AppContext : IDisposable
-    {
-        private SiteContext _siteContext;
-        public SiteContext SiteContext
+        private WebSiteContext _siteContext;
+        public WebSiteContext SiteContext
         {
             get
             {
@@ -78,12 +21,12 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public AppContext(string name, string physicalPath, string url = null)
+        public WebAppContext(string name, string physicalPath, string url = null)
             : this(name, physicalPath, null, url)
         {
         }
                 
-        public AppContext(string name, string physicalPath, SiteContext siteContext, string url = null)
+        public WebAppContext(string name, string physicalPath, WebSiteContext siteContext, string url = null)
         {
             _siteContext = siteContext;
             _name = name;

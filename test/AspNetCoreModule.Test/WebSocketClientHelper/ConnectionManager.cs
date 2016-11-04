@@ -37,7 +37,7 @@ namespace AspNetCoreModule.Test.WebSocketClient
 
             WebSocketClientHelper Client = new WebSocketClientHelper();
 
-            TestUtility.LogMessage("Connecting to {0} on {1}", host, port);
+            TestUtility.LogTrace("Connecting to {0} on {1}", host, port);
 
             Client.TcpClient = new MyTcpClient(host, port);
             Client.Stream = Client.TcpClient.GetStream();
@@ -72,7 +72,7 @@ namespace AspNetCoreModule.Test.WebSocketClient
                 //jhkim debug
                 //result.AsyncWaitHandle.WaitOne();
 
-                TestUtility.LogMessage("Client {0:D3}: Write {1} bytes: {2} ", Client.Id, outputData.Length,
+                TestUtility.LogTrace("Client {0:D3}: Write {1} bytes: {2} ", Client.Id, outputData.Length,
                     Encoding.UTF8.GetString(outputData, 0, outputData.Length));
 
                 //result.AsyncWaitHandle.Close();
@@ -90,7 +90,7 @@ namespace AspNetCoreModule.Test.WebSocketClient
                 outputData = HandShakeRequest[offset++];
 
                 Client.Stream.BeginWrite(outputData, 0, outputData.Length, WriteCallback, Client);
-                TestUtility.LogMessage("Client {0:D3}: Write {1} bytes: {2} ", Client.Id, outputData.Length,
+                TestUtility.LogTrace("Client {0:D3}: Write {1} bytes: {2} ", Client.Id, outputData.Length,
                     Encoding.UTF8.GetString(outputData, 0, outputData.Length));
             }
         }
@@ -124,7 +124,7 @@ namespace AspNetCoreModule.Test.WebSocketClient
                         tempBuffer = WebSocketClientUtility.SubArray(Client.InputData, 0, bytesRead);
                         InputDataArray.Add(tempBuffer);
                         bytesReadIntotal += bytesRead;
-                        TestUtility.LogMessage("ReadDataCallback: Looping: Client {0:D3}: bytesReadHere {1} ", Client.Id, bytesRead);
+                        TestUtility.LogTrace("ReadDataCallback: Looping: Client {0:D3}: bytesReadHere {1} ", Client.Id, bytesRead);
                     }
 
                     // create a single byte array with the arrayList
@@ -145,7 +145,7 @@ namespace AspNetCoreModule.Test.WebSocketClient
                 int nextFrameIndex = 0;
                 while (nextFrameIndex != -1)
                 {
-                    TestUtility.LogMessage("ReadDataCallback: Client {0:D3}: Read Type {1} : {2} ", Client.Id, frame.FrameType, bytesReadIntotal);
+                    TestUtility.LogTrace("ReadDataCallback: Client {0:D3}: Read Type {1} : {2} ", Client.Id, frame.FrameType, bytesReadIntotal);
                     ProcessReceivedData(frame);
 
                     // Send Pong if the frame was Ping
@@ -191,7 +191,7 @@ namespace AspNetCoreModule.Test.WebSocketClient
 
                     ProcessReceivedData(frame);
 
-                    TestUtility.LogMessage("Client {0:D3}: Read Type {1} : {2} ", Client.Id, frame.FrameType, frame.Content.Length);
+                    TestUtility.LogTrace("Client {0:D3}: Read Type {1} : {2} ", Client.Id, frame.FrameType, frame.Content.Length);
                 }
 
             }
@@ -270,12 +270,12 @@ namespace AspNetCoreModule.Test.WebSocketClient
             if (Client.TcpClient.Connected)
             {
                 var result = Client.Stream.BeginWrite(outputData, 0, outputData.Length, WriteCallback, Client);
-                TestUtility.LogMessage("Client {0:D3}: Write Type {1} : {2} ", Client.Id, frame.FrameType,
+                TestUtility.LogTrace("Client {0:D3}: Write Type {1} : {2} ", Client.Id, frame.FrameType,
                     frame.Content.Length);
             }
             else
             {
-                TestUtility.LogMessage("Connection is disconnected");
+                TestUtility.LogTrace("Connection is disconnected");
             }
 
             return frame;
