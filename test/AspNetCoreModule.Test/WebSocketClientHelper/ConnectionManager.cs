@@ -10,7 +10,7 @@ namespace AspNetCoreModule.Test.WebSocketClient
 {
     public class ConnectionManager
     {
-        public Client Client { get; set; }
+        public WebSocketClientHelper Client { get; set; }
         public bool StoreData { get; set; }
         public bool IsAlwaysReading { get; private set; }
         public Uri Address { get; set; }
@@ -33,8 +33,8 @@ namespace AspNetCoreModule.Test.WebSocketClient
         {
             string host = Address.DnsSafeHost;
             int port = Address.Port;
-            
-            Client = new Client();
+
+            WebSocketClientHelper Client = new WebSocketClientHelper();
 
             TestUtility.LogMessage("Connecting to {0} on {1}", host, port);
 
@@ -96,7 +96,7 @@ namespace AspNetCoreModule.Test.WebSocketClient
         
         public void ReadDataCallback(IAsyncResult result)
         {
-            Client client = (Client) result.AsyncState;
+            WebSocketClientHelper client = (WebSocketClientHelper) result.AsyncState;
             
             if (client.IsDisposed)
                 return;
@@ -248,7 +248,7 @@ namespace AspNetCoreModule.Test.WebSocketClient
 
         public static void WriteCallback(IAsyncResult result)
         {
-            var client = result.AsyncState as Client;
+            var client = result.AsyncState as WebSocketClientHelper;
             if (client.IsDisposed)
                 return;
 

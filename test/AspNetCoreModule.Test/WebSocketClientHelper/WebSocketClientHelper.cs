@@ -24,11 +24,11 @@ namespace AspNetCoreModule.Test.WebSocketClient
         }
     }
 
-    public class Client : IDisposable
+    public class WebSocketClientHelper : IDisposable
     {
         private static int globalID;
 
-        public Client()
+        public WebSocketClientHelper()
         {
             Id = ++globalID;
             InputData = new byte[10240];            

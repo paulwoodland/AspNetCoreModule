@@ -813,5 +813,50 @@ namespace AspNetCoreModule.Test.Utility
                 TestUtility.LogMessage(String.Format("#################### Changing dynamicRegistrationThreshold failed. Reason: {0} ####################", ex.Message));
             }
         }
+
+        public string VerifyRunningWpOwners(string[] owners)
+        {
+            string query = "Select * From Win32_Process Where Name = 'w3wp.exe'";
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+            ManagementObjectCollection processList = searcher.Get();
+
+
+            bool[] ownersFound = new bool[owners.Length];
+            for (int i = 0; i < ownersFound.Length; i++)
+                ownersFound[i] = false;
+
+            foreach (ManagementObject obj in processList)
+            {
+                string[] argList = new string[] { string.Empty, string.Empty };
+                int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                if (returnVal == 0)
+                {
+                    bool found = false;
+                    for (int i = 0; i < owners.Length; i++)
+                    {
+                        if (argList[0].ToUpper() == owners[i].ToUpper())
+                        {
+                            found = ownersFound[i] = true;
+                            owners[i] = argList[0] + "\\" + argList[1];
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        throw new System.ApplicationException(String.Format("Unexpeced w3wp.exe with owner {0}\\{1} found", argList[0], argList[1]));
+                    }
+                }
+            }
+
+            for (int i = 0; i < owners.Length; i++)
+            {
+                if (ownersFound[i])
+                    TestUtility.LogMessage(String.Format("w3wp.exe with owner {0} found", owners[i]));
+                else
+                    TestUtility.LogError(String.Format("w3wp.exe with owner {0} not found", owners[i]));
+            }
+
+            return null;
+        }
     }
 }
