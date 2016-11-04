@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using System.Collections;
-using System.Xml;
-using System.Management;
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-namespace AspNetCoreModule.Test.Utility
+using System;
+using System.IO;
+
+namespace AspNetCoreModule.Test.Framework
 {
     public class SiteContext : IDisposable
     {

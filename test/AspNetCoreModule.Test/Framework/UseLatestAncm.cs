@@ -1,4 +1,6 @@
-﻿using AspNetCoreModule.Test.Utility;
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
 using Microsoft.Extensions.PlatformAbstractions;
 using System;
 using System.Diagnostics;
@@ -6,7 +8,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 
-namespace AspNetCoreModule.Test.Utility
+namespace AspNetCoreModule.Test.Framework
 {
     public class UseLatestAncm : IDisposable
     {

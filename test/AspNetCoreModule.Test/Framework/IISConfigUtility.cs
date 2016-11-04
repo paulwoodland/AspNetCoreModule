@@ -1,13 +1,15 @@
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
 using AspNetCoreModule.Test.HttpClientHelper;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Web.Administration;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Management;
 using System.ServiceProcess;
 
-namespace AspNetCoreModule.Test.Utility
+namespace AspNetCoreModule.Test.Framework
 {
     public class IISConfigUtility : IDisposable
     {

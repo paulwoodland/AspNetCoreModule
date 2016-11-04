@@ -1,16 +1,18 @@
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
 using System;
 using System.Text;
 using System.IO;
 using System.Xml;
 using System.Management;
 using System.Threading;
-using Xunit.Abstractions;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.Extensions.Logging;
 
-namespace AspNetCoreModule.Test.Utility
+namespace AspNetCoreModule.Test.Framework
 {
     public class TestUtility
     {

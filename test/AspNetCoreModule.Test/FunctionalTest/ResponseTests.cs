@@ -13,8 +13,8 @@ using Microsoft.Net.Http.Headers;
 using Xunit;
 using Xunit.Sdk;
 using AspNetCoreModule.Test;
-using AspNetCoreModule.Test.Utility;
-using static AspNetCoreModule.Test.Utility.IISConfigUtility;
+using AspNetCoreModule.Test.Framework;
+using static AspNetCoreModule.Test.Framework.IISConfigUtility;
 using System.IO;
 using System.Threading;
 

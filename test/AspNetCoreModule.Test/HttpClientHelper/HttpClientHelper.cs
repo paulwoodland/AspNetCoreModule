@@ -1,9 +1,12 @@
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
 using System;
 using System.Net;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
-using AspNetCoreModule.Test.Utility;
+using AspNetCoreModule.Test.Framework;
 using System.Threading;
 using System.Net.Sockets;
 
