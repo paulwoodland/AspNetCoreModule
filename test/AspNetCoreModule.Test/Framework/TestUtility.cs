@@ -17,10 +17,24 @@ namespace AspNetCoreModule.Test.Framework
 {
     public class TestUtility
     {
-        public static ILogger Logger = null;
+        public static ILogger _logger = null;
+        public static ILogger Logger
+        {
+            get
+            {
+                if (_logger == null)
+                {
+                    _logger = new LoggerFactory()
+                            .AddConsole()
+                            .CreateLogger("TestUtility");
+                }
+                return _logger;
+            }
+        }
+
         public static void Initialize(ILogger logger)
         {
-            Logger = logger;
+            _logger = logger;
         }
         
         public static void LogTrace(string format, params object[] parameters)

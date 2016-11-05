@@ -3,8 +3,6 @@
 
 using AspNetCoreModule.Test.Framework;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.IO;
@@ -12,7 +10,6 @@ using System.Threading;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Testing.xunit;
 using Microsoft.Extensions.Logging;
-using Microsoft.Net.Http.Headers;
 using Xunit;
 using Xunit.Sdk;
 

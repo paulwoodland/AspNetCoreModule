@@ -47,6 +47,7 @@ namespace AspNetCoreModule.Test.Framework
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
             p.StartInfo.UseShellExecute = false;
+            p.StartInfo.CreateNoWindow = true;
             p.Start();
             string standardOutput = p.StandardOutput.ReadToEnd();
             string standardError = p.StandardError.ReadToEnd();
@@ -107,6 +108,7 @@ namespace AspNetCoreModule.Test.Framework
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
             p.StartInfo.UseShellExecute = false;
+            p.StartInfo.CreateNoWindow = true;
             p.Start();
             string standardOutput = p.StandardOutput.ReadToEnd();
             string standardError = p.StandardError.ReadToEnd();

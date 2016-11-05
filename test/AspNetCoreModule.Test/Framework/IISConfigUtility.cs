@@ -100,7 +100,12 @@ namespace AspNetCoreModule.Test.Framework
                 Configuration config = serverManager.GetApplicationHostConfiguration();
                 ConfigurationSection sitesSection = config.GetSection("system.applicationHost/sites");
                 ConfigurationElementCollection sitesCollection = sitesSection.GetCollection();
-                ConfigurationElement siteElement = sitesCollection.CreateElement("site");
+                ConfigurationElement siteElement = FindElement(sitesCollection, "site", "name", siteName);
+                if (siteElement != null)
+                {
+                    sitesCollection.Remove(siteElement);
+                }
+                siteElement = sitesCollection.CreateElement("site");
                 siteElement["id"] = siteId;
                 siteElement["name"] = siteName;
                 ConfigurationElementCollection bindingsCollection = siteElement.GetCollection("bindings");
