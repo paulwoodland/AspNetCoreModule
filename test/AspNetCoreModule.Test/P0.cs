@@ -18,34 +18,30 @@ using Xunit.Sdk;
 
 namespace AspNetCoreModule.Test
 {
-    public class ResponseTests : IClassFixture<UseLatestAncm>
-    {
+    public class P0 : IClassFixture<UseLatestAncm>
+    {        
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(ServerType.IISExpress, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5090/")]
         [InlineData(ServerType.IISExpress, RuntimeFlavor.Clr, RuntimeArchitecture.x64, "http://localhost:5091/")]
-        public Task BasicTest(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
+        public Task BasicTestOnIISExpress(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
         {
-            return ResponseFormats(AspNetCoreModule.Test.Framework.IISConfigUtility.AppPoolSettings.none, serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
+            return BasicTest(AspNetCoreModule.Test.Framework.IISConfigUtility.AppPoolSettings.none, serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
         }
-
-        private Task ResponseFormats(object none, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> checkChunkedAsync, ApplicationType portable)
-        {
-            throw new NotImplementedException();
-        }
-
+        
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")] 
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64, ServerType.IIS, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5093/")]
-        public Task BasicTestForIIS(IISConfigUtility.AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
+        [InlineData(IISConfigUtility.AppPoolSettings.none, ServerType.IIS, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5093/")]
+        public Task BasicTestOnIIS(IISConfigUtility.AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
         {
-            return ResponseFormats(appPoolSetting, serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
+            return BasicTest(appPoolSetting, serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
         }
         
-        public async Task ResponseFormats(IISConfigUtility.AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
+        public async Task BasicTest(IISConfigUtility.AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
         {
             var logger = new LoggerFactory()
                             .AddConsole()
@@ -58,7 +54,6 @@ namespace AspNetCoreModule.Test
             {
                 TestUtility.CleanupTestEnv(serverType);
             }
-
             
             using (logger.BeginScope("ResponseFormatsTest"))
             {
@@ -79,12 +74,6 @@ namespace AspNetCoreModule.Test
                 {
                     var deploymentResult = deployer.Deploy();
                     string solutionPath = UseLatestAncm.GetSolutionDirectory();
-                    string publishedApplicationRootPathBackup = Path.Combine(solutionPath, ".build", "publishedApplicationRootPath");
-
-                    if (!Directory.Exists(publishedApplicationRootPathBackup))
-                    {
-                        TestUtility.DirectoryCopy(deploymentParameters.PublishedApplicationRootPath, publishedApplicationRootPathBackup);
-                    }
                     var applicationBaseAddress = new Uri(deploymentResult.ApplicationBaseUri);
 
                     var httpClientHandler = new HttpClientHandler();
@@ -114,71 +103,10 @@ namespace AspNetCoreModule.Test
 
                     // Invoke given test scenario function
                     await scenario(httpClient, logger);
-
-                    if (serverType == ServerType.IIS)
-                    {
-                        // Start ANCMFunctional test, which is launched only for IIS, not for IISExpress
-                        await ANCMFunctionalTestOnIIS(appPoolSetting, publishedApplicationRootPathBackup, deploymentResult);
-                    }
                 }
             }
         }
-
-        private static async Task ANCMFunctionalTestOnIIS(IISConfigUtility.AppPoolSettings appPoolSetting, string publishedApplicationRootPathBackup, DeploymentResult deploymentResult)
-        {
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
-            {
-                TestUtility.LogTrace("Scenario 1: Verify the ANCM event");
-
-                var testsiteContext = new WebSiteContext("localhost", "StandardTestSite", 1234);
-                string solutionPath = UseLatestAncm.GetSolutionDirectory();
-                string webRootPath = Path.Combine(solutionPath, "test", "WebRoot", "WebSite1");
-
-                var rootAppContext = new WebAppContext("/", webRootPath, testsiteContext);
-                iisConfig.CreateSite(testsiteContext.SiteName, rootAppContext.PhysicalPath, 555, testsiteContext.TcpPort, rootAppContext.AppPoolName);
-
-                if (appPoolSetting == IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64)
-                {
-                    iisConfig.SetAppPoolSetting(rootAppContext.AppPoolName, IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64, true);
-                    Thread.Sleep(500);
-                    iisConfig.RecycleAppPool(rootAppContext.AppPoolName);
-                    Thread.Sleep(500);
-                }
-
-                var fooApp = new WebAppContext("/foo", publishedApplicationRootPathBackup, testsiteContext);
-                iisConfig.CreateApp(testsiteContext.SiteName, fooApp.Name, fooApp.PhysicalPath);
-
-                var baseAddress = fooApp.GetHttpUri();
-
-                var httpClientHandler = new HttpClientHandler();
-                var httpClient = new HttpClient(httpClientHandler)
-                {
-                    BaseAddress = baseAddress,
-                    Timeout = TimeSpan.FromSeconds(5),
-                };
-
-                var response = await RetryHelper.RetryRequest(() =>
-                {
-                    return httpClient.GetAsync(string.Empty);
-                }, TestUtility.Logger, deploymentResult.HostShutdownToken);
-
-                var responseText = await response.Content.ReadAsStringAsync();
-                try
-                {
-                    Assert.Equal("Running", responseText);
-                }
-                catch (XunitException)
-                {
-                    TestUtility.LogWarning(response.ToString());
-                    TestUtility.LogWarning(responseText);
-                    throw;
-                }
-
-                var result = TestUtility.GetApplicationEvent(1001);
-                Assert.True(result.Count > 0, "Verfiy Event log");
-            }
-        }
-
+        
         private static async Task CheckChunkedAsync(HttpClient client, ILogger logger)
         {
             var response = await client.GetAsync("chunked");
