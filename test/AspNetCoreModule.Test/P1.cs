@@ -28,8 +28,21 @@ namespace AspNetCoreModule.Test
                     string solutionPath = UseLatestAncm.GetSolutionDirectory();
                     _publishedApplicationRootPath = Path.Combine(solutionPath, ".build", "publishedApplicationRootPath");
 
+                    bool IsApplicationRootPathAvailable = false;
+                    if (Directory.Exists(_publishedApplicationRootPath))
+                    {
+                        if (!File.Exists(Path.Combine(_publishedApplicationRootPath, "web.config")))
+                        {
+                            TestUtility.DeleteDirectory(_publishedApplicationRootPath);
+                        }
+                        else
+                        {
+                            IsApplicationRootPathAvailable = true;
+                        }
+                    }
+
                     // if _publishedApplicationRootPath does not exist, create a new one
-                    if (!Directory.Exists(_publishedApplicationRootPath))
+                    if (!IsApplicationRootPathAvailable)
                     {
                         var serverType = ServerType.IIS;
                         var architecture = RuntimeArchitecture.x64;

@@ -95,6 +95,7 @@ namespace AspNetCoreModule.Test.Framework
             if (File.Exists(filePath))
             {
                 ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c del \"" + filePath + "\"");
+                myProcessStartInfo.CreateNoWindow = true;
                 Process myProc = Process.Start(myProcessStartInfo);
                 myProc.WaitForExit();
             }
@@ -117,6 +118,7 @@ namespace AspNetCoreModule.Test.Framework
                     return;                
                 }
                 ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c copy /y \"" + from + "\" \"" + to + "\"");
+                myProcessStartInfo.CreateNoWindow = true;
                 Process myProc = Process.Start(myProcessStartInfo);
                 myProc.WaitForExit();
 
@@ -136,6 +138,7 @@ namespace AspNetCoreModule.Test.Framework
             if (Directory.Exists(directoryPath))
             {
                 ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c rm  \"" + directoryPath + "\" /s");
+                myProcessStartInfo.CreateNoWindow = true;
                 Process myProc = Process.Start(myProcessStartInfo);
                 myProc.WaitForExit();
             }
@@ -150,6 +153,7 @@ namespace AspNetCoreModule.Test.Framework
             if (!Directory.Exists(directoryPath))
             {
                 ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c md \"" + directoryPath + "\"");
+                myProcessStartInfo.CreateNoWindow = true;
                 Process myProc = Process.Start(myProcessStartInfo);
                 myProc.WaitForExit();
             }
@@ -174,6 +178,7 @@ namespace AspNetCoreModule.Test.Framework
             if (Directory.Exists(from))
             {
                 ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c xcopy \"" + from + "\" \"" + to + "\" /s");
+                myProcessStartInfo.CreateNoWindow = true;
                 Process myProc = Process.Start(myProcessStartInfo);
                 myProc.WaitForExit();
             }
@@ -387,13 +392,16 @@ namespace AspNetCoreModule.Test.Framework
 
         public static void RestartIis()
         {
-            Process myProc = Process.Start("iisreset");
+            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("iisreset");
+            myProcessStartInfo.CreateNoWindow = true;
+            Process myProc = Process.Start(myProcessStartInfo);
             myProc.WaitForExit();
         }
 
         public static void StopHttp()
         {
             ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop http /y");
+            myProcessStartInfo.CreateNoWindow = true;
             Process myProc = Process.Start(myProcessStartInfo);
             myProc.WaitForExit();
         }
@@ -401,6 +409,7 @@ namespace AspNetCoreModule.Test.Framework
         public static void StopWas()
         {
             ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop was /y");
+            myProcessStartInfo.CreateNoWindow = true;
             Process myProc = Process.Start(myProcessStartInfo);
             myProc.WaitForExit();
         }
@@ -408,6 +417,7 @@ namespace AspNetCoreModule.Test.Framework
         public static void StartWas()
         {
             ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start was");
+            myProcessStartInfo.CreateNoWindow = true;
             Process myProc = Process.Start(myProcessStartInfo);
             myProc.WaitForExit();
         }
@@ -415,6 +425,7 @@ namespace AspNetCoreModule.Test.Framework
         public static void StopW3svc()
         {
             ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop w3svc /y");
+            myProcessStartInfo.CreateNoWindow = true;
             Process myProc = Process.Start(myProcessStartInfo);
             myProc.WaitForExit();
         }
@@ -422,6 +433,7 @@ namespace AspNetCoreModule.Test.Framework
         public static void StartW3svc()
         {
             ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start w3svc");
+            myProcessStartInfo.CreateNoWindow = true;
             Process myProc = Process.Start(myProcessStartInfo);
             myProc.WaitForExit();
         }
