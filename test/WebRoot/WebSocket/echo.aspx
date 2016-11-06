@@ -9,10 +9,11 @@ var socket;
 var receive_counter = 0; 
 function initializeWebSocket() {
 
-  //var host = "ws://localhost:8080/wsclient/EchoHandler.ashx";
-  //var host = "ws://localhost:8080/URLRewrite/rewrite/wsclient/EchoHandler.ashx";
-  //var host = "ws://localhost:8080/websocketecho/test";
-	var host = "ws://localhost:8080/URLRewrite/rewrite/websocketecho/test";
+  var host = "ws://localhost:39982/websocket/managed";
+  //var host = "ws://localhost:1234/webSocket/EchoHandler.ashx";
+  //var host = "ws://localhost:1234/URLRewrite/rewrite/wsclient/EchoHandler.ashx";
+  //var host = "ws://localhost:1234/websocketecho/test";
+  //var host = "ws://localhost:1234/URLRewrite/rewrite/websocketecho/test";
   try {
 		socket = new WebSocket(host, "mywebsocketsubprotocol");
 

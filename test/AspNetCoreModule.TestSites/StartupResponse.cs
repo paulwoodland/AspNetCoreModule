@@ -6,15 +6,47 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using System;
+using System.Net.WebSockets;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace AspnetCoreModule.TestSites
 {
     public class StartupResponse
     {
+        private async Task Echo(WebSocket webSocket)
+        {
+            var buffer = new byte[1024 * 4];
+            var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            while (!result.CloseStatus.HasValue)
+            {
+                await webSocket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), result.MessageType, result.EndOfMessage, CancellationToken.None);
+                result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            }
+            await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+        }
+
         public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
         {
             loggerFactory.AddConsole(minLevel: LogLevel.Warning);
+
+            app.Map("/websocket", subApp =>
+            {
+                subApp.Use(async (context, next) =>
+                {
+                    if (context.WebSockets.IsWebSocketRequest)
+                    {
+                        var webSocket = await context.WebSockets.AcceptWebSocketAsync("mywebsocketsubprotocol");
+                        await Echo(webSocket);
+                    }
+                    else
+                    {
+                        var wsScheme = context.Request.IsHttps ? "wss" : "ws";
+                        var wsUrl = $"{wsScheme}://{context.Request.Host.Host}:{context.Request.Host.Port}{context.Request.Path}";
+                        await context.Response.WriteAsync($"Ready to accept a WebSocket request at: {wsUrl}");
+                    }
+                });
+            });
 
             app.Map("/contentlength", subApp =>
             {

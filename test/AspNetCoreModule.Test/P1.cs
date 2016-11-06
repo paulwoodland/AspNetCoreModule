@@ -26,48 +26,51 @@ namespace AspNetCoreModule.Test
                 {
                     // initialize _publishedApplicationRootPath
                     string solutionPath = UseLatestAncm.GetSolutionDirectory();
-                    _publishedApplicationRootPath = Path.Combine(solutionPath, ".build", "publishedApplicationRootPath");
+                    _publishedApplicationRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
+                }
 
-                    bool IsApplicationRootPathAvailable = false;
-                    if (Directory.Exists(_publishedApplicationRootPath))
+                bool IsApplicationRootPathAvailable = false;
+
+                // check the existing directory is created today; if not, delete the old directory
+                if (Directory.Exists(_publishedApplicationRootPath))
+                {
+                    string webConfigFile = Path.Combine(_publishedApplicationRootPath, "web.config");
+                    if (File.Exists(webConfigFile) && (File.GetCreationTime(webConfigFile).Date == DateTime.Today))
                     {
-                        if (!File.Exists(Path.Combine(_publishedApplicationRootPath, "web.config")))
-                        {
-                            TestUtility.DeleteDirectory(_publishedApplicationRootPath);
-                        }
-                        else
-                        {
-                            IsApplicationRootPathAvailable = true;
-                        }
+                        IsApplicationRootPathAvailable = true;
                     }
-
-                    // if _publishedApplicationRootPath does not exist, create a new one
-                    if (!IsApplicationRootPathAvailable)
+                    else
                     {
-                        var serverType = ServerType.IIS;
-                        var architecture = RuntimeArchitecture.x64;
-                        var applicationType = ApplicationType.Portable;
-                        var runtimeFlavor = RuntimeFlavor.CoreClr;
-                        string applicationPath = TestUtility.GetApplicationPath(applicationType);
-                        string testSiteName = "WebSiteTemp001";
-                        var deploymentParameters = new DeploymentParameters(applicationPath, serverType, runtimeFlavor, architecture)
-                        {
-                            ApplicationBaseUriHint = "http://localhost:5093",
-                            EnvironmentName = "Response",
-                            ServerConfigTemplateContent = TestUtility.GetConfigContent(serverType, "Http.config"),
-                            SiteName = testSiteName,
-                            TargetFramework = runtimeFlavor == RuntimeFlavor.Clr ? "net451" : "netcoreapp1.0",
-                            ApplicationType = applicationType,
-                            PublishApplicationBeforeDeployment = true
-                        };
-                        var logger = new LoggerFactory()
-                                .AddConsole()
-                                .CreateLogger(string.Format("ResponseFormats:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
-                        using (var deployer = ApplicationDeployerFactory.Create(deploymentParameters, logger))
-                        {
-                            var deploymentResult = deployer.Deploy();
-                            TestUtility.DirectoryCopy(deploymentParameters.PublishedApplicationRootPath, _publishedApplicationRootPath);
-                        }
+                        TestUtility.DeleteDirectory(_publishedApplicationRootPath);
+                    }
+                }
+
+                // if _publishedApplicationRootPath does not exist, create a new one with using IIS deployer
+                if (!IsApplicationRootPathAvailable)
+                {
+                    var serverType = ServerType.IIS;
+                    var architecture = RuntimeArchitecture.x64;
+                    var applicationType = ApplicationType.Portable;
+                    var runtimeFlavor = RuntimeFlavor.CoreClr;
+                    string applicationPath = TestUtility.GetApplicationPath(applicationType);
+                    string testSiteName = "WebSiteTemp001";
+                    var deploymentParameters = new DeploymentParameters(applicationPath, serverType, runtimeFlavor, architecture)
+                    {
+                        ApplicationBaseUriHint = "http://localhost:5093",
+                        EnvironmentName = "Response",
+                        ServerConfigTemplateContent = TestUtility.GetConfigContent(serverType, "Http.config"),
+                        SiteName = testSiteName,
+                        TargetFramework = runtimeFlavor == RuntimeFlavor.Clr ? "net451" : "netcoreapp1.0",
+                        ApplicationType = applicationType,
+                        PublishApplicationBeforeDeployment = true
+                    };
+                    var logger = new LoggerFactory()
+                            .AddConsole()
+                            .CreateLogger(string.Format("ResponseFormats:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
+                    using (var deployer = ApplicationDeployerFactory.Create(deploymentParameters, logger))
+                    {
+                        var deploymentResult = deployer.Deploy();
+                        TestUtility.DirectoryCopy(deploymentParameters.PublishedApplicationRootPath, _publishedApplicationRootPath);
                     }
                 }
                 return _publishedApplicationRootPath;
@@ -90,12 +93,18 @@ namespace AspNetCoreModule.Test
             using (var iisConfig = new IISConfigUtility(ServerType.IIS))
             {
                 string solutionPath = UseLatestAncm.GetSolutionDirectory();
-                string webRootPath = Path.Combine(solutionPath, "test", "WebRoot", "WebSite1");
-                WebSiteContext testsiteContext = new WebSiteContext("localhost", "StandardTestSite", 1234);
-                WebAppContext rootAppContext = new WebAppContext("/", webRootPath, testsiteContext);
-                WebAppContext fooApp = new WebAppContext("/foo", PublishedApplicationRootPath, testsiteContext);
+                string siteName = "StandardTestSite";
 
-                // Enable 32bit mode for IIS worker process
+                WebSiteContext testsiteContext = new WebSiteContext("localhost", siteName, 1234);
+                WebAppContext rootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), testsiteContext);
+                iisConfig.CreateSite(testsiteContext.SiteName, rootAppContext.PhysicalPath, 555, testsiteContext.TcpPort, rootAppContext.AppPoolName);
+
+                WebAppContext fooApp = new WebAppContext("/foo", PublishedApplicationRootPath, testsiteContext);
+                iisConfig.CreateApp(testsiteContext.SiteName, fooApp.Name, fooApp.PhysicalPath);
+
+                WebAppContext webSocketApp = new WebAppContext("/webSocket", Path.Combine(solutionPath, "test", "WebRoot", "WebSocket"), testsiteContext);
+                iisConfig.CreateApp(testsiteContext.SiteName, webSocketApp.Name, webSocketApp.PhysicalPath);
+
                 if (appPoolSetting == IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64)
                 {
                     iisConfig.SetAppPoolSetting(rootAppContext.AppPoolName, IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64, true);
@@ -103,9 +112,6 @@ namespace AspNetCoreModule.Test
                     iisConfig.RecycleAppPool(rootAppContext.AppPoolName);
                     Thread.Sleep(500);
                 }
-                
-                iisConfig.CreateSite(testsiteContext.SiteName, rootAppContext.PhysicalPath, 555, testsiteContext.TcpPort, rootAppContext.AppPoolName);
-                iisConfig.CreateApp(testsiteContext.SiteName, fooApp.Name, fooApp.PhysicalPath);
 
                 var baseAddress = fooApp.GetHttpUri();
                 var httpClientHandler = new HttpClientHandler();

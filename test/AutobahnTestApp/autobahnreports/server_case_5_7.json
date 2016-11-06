@@ -1,0 +1,61 @@
+{
+   "agent": "Server",
+   "behavior": "FAILED",
+   "behaviorClose": "FAILED",
+   "case": 51,
+   "closedByMe": false,
+   "createStats": true,
+   "createWirelog": true,
+   "description": "Send text Message fragmented into 2 fragments, one ping with payload in-between. Octets are sent in frame-wise chops.",
+   "droppedByMe": true,
+   "duration": 1469997920705,
+   "expectation": "A pong is received, then the message is echo'ed back to us.",
+   "expected": {},
+   "expectedClose": {},
+   "failedByMe": false,
+   "httpRequest": "GET /test2/handler.ashx HTTP/1.1\r\nUser-Agent: AutobahnTestSuite/0.7.5-0.10.9\r\nHost: localhost:8080\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nSec-WebSocket-Key: Hl9aYjyqf7fB5P3ro/KnrA==\r\nSec-WebSocket-Version: 13\r\n\r\n",
+   "httpResponse": "HTTP/1.1 500 Internal Server Error\r\nCache-Control: private\r\nContent-Type: text/html; charset=utf-8\r\nServer: Microsoft-IIS/10.0\r\nX-Powered-By: ASP.NET\r\nDate: Sun, 31 Jul 2016 20:45:20 GMT\r\nContent-Length: 5100\r\n\r\n",
+   "id": "5.7",
+   "isServer": false,
+   "localCloseCode": null,
+   "localCloseReason": null,
+   "received": [],
+   "remoteCloseCode": null,
+   "remoteCloseReason": null,
+   "reportCompressionRatio": false,
+   "reportTime": false,
+   "result": "Actual events differ from any expected.",
+   "resultClose": "The WebSocket opening handshake was never completed!",
+   "rxFrameStats": {},
+   "rxOctetStats": {
+      "5312": 1
+   },
+   "started": "2016-07-31T20:45:20.702Z",
+   "trafficStats": null,
+   "txFrameStats": {},
+   "txOctetStats": {
+      "258": 1
+   },
+   "wasClean": false,
+   "wasCloseHandshakeTimeout": false,
+   "wasNotCleanReason": "WebSocket connection upgrade failed (500 - InternalServerError)",
+   "wasOpenHandshakeTimeout": false,
+   "wasServerConnectionDropTimeout": false,
+   "wirelog": [
+      [
+         "TO",
+         [
+            258,
+            "474554202f74657374322f68616e646c65722e6173687820485454502f312e310d0a557365722d4167656e743a204175746f6261686e5465737453756974652f ..."
+         ],
+         false
+      ],
+      [
+         "RO",
+         [
+            5312,
+            "485454502f312e312035303020496e7465726e616c20536572766572204572726f720d0a43616368652d436f6e74726f6c3a20707269766174650d0a436f6e74 ..."
+         ]
+      ]
+   ]
+}

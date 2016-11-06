@@ -56,6 +56,7 @@ namespace AspNetCoreModule.Test.Framework
         
         public void SetAppPoolSetting(string appPoolName, AppPoolSettings attribute, object value)
         {
+            TestUtility.LogTrace("Setting Apppool : " + appPoolName + "::" + attribute.ToString() + " <== " + value.ToString());
             using (ServerManager serverManager = GetServerManager())
             {
                 Configuration config = serverManager.GetApplicationHostConfiguration();
@@ -95,6 +96,7 @@ namespace AspNetCoreModule.Test.Framework
 
         public void CreateSite(string siteName, string physicalPath, int siteId, int tcpPort, string appPoolName = "DefaultAppPool")
         {
+            TestUtility.LogTrace("Creating web site : " + siteName);
             using (ServerManager serverManager = GetServerManager())
             {
                 Configuration config = serverManager.GetApplicationHostConfiguration();
@@ -134,6 +136,7 @@ namespace AspNetCoreModule.Test.Framework
 
         public void CreateApp(string siteName, string appName, string physicalPath)
         {
+            TestUtility.LogTrace("Creating web app : " + siteName + "/" + appName);
             using (ServerManager serverManager = GetServerManager())
             {
                 Configuration config = serverManager.GetApplicationHostConfiguration();
