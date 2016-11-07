@@ -45,7 +45,7 @@ namespace AspNetCoreModule.Test
         {
             var logger = new LoggerFactory()
                             .AddConsole()
-                            .CreateLogger(string.Format("ResponseFormats:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
+                            .CreateLogger(string.Format("P0:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
 
             // initialize TestUtility
             TestUtility.Initialize(logger);
@@ -55,7 +55,7 @@ namespace AspNetCoreModule.Test
                 TestUtility.CleanupTestEnv(serverType);
             }
             
-            using (logger.BeginScope("ResponseFormatsTest"))
+            using (logger.BeginScope("P0Test"))
             {
                 string applicationPath = TestUtility.GetApplicationPath(applicationType);
                 string testSiteName = "ANCMTestSite"; // This is configured in the Http.config

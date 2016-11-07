@@ -66,7 +66,8 @@ namespace AspNetCoreModule.Test
                     };
                     var logger = new LoggerFactory()
                             .AddConsole()
-                            .CreateLogger(string.Format("ResponseFormats:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
+                            .CreateLogger(string.Format("P1:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
+
                     using (var deployer = ApplicationDeployerFactory.Create(deploymentParameters, logger))
                     {
                         var deploymentResult = deployer.Deploy();

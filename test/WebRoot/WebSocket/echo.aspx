@@ -9,7 +9,7 @@ var socket;
 var receive_counter = 0; 
 function initializeWebSocket() {
 
-  var host = "ws://localhost:39982/websocket/managed";
+  var host = "ws://localhost:1234/foo/websocket";
   //var host = "ws://localhost:1234/webSocket/EchoHandler.ashx";
   //var host = "ws://localhost:1234/URLRewrite/rewrite/wsclient/EchoHandler.ashx";
   //var host = "ws://localhost:1234/websocketecho/test";

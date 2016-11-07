@@ -165,7 +165,7 @@ namespace AspNetCoreModule.Test.Framework
 
         public static void DirectoryCopy(string from, string to)
         {
-            if (!Directory.Exists(to))
+            if (Directory.Exists(to))
             {
                 DeleteDirectory(to);
             }
