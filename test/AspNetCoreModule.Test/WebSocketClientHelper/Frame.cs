@@ -5,11 +5,14 @@ namespace AspNetCoreModule.Test.WebSocketClient
 {
     public class Frame
     {
+        private int startingIndex;  // This will be initialized as output parameter of GetFrameString() 
+        public int DataLength;  // This will be initialized as output parameter of GetFrameString() 
+
         public Frame(byte[] data)
         {
             Data = data;
             FrameType = WebSocketClientUtility.GetFrameType(Data);
-            Content = WebSocketClientUtility.GetFrameString(Data);
+            Content = WebSocketClientUtility.GetFrameString(Data, out startingIndex, out DataLength);
             IsMasked = WebSocketClientUtility.IsFrameMasked(Data);
         }
 
@@ -17,13 +20,14 @@ namespace AspNetCoreModule.Test.WebSocketClient
         public byte[] Data { get; private set; }
         public string Content { get; private set; }
         public bool IsMasked { get; private set; }
+
         public int IndexOfNextFrame
         {
             get
             {
-                if (Content.Length > 0 && Data.Length > Content.Length + 2)
+                if (startingIndex > 0 && Data.Length > Content.Length + startingIndex)
                 {
-                    return Content.Length + 2;
+                    return Content.Length + startingIndex;
                 }
                 else
                 {

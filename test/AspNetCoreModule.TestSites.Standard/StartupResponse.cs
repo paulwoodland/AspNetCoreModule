@@ -41,7 +41,8 @@ namespace AspnetCoreModule.TestSites.Standard
                 {
                     if (context.WebSockets.IsWebSocketRequest)
                     {
-                        var webSocket = await context.WebSockets.AcceptWebSocketAsync("mywebsocketsubprotocol");
+                        var webSocket = await context.WebSockets.AcceptWebSocketAsync("");
+                        //var webSocket = await context.WebSockets.AcceptWebSocketAsync("mywebsocketsubprotocol");
                         await Echo(webSocket);
                     }
                     else

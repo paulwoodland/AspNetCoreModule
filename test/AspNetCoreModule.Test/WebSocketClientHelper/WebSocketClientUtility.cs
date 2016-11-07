@@ -42,34 +42,41 @@ namespace AspNetCoreModule.Test.WebSocketClient
 
         public static string GetFrameString(byte[] inputData)
         {
+            int frameStartingIndex;
+            int dataLength;
+            return GetFrameString(inputData, out frameStartingIndex, out dataLength);
+        }
+
+        public static string GetFrameString(byte[] inputData, out int frameStartingIndex, out int frameDataLength)
+        {
             string content;
 
             FrameType frameType = GetFrameType(inputData);
+            int startingIndex = 2;
+            int dataLength = 0;
 
             if (frameType != FrameType.NonControlFrame && frameType != FrameType.ContinuationControlled)
             {
-                int frameLength = inputData[1]; 
-                int startingIndex = 2;
-                int dataLength = 0;
-
+                int frameLength = inputData[1];
+                
                 if (IsFrameMasked(inputData))
                 {
-                    frameLength = inputData[1]^128; 
-                    
+                    frameLength = inputData[1] ^ 128;
+
                     if (frameLength < WebSocketConstants.SMALL_LENGTH_FLAG)
                     {
                         startingIndex = 6;
-                        dataLength = inputData[1] ^ 128; 
+                        dataLength = inputData[1] ^ 128;
                     }
                     else if (frameLength == WebSocketConstants.SMALL_LENGTH_FLAG)
                     {
                         startingIndex = 8;
-                        dataLength = (int)GetFrameSize(inputData, 2, 4); 
+                        dataLength = (int)GetFrameSize(inputData, 2, 4);
                     }
                     else if (frameLength == WebSocketConstants.LARGE_LENGTH_FLAG)
                     {
                         startingIndex = 14;
-                        dataLength = (int)GetFrameSize(inputData, 2, 10); 
+                        dataLength = (int)GetFrameSize(inputData, 2, 10);
                     }
                 }
                 else
@@ -94,8 +101,14 @@ namespace AspNetCoreModule.Test.WebSocketClient
                 content = Encoding.UTF8.GetString(inputData, startingIndex, (inputData.Length - startingIndex < dataLength) ? inputData.Length - startingIndex : dataLength);
             }
             else
+            {
+                startingIndex = 0;
+                dataLength = 0;
                 content = Encoding.UTF8.GetString(inputData, 0, inputData.Length);
+            }
 
+            frameStartingIndex = startingIndex;
+            frameDataLength = dataLength;
             return content;
         }
 

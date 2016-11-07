@@ -111,35 +111,40 @@ namespace AspNetCoreModule.Test.WebSocketClient
             {
                 tempBuffer = WebSocketClientUtility.SubArray(Client.InputData, 0, bytesRead);
 
+                Frame temp = new Frame(tempBuffer);
+
                 // start looping if there is still remaining data
-                if (client.TcpClient.GetStream().DataAvailable)
-                {
-                    // add the first buffer to the arrayList
-                    InputDataArray.Add(tempBuffer);
-
-                    // start looping appending to the arrayList
-                    while (client.TcpClient.GetStream().DataAvailable)
+                if (tempBuffer.Length < temp.DataLength)
+                { 
+                    if (client.TcpClient.GetStream().DataAvailable)
                     {
-                        bytesRead = client.TcpClient.GetStream().Read(Client.InputData, 0, Client.InputData.Length);
-                        tempBuffer = WebSocketClientUtility.SubArray(Client.InputData, 0, bytesRead);
+                        // add the first buffer to the arrayList
                         InputDataArray.Add(tempBuffer);
-                        bytesReadIntotal += bytesRead;
-                        TestUtility.LogTrace("ReadDataCallback: Looping: Client {0:D3}: bytesReadHere {1} ", Client.Id, bytesRead);
-                    }
 
-                    // create a single byte array with the arrayList
-                    tempBuffer = new byte[bytesReadIntotal];
-                    int arrayIndex = 0;
-                    foreach (byte[] item in InputDataArray.ToArray())
-                    {
-                        for (int i = 0; i < item.Length; i++)
+                        // start looping appending to the arrayList
+                        while (client.TcpClient.GetStream().DataAvailable)
                         {
-                            tempBuffer[arrayIndex] = item[i];
-                            arrayIndex++;
+                            bytesRead = client.TcpClient.GetStream().Read(Client.InputData, 0, Client.InputData.Length);
+                            tempBuffer = WebSocketClientUtility.SubArray(Client.InputData, 0, bytesRead);
+                            InputDataArray.Add(tempBuffer);
+                            bytesReadIntotal += bytesRead;
+                            TestUtility.LogTrace("ReadDataCallback: Looping: Client {0:D3}: bytesReadHere {1} ", Client.Id, bytesRead);
+                        }
+
+                        // create a single byte array with the arrayList
+                        tempBuffer = new byte[bytesReadIntotal];
+                        int arrayIndex = 0;
+                        foreach (byte[] item in InputDataArray.ToArray())
+                        {
+                            for (int i = 0; i < item.Length; i++)
+                            {
+                                tempBuffer[arrayIndex] = item[i];
+                                arrayIndex++;
+                            }
                         }
                     }
                 }
-                
+
                 // Create frame with the tempBuffer
                 Frame frame = new Frame(tempBuffer);
                 int nextFrameIndex = 0;
