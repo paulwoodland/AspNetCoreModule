@@ -32,6 +32,11 @@ namespace AspnetCoreModule.TestSites
 
             app.Map("/websocket", subApp =>
             {
+                app.UseWebSockets(new WebSocketOptions
+                {
+                    ReplaceFeature = true
+                });
+
                 subApp.Use(async (context, next) =>
                 {
                     if (context.WebSockets.IsWebSocketRequest)

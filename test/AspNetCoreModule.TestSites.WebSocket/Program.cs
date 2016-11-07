@@ -25,11 +25,7 @@ namespace AutobahnTestApp
             }
             else
             {
-                builder.UseKestrel(options =>
-                {
-                    var certPath = Path.Combine(AppContext.BaseDirectory, "TestResources", "testCert.pfx");
-                    options.UseHttps(certPath, "testPassword");
-                });
+                builder.UseKestrel();
             }
 
             var host = builder.Build();
