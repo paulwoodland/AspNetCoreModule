@@ -30,6 +30,29 @@ namespace AspnetCoreModule.TestSites.Standard
         {
             loggerFactory.AddConsole(minLevel: LogLevel.Warning);
 
+            app.Map("/websocketSubProtocol", subApp =>
+            {
+                app.UseWebSockets(new WebSocketOptions
+                {
+                    ReplaceFeature = true
+                });
+
+                subApp.Use(async (context, next) =>
+                {
+                    if (context.WebSockets.IsWebSocketRequest)
+                    {
+                        var webSocket = await context.WebSockets.AcceptWebSocketAsync("mywebsocketsubprotocol");
+                        await Echo(webSocket);
+                    }
+                    else
+                    {
+                        var wsScheme = context.Request.IsHttps ? "wss" : "ws";
+                        var wsUrl = $"{wsScheme}://{context.Request.Host.Host}:{context.Request.Host.Port}{context.Request.Path}";
+                        await context.Response.WriteAsync($"Ready to accept a WebSocket request at: {wsUrl}");
+                    }
+                });
+            });
+
             app.Map("/websocket", subApp =>
             {
                 app.UseWebSockets(new WebSocketOptions
@@ -42,7 +65,6 @@ namespace AspnetCoreModule.TestSites.Standard
                     if (context.WebSockets.IsWebSocketRequest)
                     {
                         var webSocket = await context.WebSockets.AcceptWebSocketAsync("");
-                        //var webSocket = await context.WebSockets.AcceptWebSocketAsync("mywebsocketsubprotocol");
                         await Echo(webSocket);
                     }
                     else

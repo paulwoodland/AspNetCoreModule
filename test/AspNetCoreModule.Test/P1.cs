@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Testing.xunit;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Sdk;
+using AspNetCoreModule.Test.WebSocketClient;
+using System.Net;
 
 namespace AspNetCoreModule.Test
 {
@@ -100,8 +102,8 @@ namespace AspNetCoreModule.Test
                 WebAppContext rootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), testsiteContext);
                 iisConfig.CreateSite(testsiteContext.SiteName, rootAppContext.PhysicalPath, 555, testsiteContext.TcpPort, rootAppContext.AppPoolName);
 
-                WebAppContext fooApp = new WebAppContext("/foo", PublishedApplicationRootPath, testsiteContext);
-                iisConfig.CreateApp(testsiteContext.SiteName, fooApp.Name, fooApp.PhysicalPath);
+                WebAppContext standardTestApp = new WebAppContext("/StandardTestApp", PublishedApplicationRootPath, testsiteContext);
+                iisConfig.CreateApp(testsiteContext.SiteName, standardTestApp.Name, standardTestApp.PhysicalPath);
 
                 WebAppContext webSocketApp = new WebAppContext("/webSocket", Path.Combine(solutionPath, "test", "WebRoot", "WebSocket"), testsiteContext);
                 iisConfig.CreateApp(testsiteContext.SiteName, webSocketApp.Name, webSocketApp.PhysicalPath);
@@ -114,34 +116,78 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
                 }
 
-                var baseAddress = fooApp.GetHttpUri();
-                var httpClientHandler = new HttpClientHandler();
-                var httpClient = new HttpClient(httpClientHandler)
-                {
-                    BaseAddress = baseAddress,
-                    Timeout = TimeSpan.FromSeconds(5),
-                };
+                await VerifyResponseBody(standardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
 
-                var response = await RetryHelper.RetryRequest(() =>
-                {
-                    return httpClient.GetAsync(string.Empty);
-                }, TestUtility.Logger, retryCount:2);
+                await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echo.aspx"), new string[] { "Socket Open" }, HttpStatusCode.OK); // echo.aspx has hard coded path for the websocket server
 
-                var responseText = await response.Content.ReadAsStringAsync();
-                try
-                {
-                    Assert.Equal("Running", responseText);
-                }
-                catch (XunitException)
-                {
-                    TestUtility.LogWarning(response.ToString());
-                    TestUtility.LogWarning(responseText);
-                    throw;
-                }
+                await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
+
+                //// Verify websocket
+                //ConnectionManager cm = new ConnectionManager(standardTestApp.GetHttpUri("websocket"), true); 
+                //cm.InitiateWithAlwaysReading();
+                //Thread.Sleep(1000);
 
                 // Verify the ANCM event
                 var result = TestUtility.GetApplicationEvent(1001);
                 Assert.True(result.Count > 0, "Verfiy Event log");
+            }
+        }
+
+        private static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus)
+        {
+            await DoVerifyResponseBody(uri, expectedResponseBody, null, expectedResponseStatus);
+        }
+
+        private static async Task VerifyResponseBodyContain(Uri uri, string[] expectedStrings, HttpStatusCode expectedResponseStatus)
+        {
+            await DoVerifyResponseBody(uri, null, expectedStrings, expectedResponseStatus);
+        }
+
+        private static async Task DoVerifyResponseBody(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus)
+        {
+
+            // verify Foo
+            var httpClientHandler = new HttpClientHandler();
+            var httpClient = new HttpClient(httpClientHandler)
+            {
+                BaseAddress = uri,
+                Timeout = TimeSpan.FromSeconds(5),
+            };
+
+            var response = await RetryHelper.RetryRequest(() =>
+            {
+                return httpClient.GetAsync(string.Empty);
+            }, TestUtility.Logger, retryCount: 2);
+
+            string responseText = "NotInitialized";
+            string responseStatus = "NotInitialized";
+            try
+            {
+                if (response != null)
+                {
+                    responseText = await response.Content.ReadAsStringAsync();
+                    if (expectedResponseBody != null)
+                    {
+                        Assert.Equal(expectedResponseBody, responseText);
+                    }
+
+                    if (expectedStringsInResponseBody != null)
+                    {
+                        foreach (string item in expectedStringsInResponseBody)
+                        {
+                            Assert.True(responseText.Contains(item));
+                        }
+                    }
+                    Assert.Equal(response.StatusCode, expectedResponseStatus);
+                    responseStatus = response.StatusCode.ToString();
+                }
+            }
+            catch (XunitException)
+            {
+                TestUtility.LogWarning(response.ToString());
+                TestUtility.LogWarning(responseText);
+                TestUtility.LogWarning(responseStatus);
+                throw;
             }
         }
     }

@@ -9,16 +9,16 @@ var socket;
 var receive_counter = 0; 
 function initializeWebSocket() {
 
-  var host = "ws://localhost:1234/StandardTestApp/websocket";
+  var host = "ws://localhost:1234/StandardTestApp/websocketSubProtocol";
   //var host = "ws://localhost:1234/webSocket/EchoHandler.ashx";
   //var host = "ws://localhost:1234/URLRewrite/rewrite/wsclient/EchoHandler.ashx";
   //var host = "ws://localhost:1234/websocketecho/test";
   //var host = "ws://localhost:1234/URLRewrite/rewrite/websocketecho/test";
   try {
-		socket = new WebSocket(host, "");
+		socket = new WebSocket(host, "mywebsocketsubprotocol");
 
 		socket.onopen = function(msg){
-			var s = 'WebSocket Status:: Socket Open';
+			var s = 'WebSocket Status:: Socket Open:: ' + socket.protocol;
 			document.getElementById("serverStatus").innerHTML = s;  
 		};
 

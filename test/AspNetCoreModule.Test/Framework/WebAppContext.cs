@@ -97,7 +97,12 @@ namespace AspNetCoreModule.Test.Framework
 
         public Uri GetHttpUri()
         {
-            return new Uri("http://" + SiteContext.HostName + ":" +  _siteContext.TcpPort.ToString()  + URL);
+            return new Uri("http://" + SiteContext.HostName + ":" + _siteContext.TcpPort.ToString() + URL);
+        }
+
+        public Uri GetHttpUri(string subPath)
+        {
+            return new Uri("http://" + SiteContext.HostName + ":" +  _siteContext.TcpPort.ToString()  + URL + "/" + subPath);
         }
 
         public string _appPoolName = null;
