@@ -443,7 +443,7 @@ namespace AspNetCoreModule.Test.Framework
             var applicationBasePath = PlatformServices.Default.Application.ApplicationBasePath;
             string solutionPath = UseLatestAncm.GetSolutionDirectory();
             string applicationPath = string.Empty;
-            applicationPath = Path.Combine(solutionPath, "test", "AspNetCoreModule.TestSites");
+            applicationPath = Path.Combine(solutionPath, "test", "AspNetCoreModule.TestSites.Standard");
             if (applicationType == ApplicationType.Standalone)
             {
                 // NA

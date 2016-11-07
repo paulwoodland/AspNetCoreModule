@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Net.Http.Server;
 using System;
 
-namespace AspnetCoreModule.TestSites
+namespace AspnetCoreModule.TestSites.Standard
 {
     public static class Program
     {

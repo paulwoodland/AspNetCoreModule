@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-namespace AspnetCoreModule.TestSites
+namespace AspnetCoreModule.TestSites.Standard
 {
     public class StartupHelloWorld
     {

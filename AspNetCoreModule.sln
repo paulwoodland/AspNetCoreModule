@@ -21,9 +21,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FDD2EDF8-1B62-4978-9815-9D95260B8B91}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AspnetCoreModule.TestSites", "test\AspNetCoreModule.TestSites\AspnetCoreModule.TestSites.xproj", "{030225D8-4EE8-47E5-B692-2A96B3B51A38}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AspnetCoreModule.TestSites.Standard", "test\AspNetCoreModule.TestSites.Standard\AspnetCoreModule.TestSites.Standard.xproj", "{030225D8-4EE8-47E5-B692-2A96B3B51A38}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AspNetCoreModule.TestSites.WebSocket", "test\AspNetCoreModule.TestSites.WebSocket\AspNetCoreModule.TestSites.WebSocket.xproj", "{9755F612-A155-4BDD-9E20-37ADE0B4B3BA}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AspNetCoreModule.TestSites.TestWebSocket", "test\AspNetCoreModule.TestSites.TestWebSocket\AspNetCoreModule.TestSites.TestWebSocket.xproj", "{9755F612-A155-4BDD-9E20-37ADE0B4B3BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

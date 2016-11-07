@@ -10,7 +10,7 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AspnetCoreModule.TestSites
+namespace AspnetCoreModule.TestSites.Standard
 {
     public class StartupResponse
     {

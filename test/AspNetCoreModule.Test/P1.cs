@@ -125,7 +125,7 @@ namespace AspNetCoreModule.Test
                 var response = await RetryHelper.RetryRequest(() =>
                 {
                     return httpClient.GetAsync(string.Empty);
-                }, TestUtility.Logger);
+                }, TestUtility.Logger, retryCount:2);
 
                 var responseText = await response.Content.ReadAsStringAsync();
                 try
