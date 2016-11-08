@@ -95,6 +95,11 @@ namespace AspNetCoreModule.Test
         {
             using (var iisConfig = new IISConfigUtility(ServerType.IIS))
             {
+                if (!TestUtility.CleanupTestEnv(ServerType.IIS))
+                {
+                    return;
+                }
+
                 string solutionPath = UseLatestAncm.GetSolutionDirectory();
                 string siteName = "StandardTestSite";
 
@@ -122,10 +127,11 @@ namespace AspNetCoreModule.Test
 
                 await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
 
-                //// Verify websocket
-                //ConnectionManager cm = new ConnectionManager(standardTestApp.GetHttpUri("websocket"), true); 
-                //cm.InitiateWithAlwaysReading();
-                //Thread.Sleep(1000);
+                // Verify websocket
+                ConnectionManager cm = new ConnectionManager(standardTestApp.GetHttpUri("websocket"), true);
+                cm.Client = new WebSocketClientHelper();
+                cm.InitiateWithAlwaysReading();
+                Thread.Sleep(1000);
 
                 // Verify the ANCM event
                 var result = TestUtility.GetApplicationEvent(1001);

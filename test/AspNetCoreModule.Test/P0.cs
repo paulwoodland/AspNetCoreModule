@@ -50,7 +50,10 @@ namespace AspNetCoreModule.Test
 
             if (serverType == ServerType.IIS)
             {
-                TestUtility.CleanupTestEnv(serverType);
+                if (!TestUtility.CleanupTestEnv(serverType))
+                {
+                    return;
+                }
             }
             
             using (logger.BeginScope("P0Test"))

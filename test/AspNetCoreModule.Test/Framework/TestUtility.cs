@@ -50,7 +50,7 @@ namespace AspNetCoreModule.Test.Framework
             Logger.LogWarning(format);
         }
 
-        public static void CleanupTestEnv(ServerType serverType)
+        public static bool CleanupTestEnv(ServerType serverType)
         {
             // clear Event logs
             TestUtility.ClearApplicationEventLog();
@@ -60,13 +60,13 @@ namespace AspNetCoreModule.Test.Framework
                 if (!iisConfig.IsIISInstalled())
                 {
                     LogTrace("IIS is not installed on this machine. Skipping!!!");
-                    return;
+                    return false;
                 }
 
                 if (!iisConfig.IsUrlRewriteInstalledForIIS())
                 {
                     LogTrace("IIS UrlRewrite module is not installed on this machine. Skipping!!!");
-                    return;
+                    return false;
                 }
 
                 // kill vsjitdebugger processes if it happened in the previous test
@@ -86,9 +86,11 @@ namespace AspNetCoreModule.Test.Framework
 
                 if (iisConfig.GetServiceStatus("w3svc") != "Running")
                 {
-                    throw new System.ApplicationException("w3svc service is not runing. Skipping!!!");
+                    LogTrace("w3svc service is not runing. Skipping!!!");
+                    return false;
                 }
             }
+            return true;
         }
         public static void DeleteFile(string filePath)
         {
