@@ -20,64 +20,7 @@ namespace AspNetCoreModule.Test
 {
     public class P1 : IClassFixture<UseLatestAncm>
     {
-        private static string _publishedApplicationRootPath = null;
-        public static string PublishedApplicationRootPath
-        {
-            get
-            {
-                return _publishedApplicationRootPath;
-            }
-            set
-            {
-                bool IsApplicationRootPathAvailable = false;
-                _publishedApplicationRootPath = value;
-
-                // if the existing directory is created today, delete the old directory first
-                if (Directory.Exists(_publishedApplicationRootPath))
-                {
-                    string webConfigFile = Path.Combine(_publishedApplicationRootPath, "web.config");
-                    if (File.Exists(webConfigFile) && (File.GetCreationTime(webConfigFile).Date == DateTime.Today))
-                    {
-                        IsApplicationRootPathAvailable = true;
-                        TestUtility.LogTrace("Warning!!! Skipping to re-generate " + _publishedApplicationRootPath + " because it was created recently. If you want to regenerate it, remove the directory manually");
-                    }
-                    else
-                    {
-                        TestUtility.DeleteDirectory(_publishedApplicationRootPath);
-                    }
-                }
-
-                // if _publishedApplicationRootPath does not exist, create a new one with using IIS deployer
-                if (!IsApplicationRootPathAvailable)
-                {
-                    var serverType = ServerType.IIS;
-                    var architecture = RuntimeArchitecture.x64;
-                    var applicationType = ApplicationType.Portable;
-                    var runtimeFlavor = RuntimeFlavor.CoreClr;
-                    string applicationPath = TestUtility.GetApplicationPath(applicationType);
-                    string testSiteName = "WebSiteTemp001";
-                    var deploymentParameters = new DeploymentParameters(applicationPath, serverType, runtimeFlavor, architecture)
-                    {
-                        ApplicationBaseUriHint = "http://localhost:5093",
-                        EnvironmentName = "Response",
-                        ServerConfigTemplateContent = TestUtility.GetConfigContent(serverType, "Http.config"),
-                        SiteName = testSiteName,
-                        TargetFramework = runtimeFlavor == RuntimeFlavor.Clr ? "net451" : "netcoreapp1.0",
-                        ApplicationType = applicationType,
-                        PublishApplicationBeforeDeployment = true
-                    };
-                    var logger = new LoggerFactory()
-                            .AddConsole()
-                            .CreateLogger(string.Format("P1:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
-
-                    using (var deployer = ApplicationDeployerFactory.Create(deploymentParameters, logger))
-                    {
-                        var deploymentResult = deployer.Deploy();
-                        TestUtility.DirectoryCopy(deploymentParameters.PublishedApplicationRootPath, _publishedApplicationRootPath);
-                    }
-                }
-            }
-        }
+        
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
@@ -101,13 +44,15 @@ namespace AspNetCoreModule.Test
 
                 string solutionPath = UseLatestAncm.GetSolutionDirectory();
                 string siteName = "StandardTestSite";
-                PublishedApplicationRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
+
+                TestUtility.StandardAppRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
+                TestUtility.InitializeStandardAppRootPath(false);
 
                 WebSiteContext testsiteContext = new WebSiteContext("localhost", siteName, 1234);
                 WebAppContext rootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), testsiteContext);
                 iisConfig.CreateSite(testsiteContext.SiteName, rootAppContext.PhysicalPath, 555, testsiteContext.TcpPort, rootAppContext.AppPoolName);
 
-                WebAppContext standardTestApp = new WebAppContext("/StandardTestApp", PublishedApplicationRootPath, testsiteContext);
+                WebAppContext standardTestApp = new WebAppContext("/StandardTestApp", TestUtility.StandardAppRootPath, testsiteContext);
                 iisConfig.CreateApp(testsiteContext.SiteName, standardTestApp.Name, standardTestApp.PhysicalPath);
 
                 WebAppContext webSocketApp = new WebAppContext("/webSocket", Path.Combine(solutionPath, "test", "WebRoot", "WebSocket"), testsiteContext);
@@ -121,10 +66,13 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
                 }
 
+                // Send a request
                 await VerifyResponseBody(standardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
 
+                // Verify WebSocket without setting subprotocol
                 await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echo.aspx"), new string[] { "Socket Open" }, HttpStatusCode.OK); // echo.aspx has hard coded path for the websocket server
 
+                // Verify WebSocket subprotocol
                 await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
 
                 // Verify websocket
@@ -143,9 +91,9 @@ namespace AspNetCoreModule.Test
                         websocketClient.SendTextData(dataSent);
                         websocketClient.SendPing();
                         websocketClient.SendPing();
+                        websocketClient.SendTextData(dataSent, 0x01);  // 0x01: start of sending partial data
                         websocketClient.SendPing();
-                        websocketClient.SendTextData(dataSent);
-                        websocketClient.SendTextData(dataSent);
+                        websocketClient.SendTextData(dataSent, 0x80);  // 0x80: end of sending partial data
                         websocketClient.SendPing();
                         websocketClient.SendPing();
                         websocketClient.SendTextData(dataSent);
@@ -160,7 +108,7 @@ namespace AspNetCoreModule.Test
                     Assert.True(closeFrame.FrameType == FrameType.Close, "Closing Handshake");
                 }
 
-                // Verify the ANCM event
+                // Verify the ANCM event generated
                 var result = TestUtility.GetApplicationEvent(1001);
                 Assert.True(result.Count > 0, "Verfiy Event log");
             }

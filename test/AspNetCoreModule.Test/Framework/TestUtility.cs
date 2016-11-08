@@ -36,7 +36,72 @@ namespace AspNetCoreModule.Test.Framework
         {
             _logger = logger;
         }
-        
+
+        private static string _standardAppRootPath = null;
+        public static string StandardAppRootPath
+        {
+            get
+            {
+                return _standardAppRootPath;
+            }
+            set
+            {
+                _standardAppRootPath = value;
+            }
+        }
+
+        public static void InitializeStandardAppRootPath(bool reGenerate)
+        {
+            bool IsApplicationRootPathAvailable = false;
+
+            // if the existing directory is created today, delete the old directory first
+            if (Directory.Exists(_standardAppRootPath))
+            {
+                string webConfigFile = Path.Combine(_standardAppRootPath, "web.config");
+                if (!reGenerate && File.Exists(webConfigFile) && (File.GetCreationTime(webConfigFile).Date == DateTime.Today))
+                {
+                    IsApplicationRootPathAvailable = true;
+                    TestUtility.LogTrace("Skipping to re-generate " + _standardAppRootPath + " because it was created recently. If you want to regenerate it, remove the directory manually");
+                }
+                else
+                {
+                    TestUtility.LogTrace("Regenerating " + _standardAppRootPath);
+                    TestUtility.DeleteDirectory(_standardAppRootPath);
+                }
+            }
+
+            // if _publishedApplicationRootPath does not exist, create a new one with using IIS deployer
+            if (!IsApplicationRootPathAvailable)
+            {
+                var serverType = ServerType.IIS;
+                var architecture = RuntimeArchitecture.x64;
+                var applicationType = ApplicationType.Portable;
+                var runtimeFlavor = RuntimeFlavor.CoreClr;
+                string applicationPath = TestUtility.GetApplicationPath(applicationType);
+                string testSiteName = "WebSiteTemp001";
+                var deploymentParameters = new DeploymentParameters(applicationPath, serverType, runtimeFlavor, architecture)
+                {
+                    ApplicationBaseUriHint = "http://localhost:5093",
+                    EnvironmentName = "Response",
+                    ServerConfigTemplateContent = TestUtility.GetConfigContent(serverType, "Http.config"),
+                    SiteName = testSiteName,
+                    TargetFramework = runtimeFlavor == RuntimeFlavor.Clr ? "net451" : "netcoreapp1.0",
+                    ApplicationType = applicationType,
+                    PublishApplicationBeforeDeployment = true
+                };
+                var logger = new LoggerFactory()
+                        .AddConsole()
+                        .CreateLogger(string.Format("P1:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
+
+                using (var deployer = ApplicationDeployerFactory.Create(deploymentParameters, logger))
+                {
+                    var deploymentResult = deployer.Deploy();
+                    TestUtility.DirectoryCopy(deploymentParameters.PublishedApplicationRootPath, _standardAppRootPath);
+                }
+            }
+        }
+
+
         public static void LogTrace(string format, params object[] parameters)
         {
             Logger.LogTrace(format);
