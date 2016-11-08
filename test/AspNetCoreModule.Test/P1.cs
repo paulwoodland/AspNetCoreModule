@@ -14,6 +14,7 @@ using Xunit;
 using Xunit.Sdk;
 using AspNetCoreModule.Test.WebSocketClient;
 using System.Net;
+using System.Text;
 
 namespace AspNetCoreModule.Test
 {
@@ -24,22 +25,21 @@ namespace AspNetCoreModule.Test
         {
             get
             {
-                if (_publishedApplicationRootPath == null)
-                {
-                    // initialize _publishedApplicationRootPath
-                    string solutionPath = UseLatestAncm.GetSolutionDirectory();
-                    _publishedApplicationRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
-                }
-
+                return _publishedApplicationRootPath;
+            }
+            set
+            {
                 bool IsApplicationRootPathAvailable = false;
+                _publishedApplicationRootPath = value;
 
-                // check the existing directory is created today; if not, delete the old directory
+                // if the existing directory is created today, delete the old directory first
                 if (Directory.Exists(_publishedApplicationRootPath))
                 {
                     string webConfigFile = Path.Combine(_publishedApplicationRootPath, "web.config");
                     if (File.Exists(webConfigFile) && (File.GetCreationTime(webConfigFile).Date == DateTime.Today))
                     {
                         IsApplicationRootPathAvailable = true;
+                        TestUtility.LogTrace("Warning!!! Skipping to re-generate " + _publishedApplicationRootPath + " because it was created recently. If you want to regenerate it, remove the directory manually");
                     }
                     else
                     {
@@ -76,10 +76,9 @@ namespace AspNetCoreModule.Test
                         TestUtility.DirectoryCopy(deploymentParameters.PublishedApplicationRootPath, _publishedApplicationRootPath);
                     }
                 }
-                return _publishedApplicationRootPath;
             }
         }
-        
+
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
@@ -102,6 +101,7 @@ namespace AspNetCoreModule.Test
 
                 string solutionPath = UseLatestAncm.GetSolutionDirectory();
                 string siteName = "StandardTestSite";
+                PublishedApplicationRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
 
                 WebSiteContext testsiteContext = new WebSiteContext("localhost", siteName, 1234);
                 WebAppContext rootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), testsiteContext);
@@ -128,10 +128,37 @@ namespace AspNetCoreModule.Test
                 await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
 
                 // Verify websocket
-                ConnectionManager cm = new ConnectionManager(standardTestApp.GetHttpUri("websocket"), true);
-                cm.Client = new WebSocketClientHelper();
-                cm.InitiateWithAlwaysReading();
-                Thread.Sleep(1000);
+                using (WebSocketClientHelper websocketClient = new WebSocketClientHelper())
+                {
+                    var openingFrame = websocketClient.Connect(standardTestApp.GetHttpUri("websocket"), true, true);
+                    Assert.True(((openingFrame.Content.IndexOf("Connection: Upgrade", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                               && (openingFrame.Content.IndexOf("Upgrade: Websocket", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                               && openingFrame.Content.Contains("HTTP/1.1 101 Switching Protocols")), "Opening handshake");
+
+                    for (int i = 0; i <= 10; i++)
+                    {
+                        string dataSent = "abcdefghijklmnopqrstuvwxyz0123456789";
+                        websocketClient.SendTextData(dataSent);
+                        websocketClient.SendPing();
+                        websocketClient.SendTextData(dataSent);
+                        websocketClient.SendPing();
+                        websocketClient.SendPing();
+                        websocketClient.SendPing();
+                        websocketClient.SendTextData(dataSent);
+                        websocketClient.SendTextData(dataSent);
+                        websocketClient.SendPing();
+                        websocketClient.SendPing();
+                        websocketClient.SendTextData(dataSent);
+                        websocketClient.SendTextData(dataSent);
+                        websocketClient.SendTextData(dataSent);
+                        websocketClient.SendPing();
+                        Thread.Sleep(3000);
+                        VerifyDataSentAndReceived(websocketClient);
+                    }
+
+                    var closeFrame = websocketClient.Close();
+                    Assert.True(closeFrame.FrameType == FrameType.Close, "Closing Handshake");
+                }
 
                 // Verify the ANCM event
                 var result = TestUtility.GetApplicationEvent(1001);
@@ -149,6 +176,81 @@ namespace AspNetCoreModule.Test
             await DoVerifyResponseBody(uri, null, expectedStrings, expectedResponseStatus);
         }
 
+        private static void VerifyDataSentAndReceived(WebSocketClientHelper websocketClient)
+        {
+            bool testResult = false;
+            for (int i = 0; i < 3; i++)
+            {
+                if (DoVerifyDataSentAndReceived(websocketClient) == false)
+                {
+                    // retrying after 1 second sleeping
+                    Thread.Sleep(1000);
+                }
+                else
+                {
+                    testResult = true;
+                    break;
+                }
+            }
+            Assert.True(testResult, "DoVerifyDataSentAndReceived");
+        }
+
+        private static bool DoVerifyDataSentAndReceived(WebSocketClientHelper websocketClient)
+        {
+            var result = true;
+            var sentString = new StringBuilder();
+            var recString = new StringBuilder();
+            var pingString = new StringBuilder();
+            var pongString = new StringBuilder();
+
+            foreach (Frame frame in websocketClient.Connection.DataSent.ToArray())
+            {
+                if (frame.FrameType == FrameType.Continuation
+                    || frame.FrameType == FrameType.SegmentedText
+                        || frame.FrameType == FrameType.Text
+                            || frame.FrameType == FrameType.ContinuationFrameEnd)
+                {
+                    sentString.Append(frame.Content);
+                }
+
+                if (frame.FrameType == FrameType.Ping)
+                {
+                    pingString.Append(frame.Content);
+                }
+            }
+
+            foreach (Frame frame in websocketClient.Connection.DataReceived.ToArray())
+            {
+                if (frame.FrameType == FrameType.Continuation
+                    || frame.FrameType == FrameType.SegmentedText
+                        || frame.FrameType == FrameType.Text
+                            || frame.FrameType == FrameType.ContinuationFrameEnd)
+                {
+                    recString.Append(frame.Content);
+                }
+
+                if (frame.FrameType == FrameType.Pong)
+                {
+                    pongString.Append(frame.Content);
+                }
+            }
+
+            if (sentString.Length == recString.Length && pongString.Length == pingString.Length)
+            {
+                Assert.True(sentString.Length == recString.Length, "Same size of data sent(" + sentString.Length + ") and received(" + recString.Length + ")");
+                Assert.True(sentString.ToString() == recString.ToString(), "Same string in sent and received");
+                Assert.True(pongString.Length == pingString.Length, "Ping received; Ping (" + pingString.Length + ") and Pong (" + pongString.Length + ")");
+                websocketClient.Connection.DataSent.Clear();
+                websocketClient.Connection.DataReceived.Clear();
+            }
+            else
+            {
+                TestUtility.LogTrace("Retrying...  so far data sent(" + sentString.Length + ") and received(" + recString.Length + ")");
+                result = false;
+            }
+            return result;
+        }
+        
         private static async Task DoVerifyResponseBody(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus)
         {
 

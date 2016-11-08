@@ -225,17 +225,7 @@ namespace AspNetCoreModule.Test.WebSocketClient
             return result;
         }
 
-        public static string WebSocketUri = "http://localhost:8080";
+        public static string WebSocketUri = null;
         public static int WebSocketVersion { get { return 13; } }
-
-        public static ConnectionManager GetEchoConnectionManager()
-        {
-            return new ConnectionManager(GetEchoUri(), true);
-        }
-
-        public static Uri GetEchoUri()
-        {
-            return new Uri(WebSocketUri);
-        }
     }
 }

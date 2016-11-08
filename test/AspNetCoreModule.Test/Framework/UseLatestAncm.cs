@@ -22,6 +22,11 @@ namespace AspNetCoreModule.Test.Framework
             InvokeInstallScript();
         }
 
+        public void Dispose()
+        {
+            InvokeRollbackScript();
+        }
+
         private void InvokeInstallScript()
         {
             var solutionRoot = GetSolutionDirectory();
@@ -89,11 +94,6 @@ namespace AspNetCoreModule.Test.Framework
             }
 
             return nupkg;
-        }
-
-        public void Dispose()
-        {
-            InvokeRollbackScript();
         }
 
         private void InvokeRollbackScript()

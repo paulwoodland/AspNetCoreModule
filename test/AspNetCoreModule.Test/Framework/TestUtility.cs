@@ -139,7 +139,7 @@ namespace AspNetCoreModule.Test.Framework
         {
             if (Directory.Exists(directoryPath))
             {
-                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c rm  \"" + directoryPath + "\" /s");
+                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c rd \"" + directoryPath + "\" /s /q");
                 myProcessStartInfo.CreateNoWindow = true;
                 Process myProc = Process.Start(myProcessStartInfo);
                 myProc.WaitForExit();
