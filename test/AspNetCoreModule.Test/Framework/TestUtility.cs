@@ -36,72 +36,20 @@ namespace AspNetCoreModule.Test.Framework
         {
             _logger = logger;
         }
-
-        private static string _standardAppRootPath = null;
-        public static string StandardAppRootPath
+        
+        public static void InitializeStandardAppRootPath(string outputPath)
         {
-            get
+            if (Directory.Exists(outputPath))
             {
-                return _standardAppRootPath;
+                DeleteDirectory(outputPath);                
             }
-            set
-            {
-                _standardAppRootPath = value;
-            }
+
+            string appPath = TestUtility.GetApplicationPath(ApplicationType.Portable);
+            string publishPath = Path.Combine(appPath, "bin", "Debug", "netcoreapp1.0", "publish");                
+            RunCommand("dotnet", "publish " + appPath);
+            DirectoryCopy(publishPath, outputPath);
         }
-
-        public static void InitializeStandardAppRootPath(bool reGenerate)
-        {
-            bool IsApplicationRootPathAvailable = false;
-
-            // if the existing directory is created today, delete the old directory first
-            if (Directory.Exists(_standardAppRootPath))
-            {
-                string webConfigFile = Path.Combine(_standardAppRootPath, "web.config");
-                if (!reGenerate && File.Exists(webConfigFile) && (File.GetCreationTime(webConfigFile).Date == DateTime.Today))
-                {
-                    IsApplicationRootPathAvailable = true;
-                    TestUtility.LogTrace("Skipping to re-generate " + _standardAppRootPath + " because it was created recently. If you want to regenerate it, remove the directory manually");
-                }
-                else
-                {
-                    TestUtility.LogTrace("Regenerating " + _standardAppRootPath);
-                    TestUtility.DeleteDirectory(_standardAppRootPath);
-                }
-            }
-
-            // if _publishedApplicationRootPath does not exist, create a new one with using IIS deployer
-            if (!IsApplicationRootPathAvailable)
-            {
-                var serverType = ServerType.IIS;
-                var architecture = RuntimeArchitecture.x64;
-                var applicationType = ApplicationType.Portable;
-                var runtimeFlavor = RuntimeFlavor.CoreClr;
-                string applicationPath = TestUtility.GetApplicationPath(applicationType);
-                string testSiteName = "WebSiteTemp001";
-                var deploymentParameters = new DeploymentParameters(applicationPath, serverType, runtimeFlavor, architecture)
-                {
-                    ApplicationBaseUriHint = "http://localhost:5093",
-                    EnvironmentName = "Response",
-                    ServerConfigTemplateContent = TestUtility.GetConfigContent(serverType, "Http.config"),
-                    SiteName = testSiteName,
-                    TargetFramework = runtimeFlavor == RuntimeFlavor.Clr ? "net451" : "netcoreapp1.0",
-                    ApplicationType = applicationType,
-                    PublishApplicationBeforeDeployment = true
-                };
-                var logger = new LoggerFactory()
-                        .AddConsole()
-                        .CreateLogger(string.Format("P1:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
-
-                using (var deployer = ApplicationDeployerFactory.Create(deploymentParameters, logger))
-                {
-                    var deploymentResult = deployer.Deploy();
-                    TestUtility.DirectoryCopy(deploymentParameters.PublishedApplicationRootPath, _standardAppRootPath);
-                }
-            }
-        }
-
-
+        
         public static void LogTrace(string format, params object[] parameters)
         {
             Logger.LogTrace(format);
@@ -122,6 +70,15 @@ namespace AspNetCoreModule.Test.Framework
 
             using (var iisConfig = new IISConfigUtility(serverType))
             {
+                try
+                {
+                    IISConfigUtility.RestoreAppHostConfig(false);
+                }
+                catch
+                {
+                    // ignore this initial exception
+                }
+
                 if (!iisConfig.IsIISInstalled())
                 {
                     LogTrace("IIS is not installed on this machine. Skipping!!!");
@@ -161,10 +118,7 @@ namespace AspNetCoreModule.Test.Framework
         {
             if (File.Exists(filePath))
             {
-                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c del \"" + filePath + "\"");
-                myProcessStartInfo.CreateNoWindow = true;
-                Process myProc = Process.Start(myProcessStartInfo);
-                myProc.WaitForExit();
+                RunCommand("cmd.exe", "/c del \"" + filePath + "\"");                
             }
             if (File.Exists(filePath))
             {
@@ -184,10 +138,7 @@ namespace AspNetCoreModule.Test.Framework
                 {
                     return;                
                 }
-                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c copy /y \"" + from + "\" \"" + to + "\"");
-                myProcessStartInfo.CreateNoWindow = true;
-                Process myProc = Process.Start(myProcessStartInfo);
-                myProc.WaitForExit();
+                RunCommand("cmd.exe", "/c copy /y \"" + from + "\" \"" + to + "\"");
 
                 if (!File.Exists(to))
                 {
@@ -204,10 +155,7 @@ namespace AspNetCoreModule.Test.Framework
         {
             if (Directory.Exists(directoryPath))
             {
-                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c rd \"" + directoryPath + "\" /s /q");
-                myProcessStartInfo.CreateNoWindow = true;
-                Process myProc = Process.Start(myProcessStartInfo);
-                myProc.WaitForExit();
+                RunCommand("cmd.exe", "/c rd \"" + directoryPath + "\" /s /q");                
             }
             if (Directory.Exists(directoryPath))
             {
@@ -219,10 +167,7 @@ namespace AspNetCoreModule.Test.Framework
         {
             if (!Directory.Exists(directoryPath))
             {
-                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c md \"" + directoryPath + "\"");
-                myProcessStartInfo.CreateNoWindow = true;
-                Process myProc = Process.Start(myProcessStartInfo);
-                myProc.WaitForExit();
+                RunCommand("cmd.exe", "/c md \"" + directoryPath + "\"");                
             }
             if (!Directory.Exists(directoryPath))
             {
@@ -244,10 +189,7 @@ namespace AspNetCoreModule.Test.Framework
 
             if (Directory.Exists(from))
             {
-                ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("cmd.exe", "/c xcopy \"" + from + "\" \"" + to + "\" /s");
-                myProcessStartInfo.CreateNoWindow = true;
-                Process myProc = Process.Start(myProcessStartInfo);
-                myProc.WaitForExit();
+                RunCommand("cmd.exe", "/c xcopy \"" + from + "\" \"" + to + "\" /s");                
             }
             else
             {
@@ -457,52 +399,56 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
+        public static void RunCommand(string fileName, string arguments = null, bool checkStandardError = true)
+        {
+            Process p = new Process();
+            p.StartInfo.FileName = fileName;
+            if (arguments != null)
+            {
+                p.StartInfo.Arguments = arguments;
+            }
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.RedirectStandardError = true;
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.CreateNoWindow = true;
+            p.Start();
+            string standardOutput = p.StandardOutput.ReadToEnd();
+            string standardError = p.StandardError.ReadToEnd();
+            p.WaitForExit();
+            if (checkStandardError && standardError != string.Empty)
+            {
+                throw new Exception("Failed to run " + fileName + " " + arguments + ", Error: " + standardError + ", StandardOutput: " + standardOutput);
+            }
+        }
+
         public static void RestartIis()
         {
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("iisreset");
-            myProcessStartInfo.CreateNoWindow = true;
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
+            RunCommand("iisreset", null, false);            
         }
 
         public static void StopHttp()
         {
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop http /y");
-            myProcessStartInfo.CreateNoWindow = true;
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
+            RunCommand("net", "stop http /y", false);
         }
 
         public static void StopWas()
         {
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop was /y");
-            myProcessStartInfo.CreateNoWindow = true;
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
+            RunCommand("net", "stop was /y", false);
         }
 
         public static void StartWas()
         {
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start was");
-            myProcessStartInfo.CreateNoWindow = true;
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
+            RunCommand("net", "start was", false);   
         }
 
         public static void StopW3svc()
         {
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "stop w3svc /y");
-            myProcessStartInfo.CreateNoWindow = true;
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
+            RunCommand("net", "stop w3svc /y", false);
         }
 
         public static void StartW3svc()
         {
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo("net", "start w3svc");
-            myProcessStartInfo.CreateNoWindow = true;
-            Process myProc = Process.Start(myProcessStartInfo);
-            myProc.WaitForExit();
+            RunCommand("net", "start w3svc", false);            
         }
 
         public static string GetApplicationPath(ApplicationType applicationType)

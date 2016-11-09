@@ -20,8 +20,6 @@ namespace AspNetCoreModule.Test
 {
     public class P1 : IClassFixture<UseLatestAncm>
     {
-        
-
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
@@ -37,6 +35,7 @@ namespace AspNetCoreModule.Test
         {
             using (var iisConfig = new IISConfigUtility(ServerType.IIS))
             {
+                // Clean up applicationhost.config before test is started
                 if (!TestUtility.CleanupTestEnv(ServerType.IIS))
                 {
                     return;
@@ -44,15 +43,14 @@ namespace AspNetCoreModule.Test
 
                 string solutionPath = UseLatestAncm.GetSolutionDirectory();
                 string siteName = "StandardTestSite";
-
-                TestUtility.StandardAppRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
-                TestUtility.InitializeStandardAppRootPath(false);
-
+                                
                 WebSiteContext testsiteContext = new WebSiteContext("localhost", siteName, 1234);
                 WebAppContext rootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), testsiteContext);
                 iisConfig.CreateSite(testsiteContext.SiteName, rootAppContext.PhysicalPath, 555, testsiteContext.TcpPort, rootAppContext.AppPoolName);
 
-                WebAppContext standardTestApp = new WebAppContext("/StandardTestApp", TestUtility.StandardAppRootPath, testsiteContext);
+                string standardAppRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
+                TestUtility.InitializeStandardAppRootPath(standardAppRootPath);
+                WebAppContext standardTestApp = new WebAppContext("/StandardTestApp", standardAppRootPath, testsiteContext);
                 iisConfig.CreateApp(testsiteContext.SiteName, standardTestApp.Name, standardTestApp.PhysicalPath);
 
                 WebAppContext webSocketApp = new WebAppContext("/webSocket", Path.Combine(solutionPath, "test", "WebRoot", "WebSocket"), testsiteContext);
@@ -74,6 +72,9 @@ namespace AspNetCoreModule.Test
 
                 // Verify WebSocket subprotocol
                 await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
+
+                // Verify Process ID
+                await VerifyResponseBodyContain(standardTestApp.GetHttpUri("GetProcessInfo"), new string[] { "Process ID:" }, HttpStatusCode.OK);
 
                 // Verify websocket
                 using (WebSocketClientHelper websocketClient = new WebSocketClientHelper())
@@ -122,6 +123,53 @@ namespace AspNetCoreModule.Test
         private static async Task VerifyResponseBodyContain(Uri uri, string[] expectedStrings, HttpStatusCode expectedResponseStatus)
         {
             await DoVerifyResponseBody(uri, null, expectedStrings, expectedResponseStatus);
+        }
+
+        private static async Task DoVerifyResponseBody(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus)
+        {
+
+            var httpClientHandler = new HttpClientHandler();
+            var httpClient = new HttpClient(httpClientHandler)
+            {
+                BaseAddress = uri,
+                Timeout = TimeSpan.FromSeconds(5),
+            };
+
+            var response = await RetryHelper.RetryRequest(() =>
+            {
+                return httpClient.GetAsync(string.Empty);
+            }, TestUtility.Logger, retryCount: 2);
+
+            string responseText = "NotInitialized";
+            string responseStatus = "NotInitialized";
+            try
+            {
+                if (response != null)
+                {
+                    responseText = await response.Content.ReadAsStringAsync();
+                    if (expectedResponseBody != null)
+                    {
+                        Assert.Equal(expectedResponseBody, responseText);
+                    }
+
+                    if (expectedStringsInResponseBody != null)
+                    {
+                        foreach (string item in expectedStringsInResponseBody)
+                        {
+                            Assert.True(responseText.Contains(item));
+                        }
+                    }
+                    Assert.Equal(response.StatusCode, expectedResponseStatus);
+                    responseStatus = response.StatusCode.ToString();
+                }
+            }
+            catch (XunitException)
+            {
+                TestUtility.LogWarning(response.ToString());
+                TestUtility.LogWarning(responseText);
+                TestUtility.LogWarning(responseStatus);
+                throw;
+            }
         }
 
         private static void VerifyDataSentAndReceived(WebSocketClientHelper websocketClient)
@@ -197,54 +245,6 @@ namespace AspNetCoreModule.Test
                 result = false;
             }
             return result;
-        }
-        
-        private static async Task DoVerifyResponseBody(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus)
-        {
-
-            // verify Foo
-            var httpClientHandler = new HttpClientHandler();
-            var httpClient = new HttpClient(httpClientHandler)
-            {
-                BaseAddress = uri,
-                Timeout = TimeSpan.FromSeconds(5),
-            };
-
-            var response = await RetryHelper.RetryRequest(() =>
-            {
-                return httpClient.GetAsync(string.Empty);
-            }, TestUtility.Logger, retryCount: 2);
-
-            string responseText = "NotInitialized";
-            string responseStatus = "NotInitialized";
-            try
-            {
-                if (response != null)
-                {
-                    responseText = await response.Content.ReadAsStringAsync();
-                    if (expectedResponseBody != null)
-                    {
-                        Assert.Equal(expectedResponseBody, responseText);
-                    }
-
-                    if (expectedStringsInResponseBody != null)
-                    {
-                        foreach (string item in expectedStringsInResponseBody)
-                        {
-                            Assert.True(responseText.Contains(item));
-                        }
-                    }
-                    Assert.Equal(response.StatusCode, expectedResponseStatus);
-                    responseStatus = response.StatusCode.ToString();
-                }
-            }
-            catch (XunitException)
-            {
-                TestUtility.LogWarning(response.ToString());
-                TestUtility.LogWarning(responseText);
-                TestUtility.LogWarning(responseStatus);
-                throw;
-            }
-        }
+        }              
     }
 }

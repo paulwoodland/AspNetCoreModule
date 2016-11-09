@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using System;
+using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -76,6 +77,15 @@ namespace AspnetCoreModule.TestSites.Standard
                 });
             });
 
+            app.Map("/GetProcessInfo", subApp =>
+            {
+                subApp.Run(context =>
+                {
+                    var process = Process.GetCurrentProcess();
+                    return context.Response.WriteAsync("Process ID: " + process.Id.ToString());
+                });
+            });
+    
             app.Map("/contentlength", subApp =>
             {
                 subApp.Run(context =>
