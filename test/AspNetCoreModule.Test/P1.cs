@@ -73,8 +73,8 @@ namespace AspNetCoreModule.Test
                 // Verify WebSocket subprotocol
                 await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
 
-                // Verify Process ID
-                await VerifyResponseBodyContain(standardTestApp.GetHttpUri("GetProcessInfo"), new string[] { "Process ID:" }, HttpStatusCode.OK);
+                // Get Process ID
+                string backendProcessId = await GetResponseBody(standardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
 
                 // Verify websocket
                 using (WebSocketClientHelper websocketClient = new WebSocketClientHelper())
@@ -84,34 +84,25 @@ namespace AspNetCoreModule.Test
                                && (openingFrame.Content.IndexOf("Upgrade: Websocket", System.StringComparison.OrdinalIgnoreCase) >= 0)
                                && openingFrame.Content.Contains("HTTP/1.1 101 Switching Protocols")), "Opening handshake");
 
-                    for (int i = 0; i <= 10; i++)
-                    {
-                        string dataSent = "abcdefghijklmnopqrstuvwxyz0123456789";
-                        websocketClient.SendTextData(dataSent);
-                        websocketClient.SendPing();
-                        websocketClient.SendTextData(dataSent);
-                        websocketClient.SendPing();
-                        websocketClient.SendPing();
-                        websocketClient.SendTextData(dataSent, 0x01);  // 0x01: start of sending partial data
-                        websocketClient.SendPing();
-                        websocketClient.SendTextData(dataSent, 0x80);  // 0x80: end of sending partial data
-                        websocketClient.SendPing();
-                        websocketClient.SendPing();
-                        websocketClient.SendTextData(dataSent);
-                        websocketClient.SendTextData(dataSent);
-                        websocketClient.SendTextData(dataSent);
-                        websocketClient.SendPing();
-                        Thread.Sleep(3000);
-                        VerifyDataSentAndReceived(websocketClient);
-                    }
+                    VerifySendingWebSocketData(websocketClient);
 
                     var closeFrame = websocketClient.Close();
                     Assert.True(closeFrame.FrameType == FrameType.Close, "Closing Handshake");
                 }
 
                 // Verify the ANCM event generated
-                var result = TestUtility.GetApplicationEvent(1001);
-                Assert.True(result.Count > 0, "Verfiy Event log");
+                var events = TestUtility.GetApplicationEvent(1001);
+                Assert.True(events.Count > 0, "Verfiy expected event logs");
+                bool findEvent = false;
+                foreach (string item in events)
+                {
+                    if (item.Contains(backendProcessId))
+                    {
+                        findEvent = true;
+                        break;
+                    }
+                }
+                Assert.True(findEvent, "Verfiy the event log of the target backend process");
             }
         }
 
@@ -125,8 +116,15 @@ namespace AspNetCoreModule.Test
             await DoVerifyResponseBody(uri, null, expectedStrings, expectedResponseStatus);
         }
 
-        private static async Task DoVerifyResponseBody(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus)
+        private static async Task<string> GetResponseBody(Uri uri, HttpStatusCode expectedResponseStatus)
         {
+            return await DoVerifyResponseBody(uri, null, null, expectedResponseStatus);
+        }
+
+        private static async Task<string> DoVerifyResponseBody(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus)
+        {
+            string responseText = "NotInitialized";
+            string responseStatus = "NotInitialized";
 
             var httpClientHandler = new HttpClientHandler();
             var httpClient = new HttpClient(httpClientHandler)
@@ -140,8 +138,6 @@ namespace AspNetCoreModule.Test
                 return httpClient.GetAsync(string.Empty);
             }, TestUtility.Logger, retryCount: 2);
 
-            string responseText = "NotInitialized";
-            string responseStatus = "NotInitialized";
             try
             {
                 if (response != null)
@@ -170,11 +166,34 @@ namespace AspNetCoreModule.Test
                 TestUtility.LogWarning(responseStatus);
                 throw;
             }
+            return responseText;
         }
 
-        private static void VerifyDataSentAndReceived(WebSocketClientHelper websocketClient)
+        private static bool VerifySendingWebSocketData(WebSocketClientHelper websocketClient)
         {
-            bool testResult = false;
+            bool result = false;
+
+            //
+            // send complete or partial text data and ping multiple times
+            //
+            string dataSent = "abcdefghijklmnopqrstuvwxyz0123456789";
+            websocketClient.SendTextData(dataSent);
+            websocketClient.SendPing();
+            websocketClient.SendTextData(dataSent);
+            websocketClient.SendPing();
+            websocketClient.SendPing();
+            websocketClient.SendTextData(dataSent, 0x01);  // 0x01: start of sending partial data
+            websocketClient.SendPing();
+            websocketClient.SendTextData(dataSent, 0x80);  // 0x80: end of sending partial data
+            websocketClient.SendPing();
+            websocketClient.SendPing();
+            websocketClient.SendTextData(dataSent);
+            websocketClient.SendTextData(dataSent);
+            websocketClient.SendTextData(dataSent);
+            websocketClient.SendPing();
+            Thread.Sleep(3000);
+
+            // Verify test result
             for (int i = 0; i < 3; i++)
             {
                 if (DoVerifyDataSentAndReceived(websocketClient) == false)
@@ -184,11 +203,11 @@ namespace AspNetCoreModule.Test
                 }
                 else
                 {
-                    testResult = true;
+                    result = true;
                     break;
                 }
             }
-            Assert.True(testResult, "DoVerifyDataSentAndReceived");
+            return result;
         }
 
         private static bool DoVerifyDataSentAndReceived(WebSocketClientHelper websocketClient)
@@ -233,9 +252,22 @@ namespace AspNetCoreModule.Test
 
             if (sentString.Length == recString.Length && pongString.Length == pingString.Length)
             {
-                Assert.True(sentString.Length == recString.Length, "Same size of data sent(" + sentString.Length + ") and received(" + recString.Length + ")");
-                Assert.True(sentString.ToString() == recString.ToString(), "Same string in sent and received");
-                Assert.True(pongString.Length == pingString.Length, "Ping received; Ping (" + pingString.Length + ") and Pong (" + pongString.Length + ")");
+                if (sentString.Length != recString.Length)
+                {
+                    result = false;
+                    TestUtility.LogTrace("Same size of data sent(" + sentString.Length + ") and received(" + recString.Length + ")");
+                }
+
+                if (sentString.ToString() != recString.ToString())
+                {
+                    result = false;
+                    TestUtility.LogTrace("Not matched string in sent and received");
+                }
+                if (pongString.Length != pingString.Length)
+                {
+                    result = false;
+                    TestUtility.LogTrace("Ping received; Ping (" + pingString.Length + ") and Pong (" + pongString.Length + ")");
+                }
                 websocketClient.Connection.DataSent.Clear();
                 websocketClient.Connection.DataReceived.Clear();
             }

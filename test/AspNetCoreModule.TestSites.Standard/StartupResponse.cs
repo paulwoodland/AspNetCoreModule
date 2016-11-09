@@ -77,12 +77,12 @@ namespace AspnetCoreModule.TestSites.Standard
                 });
             });
 
-            app.Map("/GetProcessInfo", subApp =>
+            app.Map("/GetProcessId", subApp =>
             {
                 subApp.Run(context =>
                 {
                     var process = Process.GetCurrentProcess();
-                    return context.Response.WriteAsync("Process ID: " + process.Id.ToString());
+                    return context.Response.WriteAsync(process.Id.ToString());
                 });
             });
     
