@@ -44,9 +44,8 @@ namespace AspNetCoreModule.Test
                             .AddConsole()
                             .CreateLogger(string.Format("P0:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
 
-            // initialize TestUtility
-            TestUtility.Initialize(logger);
-            if (!TestUtility.StartTestMachine(serverType, IISConfigUtility.AppPoolBitness.noChange))
+            TestUtility testContext = new TestUtility(logger);
+            if (!testContext.StartTestMachine(serverType, IISConfigUtility.AppPoolBitness.noChange))
             {
                 return;
             }
@@ -102,7 +101,7 @@ namespace AspNetCoreModule.Test
                 }
             }
 
-            TestUtility.EndTestMachine();
+            testContext.EndTestMachine();
         }
 
         private static async Task CheckChunkedAsync(HttpClient client, ILogger logger)

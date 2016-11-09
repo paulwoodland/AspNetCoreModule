@@ -37,11 +37,8 @@ namespace AspNetCoreModule.Test
                             .AddConsole()
                             .CreateLogger(string.Format("P1:{0}", appPoolBitness.ToString()));
 
-            // initialize TestUtility
-            TestUtility.Initialize(logger);
-
-            // initialize Test machine
-            if (!TestUtility.StartTestMachine(ServerType.IIS, appPoolBitness))
+            TestUtility testContext = new TestUtility(logger);
+            if (!testContext.StartTestMachine(ServerType.IIS, appPoolBitness))
             {
                 return;
             }
@@ -98,7 +95,7 @@ namespace AspNetCoreModule.Test
                 }
 
                 // Verify the ANCM event generated
-                var events = TestUtility.GetApplicationEvent(1001);
+                var events = TestUtility.GetApplicationEvent(1001, testContext.StartTime);
                 Assert.True(events.Count > 0, "Verfiy expected event logs");
                 bool findEvent = false;
                 foreach (string item in events)
@@ -112,7 +109,7 @@ namespace AspNetCoreModule.Test
                 Assert.True(findEvent, "Verfiy the event log of the target backend process");
             }
 
-            TestUtility.EndTestMachine();
+            testContext.EndTestMachine();
         }
 
         private static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus)

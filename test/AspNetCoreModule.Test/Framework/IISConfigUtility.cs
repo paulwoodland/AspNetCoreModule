@@ -37,7 +37,7 @@ namespace AspNetCoreModule.Test.Framework
 
         public IISConfigUtility(ServerType type)
         {
-            this._serverType = type;
+            _serverType = type;
         }
 
         public static void BackupAppHostConfig()

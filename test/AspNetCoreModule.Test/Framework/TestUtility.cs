@@ -19,31 +19,11 @@ namespace AspNetCoreModule.Test.Framework
     {
         public static ILogger _logger = null;
 
-        private static ServerType _cleanupServerType;
-        private static IISConfigUtility.AppPoolBitness _cleanupBitness;
-        private static bool _calledCleanupServerType = false;
+        private ServerType _cleanupServerType;
+        private IISConfigUtility.AppPoolBitness _cleanupBitness;
+        private bool _calledCleanupServerType = false;
 
-        public static bool StartTestMachine(ServerType serverType, IISConfigUtility.AppPoolBitness bitness)
-        {
-            _cleanupServerType = serverType;
-            _calledCleanupServerType = true;
-            _cleanupBitness = bitness;
-            return DoCleanupTestEnv(false);
-        }
-
-        public static void EndTestMachine()
-        {
-            try
-            {
-                _calledCleanupServerType = false;
-                DoCleanupTestEnv(true);
-            }
-            catch
-            {
-                // ignore
-            }
-        }
-
+        public DateTime StartTime;
         public static ILogger Logger
         {
             get
@@ -58,11 +38,33 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public static void Initialize(ILogger logger)
+        public TestUtility(ILogger logger)
         {
+            StartTime = DateTime.Now;
             _logger = logger;
         }
-        
+
+        public bool StartTestMachine(ServerType serverType, IISConfigUtility.AppPoolBitness bitness)
+        {
+            _cleanupServerType = serverType;
+            _calledCleanupServerType = true;
+            _cleanupBitness = bitness;
+            return DoCleanupTestEnv(false);
+        }
+
+        public void EndTestMachine()
+        {
+            try
+            {
+                _calledCleanupServerType = false;
+                DoCleanupTestEnv(true);
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
         public static void InitializeStandardAppRootPath(string outputPath)
         {
             if (Directory.Exists(outputPath))
@@ -540,7 +542,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public static List<String> GetApplicationEvent(int id)
+        public static List<String> GetApplicationEvent(int id, DateTime startFrom)
         {
             var result = new List<String>();
             for (int i = 0; i < 5; i++)
@@ -550,7 +552,7 @@ namespace AspNetCoreModule.Test.Framework
                 EventLog systemLog = new EventLog("Application");
                 foreach (EventLogEntry entry in systemLog.Entries)
                 {
-                    if (entry.InstanceId == id)
+                    if (entry.TimeWritten > startFrom &&  entry.InstanceId == id)
                     {
                         result.Add(entry.ReplacementStrings[0]);
                     }
@@ -569,7 +571,7 @@ namespace AspNetCoreModule.Test.Framework
             return uri.DnsSafeHost;
         }
 
-        private static bool DoCleanupTestEnv(bool cleanupOnly)
+        private bool DoCleanupTestEnv(bool cleanupOnly)
         {
             if (_calledCleanupServerType == false)
             {
@@ -580,10 +582,7 @@ namespace AspNetCoreModule.Test.Framework
             {
                 return true;
             }
-
-            // clear Event logs
-            ClearApplicationEventLog();
-
+            
             using (var iisConfig = new IISConfigUtility(_cleanupServerType))
             {
                 if (cleanupOnly == false)
