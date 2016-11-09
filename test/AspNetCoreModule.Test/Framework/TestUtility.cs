@@ -18,6 +18,32 @@ namespace AspNetCoreModule.Test.Framework
     public class TestUtility
     {
         public static ILogger _logger = null;
+
+        private static ServerType _cleanupServerType;
+        private static IISConfigUtility.AppPoolBitness _cleanupBitness;
+        private static bool _calledCleanupServerType = false;
+
+        public static bool StartTestMachine(ServerType serverType, IISConfigUtility.AppPoolBitness bitness)
+        {
+            _cleanupServerType = serverType;
+            _calledCleanupServerType = true;
+            _cleanupBitness = bitness;
+            return DoCleanupTestEnv(false);
+        }
+
+        public static void EndTestMachine()
+        {
+            try
+            {
+                _calledCleanupServerType = false;
+                DoCleanupTestEnv(true);
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
         public static ILogger Logger
         {
             get
@@ -44,12 +70,26 @@ namespace AspNetCoreModule.Test.Framework
                 DeleteDirectory(outputPath);                
             }
 
-            string appPath = TestUtility.GetApplicationPath(ApplicationType.Portable);
+            string appPath = GetApplicationPath(ApplicationType.Portable);
             string publishPath = Path.Combine(appPath, "bin", "Debug", "netcoreapp1.0", "publish");                
             RunCommand("dotnet", "publish " + appPath);
             DirectoryCopy(publishPath, outputPath);
         }
-        
+        public static bool IsOSAmd64
+        {
+            get
+            {
+                if (Environment.ExpandEnvironmentVariables("%PROCESSOR_ARCHITECTURE%") == "AMD64")
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
         public static void LogTrace(string format, params object[] parameters)
         {
             Logger.LogTrace(format);
@@ -63,57 +103,6 @@ namespace AspNetCoreModule.Test.Framework
             Logger.LogWarning(format);
         }
 
-        public static bool CleanupTestEnv(ServerType serverType)
-        {
-            // clear Event logs
-            TestUtility.ClearApplicationEventLog();
-
-            using (var iisConfig = new IISConfigUtility(serverType))
-            {
-                try
-                {
-                    IISConfigUtility.RestoreAppHostConfig(false);
-                }
-                catch
-                {
-                    // ignore this initial exception
-                }
-
-                if (!iisConfig.IsIISInstalled())
-                {
-                    LogTrace("IIS is not installed on this machine. Skipping!!!");
-                    return false;
-                }
-
-                if (!iisConfig.IsUrlRewriteInstalledForIIS())
-                {
-                    LogTrace("IIS UrlRewrite module is not installed on this machine. Skipping!!!");
-                    return false;
-                }
-
-                // kill vsjitdebugger processes if it happened in the previous test
-                TestUtility.RestartServices(5);
-
-                // kill IIS worker processes to unlock file handle for applicationhost.config file
-                TestUtility.RestartServices(4);
-
-                // restore the applicationhost.config file with the backup file; if the backup file does not exist, it will be created here as well.
-                IISConfigUtility.RestoreAppHostConfig(true);
-
-                // start DefaultAppPool in case it is stopped
-                iisConfig.StartAppPool(IISConfigUtility.Strings.DefaultAppPool);
-
-                // start w3svc service in case it is not started
-                TestUtility.StartW3svc();
-
-                if (iisConfig.GetServiceStatus("w3svc") != "Running")
-                {
-                    LogTrace("w3svc service is not runing. Skipping!!!");
-                    return false;
-                }
-            }
-            return true;
-        }
         public static void DeleteFile(string filePath)
         {
             if (File.Exists(filePath))
@@ -126,12 +115,23 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
         
-        public static void FileCopy(string from, string to, bool overWrite = true)
+        public static void FileCopy(string from, string to, bool overWrite = true, bool ignoreExceptionWhileDeletingExistingFile = false)
         {
             if (overWrite)
             {
-                DeleteFile(to);
+                try
+                {
+                    DeleteFile(to);
+                }
+                catch
+                {
+                    if (ignoreExceptionWhileDeletingExistingFile)
+                    {
+                        throw;
+                    }
+                }
             }
+
             if (File.Exists(from))
             {
                 if (File.Exists(to) && overWrite == false)
@@ -147,7 +147,7 @@ namespace AspNetCoreModule.Test.Framework
             }
             else
             {
-                TestUtility.LogError("File not found " + from);
+                LogError("File not found " + from);
             }
         }
 
@@ -238,7 +238,7 @@ namespace AspNetCoreModule.Test.Framework
             processList = searcher.Get();
             if (processList.Count > 0)
             {
-                TestUtility.LogTrace("Failed to kill process " + processFileName);
+                LogTrace("Failed to kill process " + processFileName);
             }            
         }
 
@@ -326,29 +326,39 @@ namespace AspNetCoreModule.Test.Framework
             return builder.ToString();
         }
         
-        public static void RestartServices(int option)
+        public enum RestartOption
+        {
+            CallIISReset,
+            StopHttpStartW3svc,
+            StopWasStartW3svc,
+            StopW3svcStartW3svc,
+            KillWorkerProcess,            
+            KillVSJitDebugger
+        }
+        public static void RestartServices(RestartOption option)
         {
             switch (option)
             {
-                case 0:
-                    RestartIis();
+                case RestartOption.CallIISReset:
+                    CallIISReset();
                     break;
-                case 1:
+                case RestartOption.StopHttpStartW3svc:
                     StopHttp();
                     StartW3svc();
                     break;
-                case 2:
+                case RestartOption.StopWasStartW3svc:
                     StopWas();
                     StartW3svc();
                     break;
-                case 3:
+                case RestartOption.StopW3svcStartW3svc:
                     StopW3svc();
                     StartW3svc();
                     break;
-                case 4:
+                case RestartOption.KillWorkerProcess:
                     KillWorkerProcess();
+                    KillIISWorkerProcess();
                     break;
-                case 5:
+                case RestartOption.KillVSJitDebugger:
                     KillVSJitDebugger();
                     break;
             };
@@ -379,22 +389,60 @@ namespace AspNetCoreModule.Test.Framework
 
             foreach (ManagementObject obj in processList)
             {
-                string[] argList = new string[] { string.Empty, string.Empty };
-                int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
-                if (returnVal == 0)
+                if (owner != null)
                 {
-                    bool foundProcess = true;
-                    if (owner != null)
+                    string[] argList = new string[] { string.Empty, string.Empty };
+                    int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                    if (returnVal == 0)
                     {
+                        bool foundProcess = true;
+
                         if (String.Compare(argList[0], owner, true) != 0)
                         {
                             foundProcess = false;
                         }
+                        if (foundProcess)
+                        {
+                            obj.InvokeMethod("Terminate", null);
+                        }
                     }
-                    if (foundProcess)
+                }
+                else
+                {
+                    obj.InvokeMethod("Terminate", null); 
+                }
+            }
+        }
+
+        public static void KillIISWorkerProcess(string owner = null)
+        {
+            string query = "Select * from Win32_Process Where Name = \"iisexpress.exe\"";
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+            ManagementObjectCollection processList = searcher.Get();
+
+            foreach (ManagementObject obj in processList)
+            {
+                if (owner != null)
+                {
+                    string[] argList = new string[] { string.Empty, string.Empty };
+                    int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                    if (returnVal == 0)
                     {
-                        obj.InvokeMethod("Terminate", null);
+                        bool foundProcess = true;
+
+                        if (String.Compare(argList[0], owner, true) != 0)
+                        {
+                            foundProcess = false;
+                        }
+                        if (foundProcess)
+                        {
+                            obj.InvokeMethod("Terminate", null);
+                        }
                     }
+                }
+                else
+                {
+                    obj.InvokeMethod("Terminate", null);
                 }
             }
         }
@@ -421,7 +469,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public static void RestartIis()
+        public static void CallIISReset()
         {
             RunCommand("iisreset", null, false);            
         }
@@ -519,6 +567,83 @@ namespace AspNetCoreModule.Test.Framework
         {
             Uri uri = new Uri("http://" + domain);
             return uri.DnsSafeHost;
+        }
+
+        private static bool DoCleanupTestEnv(bool cleanupOnly)
+        {
+            if (_calledCleanupServerType == false)
+            {
+                throw new System.ApplicationException("Initial CleanupTestEnv was not called");
+            }
+
+            if (_cleanupServerType != ServerType.IIS)
+            {
+                return true;
+            }
+
+            // clear Event logs
+            ClearApplicationEventLog();
+
+            using (var iisConfig = new IISConfigUtility(_cleanupServerType))
+            {
+                if (cleanupOnly == false)
+                {
+                    try
+                    {
+                        IISConfigUtility.RestoreAppHostConfig();
+                    }
+                    catch
+                    {
+                        // ignore this initial exception
+                    }
+
+                    if (!iisConfig.IsIISInstalled())
+                    {
+                        LogTrace("IIS is not installed on this machine. Skipping!!!");
+                        return false;
+                    }
+
+                    if (!iisConfig.IsUrlRewriteInstalledForIIS())
+                    {
+                        LogTrace("IIS UrlRewrite module is not installed on this machine. Skipping!!!");
+                        return false;
+                    }
+
+                    if (!iisConfig.IsAncmInstalled(_cleanupServerType))
+                    {
+                        LogTrace("AspnetCore module is not installed on this machine. Skipping!!!");
+                        return false;
+                    }
+                }
+
+                // restore the applicationhost.config file with the backup file; if the backup file does not exist, it will be created here as well.
+                RestartServices(RestartOption.KillVSJitDebugger);
+                RestartServices(RestartOption.KillWorkerProcess);
+                IISConfigUtility.RestoreAppHostConfig();
+
+                // Update aspnetcoremodule with private file path
+                if (_cleanupBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
+                {
+                    iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X86_path, "bitness32");
+                }
+                else
+                {
+                    iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X64_path, "bitness64");
+                }
+
+                // start DefaultAppPool in case it is stopped
+                iisConfig.StartAppPool(IISConfigUtility.Strings.DefaultAppPool);
+
+                // start w3svc service in case it is not started
+                StartW3svc();
+
+                if (iisConfig.GetServiceStatus("w3svc") != "Running")
+                {
+                    LogTrace("w3svc service is not runing. Skipping!!!");
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

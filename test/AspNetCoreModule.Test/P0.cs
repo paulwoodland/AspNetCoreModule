@@ -25,21 +25,20 @@ namespace AspNetCoreModule.Test
         [InlineData(ServerType.IISExpress, RuntimeFlavor.Clr, RuntimeArchitecture.x64, "http://localhost:5091/")]
         public Task BasicTestOnIISExpress(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
         {
-            return BasicTest(AspNetCoreModule.Test.Framework.IISConfigUtility.AppPoolSettings.none, serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
+            return BasicTest(serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
         }
         
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")] 
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
-        [InlineData(IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64, ServerType.IIS, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5093/")]
-        [InlineData(IISConfigUtility.AppPoolSettings.none, ServerType.IIS, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5093/")]
-        public Task BasicTestOnIIS(IISConfigUtility.AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
+        [InlineData(ServerType.IIS, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5093/")]
+        public Task BasicTestOnIIS(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
         {
-            return BasicTest(appPoolSetting, serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
+            return BasicTest(serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
         }
         
-        public async Task BasicTest(IISConfigUtility.AppPoolSettings appPoolSetting, ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
+        public async Task BasicTest(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
         {
             var logger = new LoggerFactory()
                             .AddConsole()
@@ -47,15 +46,11 @@ namespace AspNetCoreModule.Test
 
             // initialize TestUtility
             TestUtility.Initialize(logger);
-
-            if (serverType == ServerType.IIS)
+            if (!TestUtility.StartTestMachine(serverType, IISConfigUtility.AppPoolBitness.noChange))
             {
-                if (!TestUtility.CleanupTestEnv(serverType))
-                {
-                    return;
-                }
+                return;
             }
-            
+
             using (logger.BeginScope("P0Test"))
             {
                 string applicationPath = TestUtility.GetApplicationPath(applicationType);
@@ -106,8 +101,10 @@ namespace AspNetCoreModule.Test
                     await scenario(httpClient, logger);
                 }
             }
+
+            TestUtility.EndTestMachine();
         }
-        
+
         private static async Task CheckChunkedAsync(HttpClient client, ILogger logger)
         {
             var response = await client.GetAsync("chunked");

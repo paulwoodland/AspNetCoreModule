@@ -7,27 +7,34 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using Microsoft.Extensions.PlatformAbstractions;
+using static AspNetCoreModule.Test.Framework.TestUtility;
+using System.Threading;
 
 namespace AspNetCoreModule.Test.Framework
 {
     public class UseLatestAncm : IDisposable
     {
         private string _setupScriptPath = null;
+        public static string Aspnetcore_X64_path = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles%"), "IIS Express", "aspnetcore_private.dll");
+        public static string Aspnetcore_X86_path = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%"), "IIS Express", "aspnetcore_private.dll");
+        public static string IISExpressAspnetcoreSchema_path = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%"), "IIS Express", "config", "schema", "aspnetcore_schema.xml");
+        public static string IISAspnetcoreSchema_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "config", "schema", "aspnetcore_schema.xml");
         
         // Set this flag true if the nuget package contains out-dated aspnetcore.dll and you want to use the solution output path instead to apply the laetst ANCM files
-        public static bool UseSolutionOutputFiles = true; 
-        
+        public static bool UseSolutionOutputFiles = true;
+        public static bool ReplaceExistingFiles = false;
+
         public UseLatestAncm()
         {
-            InvokeInstallScript();
+            UpdateAspnetCoreBinaryFiles();
         }
 
         public void Dispose()
         {
-            InvokeRollbackScript();
+            RollbackAspnetCoreBinaryFileChanges();
         }
 
-        private void InvokeInstallScript()
+        private void UpdateAspnetCoreBinaryFiles()
         {
             var solutionRoot = GetSolutionDirectory();
             string outputPath = string.Empty;
@@ -62,20 +69,61 @@ namespace AspNetCoreModule.Test.Framework
                 }
             }
 
-            Process p = new Process();
-            p.StartInfo.FileName = "powershell.exe";
-            p.StartInfo.Arguments = $"\"{_setupScriptPath}\\installancm.ps1\" \"" + outputPath + "\" -ForceToBackup";
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.RedirectStandardError = true;
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.CreateNoWindow = true;
-            p.Start();
-            string standardOutput = p.StandardOutput.ReadToEnd();
-            string standardError = p.StandardError.ReadToEnd();
-            p.WaitForExit();
-            if (standardError != string.Empty)
+            if (ReplaceExistingFiles)
             {
-                throw new Exception("Failed to update ANCM files, StandardError: " + standardError + ", StandardOutput: " + standardOutput);
+                // invoke installancm.ps1 to replace the existing files
+                RunCommand("powershell.exe", $"\"{_setupScriptPath}\\installancm.ps1\" \"" + outputPath + "\" -ForceToBackup");
+            }
+
+            // create an extra private copy of the private file on IISExpress directory
+            bool updateSuccess = false;
+            for (int i = 0; i < 3; i++)
+            {
+                updateSuccess = false;
+                try
+                {
+                    RestartServices(RestartOption.KillWorkerProcess);
+                    RestartServices(RestartOption.StopW3svcStartW3svc);
+                    Thread.Sleep(1000);
+                    FileCopy(Path.Combine(outputPath, "x64", "aspnetcore.dll"), Aspnetcore_X64_path);
+                    if (IsOSAmd64)
+                    {
+                        FileCopy(Path.Combine(outputPath, "Win32", "aspnetcore.dll"), Aspnetcore_X86_path);
+                    }
+                    updateSuccess = true;
+                }
+                catch
+                {
+                    updateSuccess = false;
+                }
+                if (updateSuccess)
+                {
+                    break;
+                }
+            }
+            if (!updateSuccess)
+            {
+                throw new System.ApplicationException("Failed to update aspnetcore.dll");
+            }
+        }
+        
+        private void RollbackAspnetCoreBinaryFileChanges()
+        {
+            var solutionRoot = GetSolutionDirectory();
+            string outputPath = string.Empty;
+            string setupScriptPath = string.Empty;
+
+            if (ReplaceExistingFiles)
+            {
+                RunCommand("powershell.exe", $"\"{_setupScriptPath}\\installancm.ps1\" -Rollback");
+            }
+            try
+            {
+                Directory.Delete(_setupScriptPath);
+            }
+            catch
+            {
+                // ignore exception which happens while deleting the temporary directory which won'be used anymore
             }
         }
 
@@ -110,37 +158,6 @@ namespace AspNetCoreModule.Test.Framework
             }
 
             return nupkg;
-        }
-
-        private void InvokeRollbackScript()
-        {
-            var solutionRoot = GetSolutionDirectory();
-            string outputPath = string.Empty;
-            string setupScriptPath = string.Empty;
-
-            Process p = new Process();
-            p.StartInfo.FileName = "powershell.exe";
-            p.StartInfo.Arguments = $"\"{_setupScriptPath}\\installancm.ps1\" -Rollback";
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.RedirectStandardError = true;
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.CreateNoWindow = true;
-            p.Start();
-            string standardOutput = p.StandardOutput.ReadToEnd();
-            string standardError = p.StandardError.ReadToEnd();
-            p.WaitForExit();
-            if (standardError != string.Empty)
-            {
-                throw new Exception("Failed to restore ANCM files, StandardError: " + standardError + ", StandardOutput: " + standardOutput);
-            }
-            try
-            {
-                Directory.Delete(_setupScriptPath);
-            }
-            catch
-            {
-                // ignore exception which happens while deleting the temporary directory which won'be used anymore
-            }
         }
     }
 }

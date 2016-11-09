@@ -24,23 +24,30 @@ namespace AspNetCoreModule.Test
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
-        [InlineData(IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64)]
-        [InlineData(IISConfigUtility.AppPoolSettings.none)]
-        public Task E2E(IISConfigUtility.AppPoolSettings appPoolSetting)
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
+        public Task E2E(IISConfigUtility.AppPoolBitness appPoolSetting)
         {
             return DoE2ETest(appPoolSetting);
         }
         
-        private static async Task DoE2ETest(IISConfigUtility.AppPoolSettings appPoolSetting)
+        private static async Task DoE2ETest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
+            var logger = new LoggerFactory()
+                            .AddConsole()
+                            .CreateLogger(string.Format("P1:{0}", appPoolBitness.ToString()));
+
+            // initialize TestUtility
+            TestUtility.Initialize(logger);
+
+            // initialize Test machine
+            if (!TestUtility.StartTestMachine(ServerType.IIS, appPoolBitness))
+            {
+                return;
+            }
+
             using (var iisConfig = new IISConfigUtility(ServerType.IIS))
             {
-                // Clean up applicationhost.config before test is started
-                if (!TestUtility.CleanupTestEnv(ServerType.IIS))
-                {
-                    return;
-                }
-
                 string solutionPath = UseLatestAncm.GetSolutionDirectory();
                 string siteName = "StandardTestSite";
                                 
@@ -56,9 +63,9 @@ namespace AspNetCoreModule.Test
                 WebAppContext webSocketApp = new WebAppContext("/webSocket", Path.Combine(solutionPath, "test", "WebRoot", "WebSocket"), testsiteContext);
                 iisConfig.CreateApp(testsiteContext.SiteName, webSocketApp.Name, webSocketApp.PhysicalPath);
 
-                if (appPoolSetting == IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64)
+                if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
                 {
-                    iisConfig.SetAppPoolSetting(rootAppContext.AppPoolName, IISConfigUtility.AppPoolSettings.enable32BitAppOnWin64, true);
+                    iisConfig.SetAppPoolSetting(rootAppContext.AppPoolName, "enable32BitAppOnWin64", true);
                     Thread.Sleep(500);
                     iisConfig.RecycleAppPool(rootAppContext.AppPoolName);
                     Thread.Sleep(500);
@@ -104,6 +111,8 @@ namespace AspNetCoreModule.Test
                 }
                 Assert.True(findEvent, "Verfiy the event log of the target backend process");
             }
+
+            TestUtility.EndTestMachine();
         }
 
         private static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus)
