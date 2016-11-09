@@ -31,7 +31,7 @@ namespace AspNetCoreModule.Test.Framework
         {
             var solutionRoot = GetSolutionDirectory();
             string outputPath = string.Empty;
-            _setupScriptPath = Path.Combine(solutionRoot, "tools"); 
+            _setupScriptPath = Path.Combine(solutionRoot, "tools");
 
             if (!UseSolutionOutputFiles)
             {
@@ -39,11 +39,27 @@ namespace AspNetCoreModule.Test.Framework
                 _setupScriptPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 ZipFile.ExtractToDirectory(aspnetCoreModulePackagePath, _setupScriptPath);
 
-                outputPath = Path.Combine(_setupScriptPath, "ancm", "Debug");
+                outputPath = Path.Combine(_setupScriptPath);
             }
             else
             {
+                // First try with debug build
                 outputPath = Path.Combine(solutionRoot, "artifacts", "build", "AspNetCore", "bin", "Debug");
+
+                // If debug build does is not available, try with release build
+                if (!File.Exists(Path.Combine(outputPath, "Win32", "aspnetcore.dll"))
+                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore.dll"))
+                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore_schema.xml")))
+                {
+                    outputPath = Path.Combine(solutionRoot, "artifacts", "build", "AspNetCore", "bin", "Release");
+                }
+
+                if (!File.Exists(Path.Combine(outputPath, "Win32", "aspnetcore.dll"))
+                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore.dll"))
+                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore_schema.xml")))
+                {
+                    throw new ApplicationException("aspnetcore.dll is not available; build aspnetcore.dll for both x86 and x64 and then try again!!!");
+                }
             }
 
             Process p = new Process();
