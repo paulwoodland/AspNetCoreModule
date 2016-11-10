@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 #pragma once
@@ -160,7 +160,7 @@ private:
                 m_ppServerProcessList[i] != NULL )
             {
                 // shutdown pServerProcess if not already shutdown.
-                m_ppServerProcessList[i]->StopProcess();
+                m_ppServerProcessList[i]->SendSignal();
                 m_ppServerProcessList[i]->DereferenceServerProcess();
                 m_ppServerProcessList[i] = NULL;
             }

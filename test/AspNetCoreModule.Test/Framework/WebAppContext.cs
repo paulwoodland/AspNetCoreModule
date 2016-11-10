@@ -158,6 +158,10 @@ namespace AspNetCoreModule.Test.Framework
         {
             string fromfile = Path.Combine(_physicalPath, from + ".bak");
             string tofile = Path.Combine(_physicalPath, from);
+            if (!File.Exists(tofile))
+            {
+                BackupFile(from);
+            }
             TestUtility.FileCopy(fromfile, tofile);
         }
 
@@ -171,6 +175,13 @@ namespace AspNetCoreModule.Test.Framework
         {
             string filePath = Path.Combine(_physicalPath, file);
             TestUtility.CreateFile(filePath, content);
+        }
+
+        public void MoveFile(string from, string to)
+        {
+            string fromfile = Path.Combine(_physicalPath, from);
+            string tofile = Path.Combine(_physicalPath, to);
+            TestUtility.FileMove(fromfile, tofile);
         }
     }
 }

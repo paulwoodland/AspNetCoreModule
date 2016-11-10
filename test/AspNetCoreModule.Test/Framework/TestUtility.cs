@@ -114,7 +114,35 @@ namespace AspNetCoreModule.Test.Framework
                 throw new ApplicationException("Failed to delete file: " + filePath);
             }
         }
-        
+
+        public static void FileMove(string from, string to, bool overWrite = true)
+        {
+            if (overWrite)
+            {
+                DeleteFile(to);
+            }
+            if (File.Exists(from))
+            {
+                if (File.Exists(to) && overWrite == false)
+                {
+                    return;
+                }
+                File.Move(from, to);
+                if (!File.Exists(to))
+                {
+                    throw new ApplicationException("Failed to rename from : " + from + ", to : " + to);
+                }
+                if (File.Exists(from))
+                {
+                    throw new ApplicationException("Failed to rename from : " + from + ", to : " + to);
+                }
+            }
+            else
+            {
+                throw new ApplicationException("File not found " + from);
+            }
+        }
+
         public static void FileCopy(string from, string to, bool overWrite = true, bool ignoreExceptionWhileDeletingExistingFile = false)
         {
             if (overWrite)

@@ -23,7 +23,7 @@ namespace AspNetCoreModule.Test
 
         public TestEnvSetup()
         {
-            FunctionalTest.TestEnv = this;
+            FunctionalTetClass.TestEnv = this;
         }
 
         public void GlobalSetup()

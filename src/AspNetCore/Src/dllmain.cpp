@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 #include "precomp.hxx"
@@ -51,7 +51,7 @@ VOID
     HKEY hKey;
 
     if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-        L"SOFTWARE\\Microsoft\\IIS Extensions\\AspNetCore Module\\Parameters",
+        L"SOFTWARE\\Microsoft\\IIS Extensions\\IIS AspNetCore Module\\Parameters",
         0,
         KEY_READ,
         &hKey) == NO_ERROR)

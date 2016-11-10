@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 #include "precomp.hxx"
@@ -199,6 +199,7 @@ FILE_WATCHER_ENTRY::~FILE_WATCHER_ENTRY()
     }
 }
 
+#pragma warning(disable:4100)
 
 HRESULT
 FILE_WATCHER_ENTRY::HandleChangeCompletion(
@@ -301,11 +302,12 @@ Finished:
     return hr;
 }
 
+#pragma warning( error : 4100 )
+
 HRESULT
 FILE_WATCHER_ENTRY::Monitor(VOID)
 {
     HRESULT hr = S_OK;
-    BOOL    fRet = FALSE;
     DWORD   cbRead;
 
     AcquireSRWLockExclusive(&_srwLock);
