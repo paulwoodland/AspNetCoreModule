@@ -15,7 +15,6 @@ using Xunit.Sdk;
 using AspNetCoreModule.Test.WebSocketClient;
 using System.Net;
 using System.Text;
-using System.Diagnostics;
 
 namespace AspNetCoreModule.Test
 {
@@ -118,11 +117,30 @@ namespace AspNetCoreModule.Test
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
-        public Task E2E(IISConfigUtility.AppPoolBitness appPoolSetting)
+        public Task E2E(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return DoE2ETest(appPoolSetting);
+            return DoE2ETest(appPoolBitness);
         }
-        
+
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
+        public Task RecycleApp(IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            TestEnv.Setup();
+            TestEnv.SetAppPoolBitness(appPoolBitness);
+
+            //VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
+            //var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+            //Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), app.GetProcessFileName().ToLower().Replace(".exe", ""));
+
+            TestEnv.Cleanup();
+            return null;
+        }
+                
         private static async Task DoE2ETest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             TestEnv.Setup();
@@ -145,10 +163,7 @@ namespace AspNetCoreModule.Test
 
             // Verify websocket 
             VerifyWebSocket(TestEnv.StandardTestApp.GetHttpUri("websocket"));
-
-            // Verify AppOffline
-            VerifyRecyclingApp(TestEnv.StandardTestApp);
-
+            
             // send a simple request again and verify the response body
             await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
 
@@ -185,12 +200,6 @@ namespace AspNetCoreModule.Test
                 }
             }
             Assert.True(findEvent, "Verfiy the event log of the target backend process");
-        }
-
-        private static void VerifyRecyclingApp(WebAppContext app)
-        {
-            //var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
-            //Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), app.GetProcessFileName().ToLower().Replace(".exe", ""));
         }
 
         private static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus)
