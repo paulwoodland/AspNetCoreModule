@@ -21,14 +21,90 @@ namespace AspNetCoreModule.Test
 {
     public class E2ETestEnv : IDisposable
     {
+        public WebSiteContext TestsiteContext;
+        public WebAppContext RootAppContext;
+        public WebAppContext StandardTestApp;
+        public WebAppContext WebSocketApp;
+        public TestUtility TestHelper;
+        private ILogger _logger;
+        private bool _globalSetupFinished = false;        
+
         public E2ETestEnv()
         {
-            TestUtility.LogTrace("Start of E2ETestEnv");
             P1.TestEnv = this;
         }
+
+        public void GlobalSetup()
+        {
+            if (_globalSetupFinished)
+            {
+                return;
+            }
+
+            _globalSetupFinished = true;
+            TestUtility.LogTrace("Start of E2ETestEnv");
+            string solutionPath = UseLatestAncm.GetSolutionDirectory();
+            string siteName = "StandardTestSite";
+            
+            TestsiteContext = new WebSiteContext("localhost", siteName, 1234);
+            RootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), TestsiteContext);
+            string standardAppRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
+            TestUtility.InitializeStandardAppRootPath(standardAppRootPath);
+            StandardTestApp = new WebAppContext("/StandardTestApp", standardAppRootPath, TestsiteContext);
+            WebSocketApp = new WebAppContext("/webSocket", Path.Combine(solutionPath, "test", "WebRoot", "WebSocket"), TestsiteContext);
+
+            _logger = new LoggerFactory()
+                    .AddConsole()
+                    .CreateLogger(string.Format("P1"));
+
+            TestHelper = new TestUtility(_logger);
+            if (!TestHelper.StartTestMachine(ServerType.IIS))
+            {
+                return;
+            }
+
+            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            {
+                iisConfig.CreateSite(TestsiteContext.SiteName, RootAppContext.PhysicalPath, 555, TestsiteContext.TcpPort, RootAppContext.AppPoolName);
+                iisConfig.CreateApp(TestsiteContext.SiteName, StandardTestApp.Name, StandardTestApp.PhysicalPath);
+                iisConfig.CreateApp(TestsiteContext.SiteName, WebSocketApp.Name, WebSocketApp.PhysicalPath);
+            }
+        }
+
+        public void Setup()
+        {
+            GlobalSetup();
+            TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+        }
+
+        public void SetAppPoolBitness(IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            {
+                if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
+                {
+                    iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X86_path, "bitness32");
+                    iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", true);
+                }
+                else
+                {
+                    iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X64_path, "bitness64");
+                    iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", false);
+                }
+                iisConfig.RecycleAppPool(RootAppContext.AppPoolName);
+                Thread.Sleep(500);
+            }
+        }
+
+        public void Cleanup()
+        {
+            TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+        }
+
         public void Dispose()
         {
             TestUtility.LogTrace("End of E2ETestEnv");
+            TestHelper.EndTestMachine();
         }
     }
 
@@ -49,66 +125,36 @@ namespace AspNetCoreModule.Test
         
         private static async Task DoE2ETest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            ILogger logger = new LoggerFactory()
-                            .AddConsole()
-                            .CreateLogger(string.Format("P1:{0}", appPoolBitness.ToString()));
+            TestEnv.Setup();
 
-            TestUtility testUtility = new TestUtility(logger);
-            string solutionPath = UseLatestAncm.GetSolutionDirectory();
-            string siteName = "StandardTestSite";
-            WebSiteContext testsiteContext = new WebSiteContext("localhost", siteName, 1234);
-            WebAppContext rootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), testsiteContext);
-            string standardAppRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
-            TestUtility.InitializeStandardAppRootPath(standardAppRootPath);
-            WebAppContext standardTestApp = new WebAppContext("/StandardTestApp", standardAppRootPath, testsiteContext);
-            WebAppContext webSocketApp = new WebAppContext("/webSocket", Path.Combine(solutionPath, "test", "WebRoot", "WebSocket"), testsiteContext);
+            TestEnv.SetAppPoolBitness(appPoolBitness);
 
-            if (!testUtility.StartTestMachine(ServerType.IIS, appPoolBitness))
-            {
-                return;
-            }
-
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
-            {
-                iisConfig.CreateSite(testsiteContext.SiteName, rootAppContext.PhysicalPath, 555, testsiteContext.TcpPort, rootAppContext.AppPoolName);
-                iisConfig.CreateApp(testsiteContext.SiteName, standardTestApp.Name, standardTestApp.PhysicalPath);
-                iisConfig.CreateApp(testsiteContext.SiteName, webSocketApp.Name, webSocketApp.PhysicalPath);
-
-                if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
-                {
-                    iisConfig.SetAppPoolSetting(rootAppContext.AppPoolName, "enable32BitAppOnWin64", true);
-                    Thread.Sleep(500);
-                    iisConfig.RecycleAppPool(rootAppContext.AppPoolName);
-                    Thread.Sleep(500);
-                }
-            }
-
-            await VerifyResponseBody(standardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
+            await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
 
             // Get Process ID
-            string backendProcessId = await GetResponseBody(standardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+            string backendProcessId = await GetResponseBody(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
 
             // Verify WebSocket without setting subprotocol
-            await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echo.aspx"), new string[] { "Socket Open" }, HttpStatusCode.OK); // echo.aspx has hard coded path for the websocket server
+            await VerifyResponseBodyContain(TestEnv.WebSocketApp.GetHttpUri("echo.aspx"), new string[] { "Socket Open" }, HttpStatusCode.OK); // echo.aspx has hard coded path for the websocket server
 
             // Verify WebSocket subprotocol
-            await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
+            await VerifyResponseBodyContain(TestEnv.WebSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
 
             // Verify process creation ANCM event log
-            VerifyANCMEventLog(Convert.ToInt32(backendProcessId), testUtility.StartTime);
+            VerifyANCMEventLog(Convert.ToInt32(backendProcessId), TestEnv.TestHelper.StartTime);
 
             // Verify websocket 
-            VerifyWebSocket(standardTestApp.GetHttpUri("websocket"));
+            VerifyWebSocket(TestEnv.StandardTestApp.GetHttpUri("websocket"));
 
             // Verify AppOffline
-            VerifyRecyclingApp(standardTestApp);
+            VerifyRecyclingApp(TestEnv.StandardTestApp);
 
             // send a simple request again and verify the response body
-            await VerifyResponseBody(standardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
+            await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
 
-            testUtility.EndTestMachine();
+            TestEnv.Cleanup();
         }
-        
+
         private static void VerifyWebSocket(Uri uri)
         {
             using (WebSocketClientHelper websocketClient = new WebSocketClientHelper())

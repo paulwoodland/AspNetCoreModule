@@ -20,7 +20,6 @@ namespace AspNetCoreModule.Test.Framework
         public static ILogger _logger = null;
 
         private ServerType _cleanupServerType;
-        private IISConfigUtility.AppPoolBitness _cleanupBitness;
         private bool _calledCleanupServerType = false;
 
         public DateTime StartTime;
@@ -44,11 +43,10 @@ namespace AspNetCoreModule.Test.Framework
             _logger = logger;
         }
 
-        public bool StartTestMachine(ServerType serverType, IISConfigUtility.AppPoolBitness bitness)
+        public bool StartTestMachine(ServerType serverType)
         {
             _cleanupServerType = serverType;
             _calledCleanupServerType = true;
-            _cleanupBitness = bitness;
             return DoCleanupTestEnv(false);
         }
 
@@ -619,16 +617,6 @@ namespace AspNetCoreModule.Test.Framework
                 RestartServices(RestartOption.KillVSJitDebugger);
                 RestartServices(RestartOption.KillWorkerProcess);
                 IISConfigUtility.RestoreAppHostConfig();
-
-                // Update aspnetcoremodule with private file path
-                if (_cleanupBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
-                {
-                    iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X86_path, "bitness32");
-                }
-                else
-                {
-                    iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X64_path, "bitness64");
-                }
 
                 // start DefaultAppPool in case it is stopped
                 iisConfig.StartAppPool(IISConfigUtility.Strings.DefaultAppPool);

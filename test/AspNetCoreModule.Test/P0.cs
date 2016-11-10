@@ -45,7 +45,7 @@ namespace AspNetCoreModule.Test
                             .CreateLogger(string.Format("P0:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
 
             TestUtility testContext = new TestUtility(logger);
-            if (!testContext.StartTestMachine(serverType, IISConfigUtility.AppPoolBitness.noChange))
+            if (!testContext.StartTestMachine(serverType))
             {
                 return;
             }
