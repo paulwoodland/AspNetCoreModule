@@ -16,16 +16,16 @@ using Xunit.Sdk;
 
 namespace AspNetCoreModule.Test
 {
-    public class P0 : IClassFixture<UseLatestAncm>
+    public class BuildVerificationTest : IClassFixture<UseLatestAncm>
     {        
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(ServerType.IISExpress, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5090/")]
         [InlineData(ServerType.IISExpress, RuntimeFlavor.Clr, RuntimeArchitecture.x64, "http://localhost:5091/")]
-        public Task BasicTestOnIISExpress(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
+        public Task BVTOnIISExpress(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
         {
-            return BasicTest(serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
+            return DoBVT(serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
         }
         
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")] 
@@ -33,16 +33,16 @@ namespace AspNetCoreModule.Test
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(ServerType.IIS, RuntimeFlavor.CoreClr, RuntimeArchitecture.x64, "http://localhost:5093/")]
-        public Task BasicTestOnIIS(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
+        public Task BVTOnIIS(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl)
         {
-            return BasicTest(serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
+            return DoBVT(serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
         }
         
-        public async Task BasicTest(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
+        public async Task DoBVT(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
         {
             var logger = new LoggerFactory()
                             .AddConsole()
-                            .CreateLogger(string.Format("P0:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
+                            .CreateLogger(string.Format("BVT:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
 
             TestUtility testContext = new TestUtility(logger);
             if (!testContext.StartTestMachine(serverType))

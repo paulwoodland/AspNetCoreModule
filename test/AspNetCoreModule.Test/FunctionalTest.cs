@@ -5,112 +5,22 @@ using AspNetCoreModule.Test.Framework;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.IO;
 using System.Threading;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Testing.xunit;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Sdk;
 using AspNetCoreModule.Test.WebSocketClient;
 using System.Net;
 using System.Text;
+using System.Diagnostics;
 
 namespace AspNetCoreModule.Test
 {
-    public class E2ETestEnv : IDisposable
+    public class FunctionalTest : IClassFixture<UseLatestAncm>, IClassFixture<TestEnvSetup>
     {
-        public WebSiteContext TestsiteContext;
-        public WebAppContext RootAppContext;
-        public WebAppContext StandardTestApp;
-        public WebAppContext WebSocketApp;
-        public TestUtility TestHelper;
-        private ILogger _logger;
-        private bool _globalSetupFinished = false;        
-
-        public E2ETestEnv()
-        {
-            P1.TestEnv = this;
-        }
-
-        public void GlobalSetup()
-        {
-            if (_globalSetupFinished)
-            {
-                return;
-            }
-
-            _globalSetupFinished = true;
-            TestUtility.LogTrace("Start of E2ETestEnv");
-            string solutionPath = UseLatestAncm.GetSolutionDirectory();
-            string siteName = "StandardTestSite";
-            
-            TestsiteContext = new WebSiteContext("localhost", siteName, 1234);
-            RootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), TestsiteContext);
-            string standardAppRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
-            TestUtility.InitializeStandardAppRootPath(standardAppRootPath);
-            StandardTestApp = new WebAppContext("/StandardTestApp", standardAppRootPath, TestsiteContext);
-            WebSocketApp = new WebAppContext("/webSocket", Path.Combine(solutionPath, "test", "WebRoot", "WebSocket"), TestsiteContext);
-
-            _logger = new LoggerFactory()
-                    .AddConsole()
-                    .CreateLogger(string.Format("P1"));
-
-            TestHelper = new TestUtility(_logger);
-            if (!TestHelper.StartTestMachine(ServerType.IIS))
-            {
-                return;
-            }
-
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
-            {
-                iisConfig.CreateSite(TestsiteContext.SiteName, RootAppContext.PhysicalPath, 555, TestsiteContext.TcpPort, RootAppContext.AppPoolName);
-                iisConfig.CreateApp(TestsiteContext.SiteName, StandardTestApp.Name, StandardTestApp.PhysicalPath);
-                iisConfig.CreateApp(TestsiteContext.SiteName, WebSocketApp.Name, WebSocketApp.PhysicalPath);
-            }
-        }
-
-        public void Setup()
-        {
-            GlobalSetup();
-            TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
-        }
-
-        public void SetAppPoolBitness(IISConfigUtility.AppPoolBitness appPoolBitness)
-        {
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
-            {
-                if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
-                {
-                    iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X86_path, "bitness32");
-                    iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", true);
-                }
-                else
-                {
-                    iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X64_path, "bitness64");
-                    iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", false);
-                }
-                iisConfig.RecycleAppPool(RootAppContext.AppPoolName);
-                Thread.Sleep(500);
-            }
-        }
-
-        public void Cleanup()
-        {
-            TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
-        }
-
-        public void Dispose()
-        {
-            TestUtility.LogTrace("End of E2ETestEnv");
-            TestHelper.EndTestMachine();
-        }
-    }
-
-    public class P1 : IClassFixture<UseLatestAncm>, IClassFixture<E2ETestEnv>
-    {
-        public static E2ETestEnv TestEnv;
-
+        public static TestEnvSetup TestEnv;
+        
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
@@ -122,29 +32,9 @@ namespace AspNetCoreModule.Test
             return DoE2ETest(appPoolBitness);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
-        [ConditionalTheory]
-        [OSSkipCondition(OperatingSystems.Linux)]
-        [OSSkipCondition(OperatingSystems.MacOSX)]
-        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
-        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
-        public Task RecycleApp(IISConfigUtility.AppPoolBitness appPoolBitness)
-        {
-            TestEnv.Setup();
-            TestEnv.SetAppPoolBitness(appPoolBitness);
-
-            //VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
-            //var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
-            //Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), app.GetProcessFileName().ToLower().Replace(".exe", ""));
-
-            TestEnv.Cleanup();
-            return null;
-        }
-                
         private static async Task DoE2ETest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            TestEnv.Setup();
-
+            
             TestEnv.SetAppPoolBitness(appPoolBitness);
 
             await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
@@ -170,7 +60,7 @@ namespace AspNetCoreModule.Test
             TestEnv.Cleanup();
         }
 
-        private static void VerifyWebSocket(Uri uri)
+        public static void VerifyWebSocket(Uri uri)
         {
             using (WebSocketClientHelper websocketClient = new WebSocketClientHelper())
             {
@@ -186,7 +76,7 @@ namespace AspNetCoreModule.Test
             }
         }
 
-        private static void VerifyANCMEventLog(int backendProcessId, DateTime startFrom)
+        public static void VerifyANCMEventLog(int backendProcessId, DateTime startFrom)
         {
             var events = TestUtility.GetApplicationEvent(1001, startFrom);
             Assert.True(events.Count > 0, "Verfiy expected event logs");
@@ -202,22 +92,22 @@ namespace AspNetCoreModule.Test
             Assert.True(findEvent, "Verfiy the event log of the target backend process");
         }
 
-        private static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus)
+        public static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus)
         {
             await DoVerifyResponseBody(uri, expectedResponseBody, null, expectedResponseStatus);
         }
 
-        private static async Task VerifyResponseBodyContain(Uri uri, string[] expectedStrings, HttpStatusCode expectedResponseStatus)
+        public static async Task VerifyResponseBodyContain(Uri uri, string[] expectedStrings, HttpStatusCode expectedResponseStatus)
         {
             await DoVerifyResponseBody(uri, null, expectedStrings, expectedResponseStatus);
         }
 
-        private static async Task<string> GetResponseBody(Uri uri, HttpStatusCode expectedResponseStatus)
+        public static async Task<string> GetResponseBody(Uri uri, HttpStatusCode expectedResponseStatus)
         {
             return await DoVerifyResponseBody(uri, null, null, expectedResponseStatus);
         }
 
-        private static async Task<string> DoVerifyResponseBody(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus)
+        public static async Task<string> DoVerifyResponseBody(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus)
         {
             string responseText = "NotInitialized";
             string responseStatus = "NotInitialized";
@@ -265,7 +155,7 @@ namespace AspNetCoreModule.Test
             return responseText;
         }
 
-        private static bool VerifySendingWebSocketData(WebSocketClientHelper websocketClient)
+        public static bool VerifySendingWebSocketData(WebSocketClientHelper websocketClient)
         {
             bool result = false;
 
@@ -306,7 +196,7 @@ namespace AspNetCoreModule.Test
             return result;
         }
 
-        private static bool DoVerifyDataSentAndReceived(WebSocketClientHelper websocketClient)
+        public static bool DoVerifyDataSentAndReceived(WebSocketClientHelper websocketClient)
         {
             var result = true;
             var sentString = new StringBuilder();
