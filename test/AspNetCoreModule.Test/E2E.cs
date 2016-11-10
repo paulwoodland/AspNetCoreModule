@@ -47,7 +47,7 @@ namespace AspNetCoreModule.Test
             await VerifyResponseBodyContain(TestEnv.WebSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
 
             // Verify process creation ANCM event log
-            VerifyANCMEventLog(Convert.ToInt32(backendProcessId), TestEnv.TestHelper.StartTime);
+            VerifyANCMEventLog(Convert.ToInt32(backendProcessId), TestEnv.testHelper.StartTime);
 
             // Verify websocket 
             VerifyWebSocket(TestEnv.StandardTestApp.GetHttpUri("websocket"));
@@ -55,7 +55,7 @@ namespace AspNetCoreModule.Test
             // send a simple request again and verify the response body
             await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
 
-            TestEnv.Cleanup();
+            TestEnv.EndTestcase();
         }
     }
 }

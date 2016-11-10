@@ -17,22 +17,23 @@ namespace AspNetCoreModule.Test
         public WebAppContext StandardTestApp;
         public WebAppContext WebSocketApp;
         public WebAppContext URLRewriteApp;
-        public TestUtility TestHelper;
+        public TestUtility testHelper;
         private ILogger _logger;
-        private bool _globalSetupFinished = false;        
+        private bool _globalSetupAlreadyCalled = false;        
 
         public TestEnvSetup()
         {
             FunctionalTetClass.TestEnv = this;
         }
 
+        public void Dispose()
+        {
+            TestUtility.LogTrace("End of E2ETestEnv");
+            testHelper.EndTestMachine(); 
+        }
+
         public void GlobalSetup()
         {
-            if (_globalSetupFinished)
-            {
-                return;
-            }
-
             TestUtility.LogTrace("Start of E2ETestEnv");
             
             //
@@ -41,8 +42,8 @@ namespace AspNetCoreModule.Test
             _logger = new LoggerFactory()
                     .AddConsole()
                     .CreateLogger(string.Format("P1"));
-            TestHelper = new TestUtility(_logger);
-            if (!TestHelper.StartTestMachine(ServerType.IIS))
+            testHelper = new TestUtility(_logger);
+            if (!testHelper.StartTestMachine(ServerType.IIS))
             {
                 return;
             }
@@ -66,16 +67,28 @@ namespace AspNetCoreModule.Test
             using (var iisConfig = new IISConfigUtility(ServerType.IIS))
             {
                 iisConfig.CreateSite(TestsiteContext.SiteName, RootAppContext.PhysicalPath, 555, TestsiteContext.TcpPort, RootAppContext.AppPoolName);
+                RootAppContext.RestoreFile("web.config");
                 iisConfig.CreateApp(TestsiteContext.SiteName, StandardTestApp.Name, StandardTestApp.PhysicalPath);
+                StandardTestApp.RestoreFile("web.config");
                 iisConfig.CreateApp(TestsiteContext.SiteName, WebSocketApp.Name, WebSocketApp.PhysicalPath);
+                WebSocketApp.RestoreFile("web.config");
                 iisConfig.CreateApp(TestsiteContext.SiteName, URLRewriteApp.Name, URLRewriteApp.PhysicalPath);
+                URLRewriteApp.RestoreFile("web.config");
             }
-            _globalSetupFinished = true;
+            _globalSetupAlreadyCalled = true;
         }
 
-        public void Setup()
+        public void StartTestcase()
         {
-            GlobalSetup();
+            if (!_globalSetupAlreadyCalled)
+            {
+                GlobalSetup();
+            }
+            TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+        }
+
+        public void EndTestcase()
+        {
             TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
         }
 
@@ -96,17 +109,6 @@ namespace AspNetCoreModule.Test
                 iisConfig.RecycleAppPool(RootAppContext.AppPoolName);
                 Thread.Sleep(500);
             }
-        }
-
-        public void Cleanup()
-        {
-            TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
-        }
-
-        public void Dispose()
-        {
-            TestUtility.LogTrace("End of E2ETestEnv");
-            TestHelper.EndTestMachine();
         }
     }
 }

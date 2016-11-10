@@ -43,10 +43,16 @@ namespace AspNetCoreModule.Test.Framework
             }
             else
             {
-                _url = "/" + name;
-                _url.Replace("//", "/");
+                string tempUrl = name.Trim();
+                if (tempUrl[0] != '/')
+                {
+                    _url = "/" + tempUrl;
+                }
+                else
+                {
+                    _url = tempUrl;
+                }
             }
-
             BackupFile("web.config");
         }
 
@@ -102,7 +108,12 @@ namespace AspNetCoreModule.Test.Framework
 
         public Uri GetHttpUri(string subPath)
         {
-            return new Uri("http://" + SiteContext.HostName + ":" +  _siteContext.TcpPort.ToString()  + URL + "/" + subPath);
+            string temp = subPath;
+            if (temp[0] != '/')
+            {
+                temp += "/" + temp;
+            }
+            return new Uri("http://" + SiteContext.HostName + ":" +  _siteContext.TcpPort.ToString()  + URL + temp);
         }
 
         public string _appPoolName = null;
