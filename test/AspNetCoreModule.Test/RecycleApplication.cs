@@ -136,5 +136,46 @@ namespace AspNetCoreModule.Test
 
             TestEnv.EndTestcase();
         }
+
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
+        public Task RecycleParentApplicationWithURLRewrite(IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            return DoRecycleParentApplicationWithURLRewrite(appPoolBitness);
+        }
+
+        private static async Task DoRecycleParentApplicationWithURLRewrite(IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            TestEnv.StartTestcase();
+            TestEnv.SetAppPoolBitness(appPoolBitness);
+            string backendProcessId_old = null;
+            for (int i = 0; i < _repeatCount; i++)
+            {
+                // BugBug: VSJitDebugger
+                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+
+                DateTime startTime = DateTime.Now;
+                Thread.Sleep(500);
+                string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
+                string backendProcessId = await GetResponseBody(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
+                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                Assert.NotEqual(backendProcessId_old, backendProcessId);
+                backendProcessId_old = backendProcessId;
+                Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                VerifyANCMEventLog(Convert.ToInt32(backendProcessId), startTime);
+                TestEnv.RootAppContext.MoveFile("web.config", "_web.config");
+                Thread.Sleep(500);
+                TestEnv.RootAppContext.MoveFile("_web.config", "web.config");
+            }
+
+            // restore web.config
+            TestEnv.RootAppContext.RestoreFile("web.config");
+
+            TestEnv.EndTestcase();
+        }
     }
 }
