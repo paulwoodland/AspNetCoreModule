@@ -15,11 +15,27 @@ using Xunit.Sdk;
 using AspNetCoreModule.Test.WebSocketClient;
 using System.Net;
 using System.Text;
+using System.Diagnostics;
 
 namespace AspNetCoreModule.Test
 {
-    public class P1 : IClassFixture<UseLatestAncm>
+    public class E2ETestEnv : IDisposable
     {
+        public E2ETestEnv()
+        {
+            TestUtility.LogTrace("Start of E2ETestEnv");
+            P1.TestEnv = this;
+        }
+        public void Dispose()
+        {
+            TestUtility.LogTrace("End of E2ETestEnv");
+        }
+    }
+
+    public class P1 : IClassFixture<UseLatestAncm>, IClassFixture<E2ETestEnv>
+    {
+        public static E2ETestEnv TestEnv;
+
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
@@ -33,31 +49,29 @@ namespace AspNetCoreModule.Test
         
         private static async Task DoE2ETest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            var logger = new LoggerFactory()
+            ILogger logger = new LoggerFactory()
                             .AddConsole()
                             .CreateLogger(string.Format("P1:{0}", appPoolBitness.ToString()));
 
-            TestUtility testContext = new TestUtility(logger);
-            if (!testContext.StartTestMachine(ServerType.IIS, appPoolBitness))
+            TestUtility testUtility = new TestUtility(logger);
+            string solutionPath = UseLatestAncm.GetSolutionDirectory();
+            string siteName = "StandardTestSite";
+            WebSiteContext testsiteContext = new WebSiteContext("localhost", siteName, 1234);
+            WebAppContext rootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), testsiteContext);
+            string standardAppRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
+            TestUtility.InitializeStandardAppRootPath(standardAppRootPath);
+            WebAppContext standardTestApp = new WebAppContext("/StandardTestApp", standardAppRootPath, testsiteContext);
+            WebAppContext webSocketApp = new WebAppContext("/webSocket", Path.Combine(solutionPath, "test", "WebRoot", "WebSocket"), testsiteContext);
+
+            if (!testUtility.StartTestMachine(ServerType.IIS, appPoolBitness))
             {
                 return;
             }
 
             using (var iisConfig = new IISConfigUtility(ServerType.IIS))
             {
-                string solutionPath = UseLatestAncm.GetSolutionDirectory();
-                string siteName = "StandardTestSite";
-                                
-                WebSiteContext testsiteContext = new WebSiteContext("localhost", siteName, 1234);
-                WebAppContext rootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), testsiteContext);
                 iisConfig.CreateSite(testsiteContext.SiteName, rootAppContext.PhysicalPath, 555, testsiteContext.TcpPort, rootAppContext.AppPoolName);
-
-                string standardAppRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
-                TestUtility.InitializeStandardAppRootPath(standardAppRootPath);
-                WebAppContext standardTestApp = new WebAppContext("/StandardTestApp", standardAppRootPath, testsiteContext);
                 iisConfig.CreateApp(testsiteContext.SiteName, standardTestApp.Name, standardTestApp.PhysicalPath);
-
-                WebAppContext webSocketApp = new WebAppContext("/webSocket", Path.Combine(solutionPath, "test", "WebRoot", "WebSocket"), testsiteContext);
                 iisConfig.CreateApp(testsiteContext.SiteName, webSocketApp.Name, webSocketApp.PhysicalPath);
 
                 if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
@@ -67,49 +81,70 @@ namespace AspNetCoreModule.Test
                     iisConfig.RecycleAppPool(rootAppContext.AppPoolName);
                     Thread.Sleep(500);
                 }
-
-                // Send a request
-                await VerifyResponseBody(standardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
-
-                // Verify WebSocket without setting subprotocol
-                await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echo.aspx"), new string[] { "Socket Open" }, HttpStatusCode.OK); // echo.aspx has hard coded path for the websocket server
-
-                // Verify WebSocket subprotocol
-                await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
-
-                // Get Process ID
-                string backendProcessId = await GetResponseBody(standardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
-
-                // Verify websocket
-                using (WebSocketClientHelper websocketClient = new WebSocketClientHelper())
-                {
-                    var openingFrame = websocketClient.Connect(standardTestApp.GetHttpUri("websocket"), true, true);
-                    Assert.True(((openingFrame.Content.IndexOf("Connection: Upgrade", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                               && (openingFrame.Content.IndexOf("Upgrade: Websocket", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                               && openingFrame.Content.Contains("HTTP/1.1 101 Switching Protocols")), "Opening handshake");
-
-                    VerifySendingWebSocketData(websocketClient);
-
-                    var closeFrame = websocketClient.Close();
-                    Assert.True(closeFrame.FrameType == FrameType.Close, "Closing Handshake");
-                }
-
-                // Verify the ANCM event generated
-                var events = TestUtility.GetApplicationEvent(1001, testContext.StartTime);
-                Assert.True(events.Count > 0, "Verfiy expected event logs");
-                bool findEvent = false;
-                foreach (string item in events)
-                {
-                    if (item.Contains(backendProcessId))
-                    {
-                        findEvent = true;
-                        break;
-                    }
-                }
-                Assert.True(findEvent, "Verfiy the event log of the target backend process");
             }
 
-            testContext.EndTestMachine();
+            await VerifyResponseBody(standardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
+
+            // Get Process ID
+            string backendProcessId = await GetResponseBody(standardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+
+            // Verify WebSocket without setting subprotocol
+            await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echo.aspx"), new string[] { "Socket Open" }, HttpStatusCode.OK); // echo.aspx has hard coded path for the websocket server
+
+            // Verify WebSocket subprotocol
+            await VerifyResponseBodyContain(webSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
+
+            // Verify process creation ANCM event log
+            VerifyANCMEventLog(Convert.ToInt32(backendProcessId), testUtility.StartTime);
+
+            // Verify websocket 
+            VerifyWebSocket(standardTestApp.GetHttpUri("websocket"));
+
+            // Verify AppOffline
+            VerifyRecyclingApp(standardTestApp);
+
+            // send a simple request again and verify the response body
+            await VerifyResponseBody(standardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
+
+            testUtility.EndTestMachine();
+        }
+        
+        private static void VerifyWebSocket(Uri uri)
+        {
+            using (WebSocketClientHelper websocketClient = new WebSocketClientHelper())
+            {
+                var openingFrame = websocketClient.Connect(uri, true, true);
+                Assert.True(((openingFrame.Content.IndexOf("Connection: Upgrade", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                           && (openingFrame.Content.IndexOf("Upgrade: Websocket", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                           && openingFrame.Content.Contains("HTTP/1.1 101 Switching Protocols")), "Opening handshake");
+
+                VerifySendingWebSocketData(websocketClient);
+
+                var closeFrame = websocketClient.Close();
+                Assert.True(closeFrame.FrameType == FrameType.Close, "Closing Handshake");
+            }
+        }
+
+        private static void VerifyANCMEventLog(int backendProcessId, DateTime startFrom)
+        {
+            var events = TestUtility.GetApplicationEvent(1001, startFrom);
+            Assert.True(events.Count > 0, "Verfiy expected event logs");
+            bool findEvent = false;
+            foreach (string item in events)
+            {
+                if (item.Contains(backendProcessId.ToString()))
+                {
+                    findEvent = true;
+                    break;
+                }
+            }
+            Assert.True(findEvent, "Verfiy the event log of the target backend process");
+        }
+
+        private static void VerifyRecyclingApp(WebAppContext app)
+        {
+            //var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+            //Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), app.GetProcessFileName().ToLower().Replace(".exe", ""));
         }
 
         private static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus)

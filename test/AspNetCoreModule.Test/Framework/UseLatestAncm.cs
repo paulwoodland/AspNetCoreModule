@@ -26,11 +26,13 @@ namespace AspNetCoreModule.Test.Framework
 
         public UseLatestAncm()
         {
+            LogTrace("Start of UseLatestAncm");
             UpdateAspnetCoreBinaryFiles();
         }
 
         public void Dispose()
         {
+            LogTrace("End of UseLatestAncm");
             RollbackAspnetCoreBinaryFileChanges();
         }
 
