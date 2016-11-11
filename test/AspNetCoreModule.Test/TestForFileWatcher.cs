@@ -1,0 +1,123 @@
+﻿// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
+using AspNetCoreModule.Test.Framework;
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using Microsoft.AspNetCore.Server.IntegrationTesting;
+using Microsoft.AspNetCore.Testing.xunit;
+using Xunit;
+using Xunit.Sdk;
+using AspNetCoreModule.Test.WebSocketClient;
+using System.Net;
+using System.Text;
+using System.Diagnostics;
+
+namespace AspNetCoreModule.Test
+{
+    public class TestForFileWatcher : FunctionalTetClass
+    {
+        private const int _repeatCount = 3;
+
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
+        public Task AppOfflineTestWithRenaming(IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            return DoAppOfflineTestWithRenaming(appPoolBitness);
+        }
+
+        private static async Task DoAppOfflineTestWithRenaming(IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            TestEnv.StartTestcase();
+
+            TestEnv.SetAppPoolBitness(appPoolBitness);
+            string backendProcessId_old = null;
+            string fileContent = "BackEndAppOffline";
+            TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
+
+            for (int i = 0; i < _repeatCount; i++)
+            {
+                DateTime startTime;
+
+                startTime = DateTime.Now;
+                Thread.Sleep(500);
+
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+
+                // verify 503 
+                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), fileContent + "\r\n", HttpStatusCode.ServiceUnavailable);
+
+                // rename app_offline.htm to _app_offline.htm and verify 200
+                TestEnv.StandardTestApp.MoveFile("app_offline.htm", "_app_offline.htm");
+                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                Assert.NotEqual(backendProcessId_old, backendProcessId);
+                backendProcessId_old = backendProcessId;
+                VerifyANCMEventLog(Convert.ToInt32(backendProcessId), startTime);
+
+                // rename back to app_offline.htm
+                TestEnv.StandardTestApp.MoveFile("_app_offline.htm", "app_offline.htm");
+            }
+            
+            TestEnv.EndTestcase();
+        }
+
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
+        public Task AppOfflineTestWithUrlRewriteAndDeleting(IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            return DoAppOfflineTestWithUrlRewriteAndDeleting(appPoolBitness);
+        }
+
+        private static async Task DoAppOfflineTestWithUrlRewriteAndDeleting(IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            TestEnv.StartTestcase();
+
+            TestEnv.SetAppPoolBitness(appPoolBitness);
+            string backendProcessId_old = null;
+            string fileContent = "BackEndAppOffline2";
+            TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
+
+            for (int i = 0; i < _repeatCount; i++)
+            {
+                DateTime startTime;
+
+                startTime = DateTime.Now;
+                Thread.Sleep(500);
+
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+
+                // verify 503 
+                string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
+                await VerifyResponseBody(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), fileContent + "\r\n", HttpStatusCode.ServiceUnavailable);
+
+                // delete app_offline.htm and verify 200 
+                TestEnv.StandardTestApp.DeleteFile("app_offline.htm");
+                string backendProcessId = await GetResponse(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
+                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                Assert.NotEqual(backendProcessId_old, backendProcessId);
+                backendProcessId_old = backendProcessId;
+                VerifyANCMEventLog(Convert.ToInt32(backendProcessId), startTime);
+
+                // create app_offline.htm again
+                TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
+            }
+
+            TestEnv.EndTestcase();
+        }
+    }
+}

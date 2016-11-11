@@ -68,12 +68,19 @@ namespace AspNetCoreModule.Test
             {
                 iisConfig.CreateSite(TestsiteContext.SiteName, RootAppContext.PhysicalPath, 555, TestsiteContext.TcpPort, RootAppContext.AppPoolName);
                 RootAppContext.RestoreFile("web.config");
+                RootAppContext.DeleteFile("app_offline.htm");
+
                 iisConfig.CreateApp(TestsiteContext.SiteName, StandardTestApp.Name, StandardTestApp.PhysicalPath);
                 StandardTestApp.RestoreFile("web.config");
+                StandardTestApp.DeleteFile("app_offline.htm");
+
                 iisConfig.CreateApp(TestsiteContext.SiteName, WebSocketApp.Name, WebSocketApp.PhysicalPath);
                 WebSocketApp.RestoreFile("web.config");
+                WebSocketApp.DeleteFile("app_offline.htm");
+
                 iisConfig.CreateApp(TestsiteContext.SiteName, URLRewriteApp.Name, URLRewriteApp.PhysicalPath);
                 URLRewriteApp.RestoreFile("web.config");
+                URLRewriteApp.DeleteFile("app_offline.htm");
             }
             _globalSetupAlreadyCalled = true;
         }
@@ -84,11 +91,14 @@ namespace AspNetCoreModule.Test
             {
                 GlobalSetup();
             }
+            
+            // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
             TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
         }
 
         public void EndTestcase()
         {
+            // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
             TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
         }
 

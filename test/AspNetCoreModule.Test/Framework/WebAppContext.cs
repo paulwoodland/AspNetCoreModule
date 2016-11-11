@@ -108,12 +108,12 @@ namespace AspNetCoreModule.Test.Framework
 
         public Uri GetHttpUri(string subPath)
         {
-            string temp = subPath;
-            if (temp[0] != '/')
+            string tempSubPath = subPath;
+            if (!tempSubPath.StartsWith("/"))
             {
-                temp += "/" + temp;
+                tempSubPath = "/" + tempSubPath;
             }
-            return new Uri("http://" + SiteContext.HostName + ":" +  _siteContext.TcpPort.ToString()  + URL + temp);
+            return new Uri("http://" + SiteContext.HostName + ":" +  _siteContext.TcpPort.ToString()  + URL + tempSubPath);
         }
 
         public string _appPoolName = null;

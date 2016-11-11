@@ -17,7 +17,7 @@ using System.Diagnostics;
 
 namespace AspNetCoreModule.Test
 {
-    public class RecycleApplication : FunctionalTetClass
+    public class TestForApplication : FunctionalTetClass
     {
         private const int _repeatCount = 3;
 
@@ -39,12 +39,12 @@ namespace AspNetCoreModule.Test
             string backendProcessId_old = null;
             for (int i = 0; i < _repeatCount; i++)
             {
-                // BugBug: VSJitDebugger
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                 TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
                 DateTime startTime = DateTime.Now;
                 Thread.Sleep(500);
-                string backendProcessId = await GetResponseBody(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
                 Assert.NotEqual(backendProcessId_old, backendProcessId);
                 backendProcessId_old = backendProcessId;
                 var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
@@ -74,12 +74,12 @@ namespace AspNetCoreModule.Test
             string backendProcessId_old = null;
             for (int i = 0; i < _repeatCount; i++)
             {
-                // BugBug: VSJitDebugger
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                 TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
                 DateTime startTime = DateTime.Now;
                 Thread.Sleep(500);
-                string backendProcessId = await GetResponseBody(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
                 var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
                 Assert.NotEqual(backendProcessId_old, backendProcessId);
                 backendProcessId_old = backendProcessId;
@@ -114,13 +114,13 @@ namespace AspNetCoreModule.Test
             string backendProcessId_old = null;
             for (int i = 0; i < _repeatCount; i++)
             {
-                // BugBug: VSJitDebugger
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                 TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
                 DateTime startTime = DateTime.Now;
                 Thread.Sleep(500);
                 string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
-                string backendProcessId = await GetResponseBody(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
+                string backendProcessId = await GetResponse(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
                 var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
                 Assert.NotEqual(backendProcessId_old, backendProcessId);
                 backendProcessId_old = backendProcessId;
@@ -155,13 +155,13 @@ namespace AspNetCoreModule.Test
             string backendProcessId_old = null;
             for (int i = 0; i < _repeatCount; i++)
             {
-                // BugBug: VSJitDebugger
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                 TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
                 DateTime startTime = DateTime.Now;
                 Thread.Sleep(500);
                 string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
-                string backendProcessId = await GetResponseBody(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
+                string backendProcessId = await GetResponse(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
                 var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
                 Assert.NotEqual(backendProcessId_old, backendProcessId);
                 backendProcessId_old = backendProcessId;

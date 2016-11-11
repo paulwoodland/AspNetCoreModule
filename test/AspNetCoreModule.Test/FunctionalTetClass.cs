@@ -53,23 +53,36 @@ namespace AspNetCoreModule.Test
             Assert.True(findEvent, "Verfiy the event log of the target backend process");
         }
 
-        public static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus)
+        public static async Task VerifyResponseStatus(Uri uri, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
-            await DoVerifyResponseBody(uri, expectedResponseBody, null, expectedResponseStatus);
+            await DoVerifyResponse(uri, null, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag);
         }
 
-        public static async Task VerifyResponseBodyContain(Uri uri, string[] expectedStrings, HttpStatusCode expectedResponseStatus)
+        public static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
-            await DoVerifyResponseBody(uri, null, expectedStrings, expectedResponseStatus);
+            await DoVerifyResponse(uri, expectedResponseBody, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag);
         }
 
-        public static async Task<string> GetResponseBody(Uri uri, HttpStatusCode expectedResponseStatus)
+        public static async Task VerifyResponseBodyContain(Uri uri, string[] expectedStrings, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
-            return await DoVerifyResponseBody(uri, null, null, expectedResponseStatus);
+            await DoVerifyResponse(uri, null, expectedStrings, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag);
         }
 
-        public static async Task<string> DoVerifyResponseBody(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus)
+        public static async Task<string> GetResponse(Uri uri, HttpStatusCode expectedResponseStatus, ReturnValueType returnValueType = ReturnValueType.ResponseBody, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
+            return await DoVerifyResponse(uri, null, null, expectedResponseStatus, returnValueType, numberOfRetryCount, verifyResponseFlag);
+        }
+        
+        public enum ReturnValueType
+        {
+            ResponseBody,
+            ResponseStatus,
+            None
+        }
+        
+        public static async Task<string> DoVerifyResponse(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus, ReturnValueType returnValueType, int numberOfRetryCount, bool verifyResponseFlag)
+        {
+            string result = null;
             string responseText = "NotInitialized";
             string responseStatus = "NotInitialized";
 
@@ -80,40 +93,74 @@ namespace AspNetCoreModule.Test
                 Timeout = TimeSpan.FromSeconds(5),
             };
 
-            var response = await RetryHelper.RetryRequest(() =>
-            {
-                return httpClient.GetAsync(string.Empty);
-            }, TestUtility.Logger, retryCount: 2);
+            HttpResponseMessage response = null;
 
             try
             {
+                // RetryRequest does not support for 503/500 server error
+                if (expectedResponseStatus != HttpStatusCode.ServiceUnavailable && expectedResponseStatus != HttpStatusCode.InternalServerError)
+                {
+                    response = await RetryHelper.RetryRequest(() =>
+                        {
+                            return httpClient.GetAsync(string.Empty);
+                        }, TestUtility.Logger, retryCount: numberOfRetryCount);
+                }
+                else
+                {
+                    response = await httpClient.GetAsync(string.Empty);
+                }
+
                 if (response != null)
                 {
-                    responseText = await response.Content.ReadAsStringAsync();
-                    if (expectedResponseBody != null)
+                    if (verifyResponseFlag)
                     {
-                        Assert.Equal(expectedResponseBody, responseText);
-                    }
-
-                    if (expectedStringsInResponseBody != null)
-                    {
-                        foreach (string item in expectedStringsInResponseBody)
+                        if (expectedResponseBody != null)
                         {
-                            Assert.True(responseText.Contains(item));
+                            responseText = await response.Content.ReadAsStringAsync();
+                            Assert.Equal(expectedResponseBody, responseText);
                         }
+
+                        if (expectedStringsInResponseBody != null)
+                        {
+                            foreach (string item in expectedStringsInResponseBody)
+                            {
+                                Assert.True(responseText.Contains(item));
+                            }
+                        }
+                        Assert.Equal(response.StatusCode, expectedResponseStatus);
+                        responseStatus = response.StatusCode.ToString();
                     }
-                    Assert.Equal(response.StatusCode, expectedResponseStatus);
-                    responseStatus = response.StatusCode.ToString();
+                    
+                    switch (returnValueType)
+                    {
+                        case ReturnValueType.ResponseBody:
+                            if (responseText == "NotInitialized")
+                            {
+                                result = await response.Content.ReadAsStringAsync();
+                            }
+                            else
+                            {
+                                result = responseText;
+                            }
+                            break;
+                        case ReturnValueType.ResponseStatus:
+                            result = response.StatusCode.ToString();
+                            break;
+                    }
                 }
             }
             catch (XunitException)
             {
-                TestUtility.LogWarning(response.ToString());
+                if (response != null)
+                {
+                    TestUtility.LogWarning(response.ToString());
+                }
                 TestUtility.LogWarning(responseText);
                 TestUtility.LogWarning(responseStatus);
-                throw;
+
+                throw;                
             }
-            return responseText;
+            return result;
         }
 
         public static bool VerifySendingWebSocketData(WebSocketClientHelper websocketClient)

@@ -92,15 +92,24 @@ namespace AspNetCoreModule.Test.Framework
 
         public static void LogTrace(string format, params object[] parameters)
         {
-            Logger.LogTrace(format);
+            if (format != null)
+            {
+                Logger.LogTrace(format);
+            }
         }
         public static void LogError(string format, params object[] parameters)
         {
-            Logger.LogError(format);
+            if (format != null)
+            {
+                Logger.LogError(format);
+            }
         }
         public static void LogWarning(string format, params object[] parameters)
         {
-            Logger.LogWarning(format);
+            if (format != null)
+            {
+                Logger.LogWarning(format);
+            }
         }
 
         public static void DeleteFile(string filePath)
