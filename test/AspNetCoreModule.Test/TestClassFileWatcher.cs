@@ -17,7 +17,7 @@ using System.Diagnostics;
 
 namespace AspNetCoreModule.Test
 {
-    public class TestForFileWatcher : FunctionalTetClass
+    public class TestclassFileWatcher : BaseTestclass
     {
         private const int _repeatCount = 3;
 

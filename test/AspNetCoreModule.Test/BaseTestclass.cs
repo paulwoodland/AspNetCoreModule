@@ -17,9 +17,9 @@ using System.Diagnostics;
 
 namespace AspNetCoreModule.Test
 {
-    public class FunctionalTetClass : IClassFixture<UseLatestAncm>, IClassFixture<TestEnvSetup>
+    public class BaseTestclass : IClassFixture<UseLatestAncm>, IClassFixture<SetupTestEnv>
     {
-        public static TestEnvSetup TestEnv;
+        public static SetupTestEnv TestEnv;
         
         public static void VerifyWebSocket(Uri uri)
         {

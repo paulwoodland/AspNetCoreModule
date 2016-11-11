@@ -17,7 +17,7 @@ using System.Diagnostics;
 
 namespace AspNetCoreModule.Test
 {
-    public class E2E : FunctionalTetClass
+    public class TestclassWebsocketHandler : BaseTestclass
     {
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
@@ -25,12 +25,12 @@ namespace AspNetCoreModule.Test
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
-        public Task E2ETest(IISConfigUtility.AppPoolBitness appPoolBitness)
+        public Task WebSocketTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return DoE2ETest(appPoolBitness);
+            return DoWebSocketTest(appPoolBitness);
         }
 
-        private static async Task DoE2ETest(IISConfigUtility.AppPoolBitness appPoolBitness)
+        private static async Task DoWebSocketTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             
             TestEnv.SetAppPoolBitness(appPoolBitness);

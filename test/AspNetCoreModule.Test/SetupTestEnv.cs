@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AspNetCoreModule.Test
 {
-    public class TestEnvSetup : IDisposable
+    public class SetupTestEnv : IDisposable
     {
         public WebSiteContext TestsiteContext;
         public WebAppContext RootAppContext;
@@ -21,9 +21,9 @@ namespace AspNetCoreModule.Test
         private ILogger _logger;
         private bool _globalSetupAlreadyCalled = false;        
 
-        public TestEnvSetup()
+        public SetupTestEnv()
         {
-            FunctionalTetClass.TestEnv = this;
+            BaseTestclass.TestEnv = this;
         }
 
         public void Dispose()

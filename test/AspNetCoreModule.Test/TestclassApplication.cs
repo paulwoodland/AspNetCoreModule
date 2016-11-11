@@ -17,7 +17,7 @@ using System.Diagnostics;
 
 namespace AspNetCoreModule.Test
 {
-    public class TestForApplication : FunctionalTetClass
+    public class TestclassApplication : BaseTestclass
     {
         private const int _repeatCount = 3;
 
