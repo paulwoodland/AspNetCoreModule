@@ -3,21 +3,17 @@
 
 using AspNetCoreModule.Test.Framework;
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Testing.xunit;
 using Xunit;
-using Xunit.Sdk;
-using AspNetCoreModule.Test.WebSocketClient;
 using System.Net;
-using System.Text;
 using System.Diagnostics;
 
 namespace AspNetCoreModule.Test
 {
-    public class TestclassApplication : BaseTestclass
+    public class ApplicationClass : Testclass
     {
         private const int _repeatCount = 3;
 
@@ -35,7 +31,11 @@ namespace AspNetCoreModule.Test
         private static async Task DoRecycleApplicationAfterBeingKilled(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             TestEnv.StartTestcase();
-            TestEnv.SetAppPoolBitness(appPoolBitness);
+
+            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
+            TestEnv.ResetAspnetCoreModule(appPoolBitness);
+            Thread.Sleep(500);
+
             string backendProcessId_old = null;
             for (int i = 0; i < _repeatCount; i++)
             {
@@ -70,7 +70,11 @@ namespace AspNetCoreModule.Test
         private static async Task DoRecycleApplicationAfterWebConfigUpdated(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             TestEnv.StartTestcase();
-            TestEnv.SetAppPoolBitness(appPoolBitness);
+
+            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
+            TestEnv.ResetAspnetCoreModule(appPoolBitness);
+            Thread.Sleep(500);
+
             string backendProcessId_old = null;
             for (int i = 0; i < _repeatCount; i++)
             {
@@ -110,7 +114,10 @@ namespace AspNetCoreModule.Test
         private static async Task DoRecycleApplicationWithURLRewrite(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             TestEnv.StartTestcase();
-            TestEnv.SetAppPoolBitness(appPoolBitness);
+            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
+            TestEnv.ResetAspnetCoreModule(appPoolBitness);
+            Thread.Sleep(500);
+
             string backendProcessId_old = null;
             for (int i = 0; i < _repeatCount; i++)
             {
@@ -151,7 +158,11 @@ namespace AspNetCoreModule.Test
         private static async Task DoRecycleParentApplicationWithURLRewrite(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             TestEnv.StartTestcase();
-            TestEnv.SetAppPoolBitness(appPoolBitness);
+
+            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
+            TestEnv.ResetAspnetCoreModule(appPoolBitness);
+            Thread.Sleep(500);
+
             string backendProcessId_old = null;
             for (int i = 0; i < _repeatCount; i++)
             {

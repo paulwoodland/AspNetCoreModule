@@ -1,14 +1,13 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using AspNetCoreModule.Test.Framework;
 using System;
 using System.IO;
 using System.Threading;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Extensions.Logging;
 
-namespace AspNetCoreModule.Test
+namespace AspNetCoreModule.Test.Framework
 {
     public class SetupTestEnv : IDisposable
     {
@@ -23,7 +22,7 @@ namespace AspNetCoreModule.Test
 
         public SetupTestEnv()
         {
-            BaseTestclass.TestEnv = this;
+            Testclass.TestEnv = this;
         }
 
         public void Dispose()
@@ -102,22 +101,34 @@ namespace AspNetCoreModule.Test
             TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
         }
 
-        public void SetAppPoolBitness(IISConfigUtility.AppPoolBitness appPoolBitness)
+        public void SetAppPoolBitness(string appPoolName, IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            {
+                if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
+                {
+                    iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", true);
+                }
+                else
+                {
+                    iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", false);
+                }
+                iisConfig.RecycleAppPool(RootAppContext.AppPoolName);
+            }
+        }
+
+        public void ResetAspnetCoreModule(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             using (var iisConfig = new IISConfigUtility(ServerType.IIS))
             {
                 if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
                 {
                     iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X86_path, "bitness32");
-                    iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", true);
                 }
                 else
                 {
                     iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X64_path, "bitness64");
-                    iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", false);
                 }
-                iisConfig.RecycleAppPool(RootAppContext.AppPoolName);
-                Thread.Sleep(500);
             }
         }
     }

@@ -3,21 +3,17 @@
 
 using AspNetCoreModule.Test.Framework;
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Testing.xunit;
 using Xunit;
-using Xunit.Sdk;
-using AspNetCoreModule.Test.WebSocketClient;
 using System.Net;
-using System.Text;
 using System.Diagnostics;
 
 namespace AspNetCoreModule.Test
 {
-    public class TestclassFileWatcher : BaseTestclass
+    public class FileWatcherClass : Testclass
     {
         private const int _repeatCount = 3;
 
@@ -36,7 +32,10 @@ namespace AspNetCoreModule.Test
         {
             TestEnv.StartTestcase();
 
-            TestEnv.SetAppPoolBitness(appPoolBitness);
+            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
+            TestEnv.ResetAspnetCoreModule(appPoolBitness);
+            Thread.Sleep(500);
+
             string backendProcessId_old = null;
             string fileContent = "BackEndAppOffline";
             TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
@@ -85,7 +84,10 @@ namespace AspNetCoreModule.Test
         {
             TestEnv.StartTestcase();
 
-            TestEnv.SetAppPoolBitness(appPoolBitness);
+            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
+            TestEnv.ResetAspnetCoreModule(appPoolBitness);
+            Thread.Sleep(500);
+
             string backendProcessId_old = null;
             string fileContent = "BackEndAppOffline2";
             TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");

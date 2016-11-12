@@ -4,9 +4,11 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -85,7 +87,41 @@ namespace AspnetCoreModule.TestSites.Standard
                     return context.Response.WriteAsync(process.Id.ToString());
                 });
             });
-    
+
+            app.Map("/EchoPostData", subApp =>
+            {
+                subApp.Run(context =>
+                {
+                    string responseBody = string.Empty;
+                    if (string.Equals(context.Request.Method, "POST", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var form = context.Request.ReadFormAsync().GetAwaiter().GetResult();
+                        int counter = 0;
+                        foreach (var key in form.Keys)
+                        {
+                            StringValues output;
+                            if (form.TryGetValue(key, out output))
+                            {
+                                responseBody += key + "=";
+                                foreach (var line in output)
+                                {
+                                    responseBody += line;
+                                }
+                                if (++counter < form.Count)
+                                {
+                                    responseBody += "&";
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        responseBody = "NoAction";
+                    }
+                    return context.Response.WriteAsync(responseBody);
+                });
+            });
+
             app.Map("/contentlength", subApp =>
             {
                 subApp.Run(context =>
