@@ -82,6 +82,12 @@ namespace AspNetCoreModule.Test
             HttpResponseMessage response = null;
             try
             {
+                FormUrlEncodedContent postHttpContent = null;
+                if (postData != null)
+                {
+                    postHttpContent = new FormUrlEncodedContent(postData);
+                }
+
                 // RetryRequest does not support for 503/500 server error
                 if (expectedResponseStatus != HttpStatusCode.ServiceUnavailable && expectedResponseStatus != HttpStatusCode.InternalServerError)
                 {
@@ -94,7 +100,6 @@ namespace AspNetCoreModule.Test
                     }
                     else
                     {
-                        var postHttpContent = new FormUrlEncodedContent(postData);
                         response = await RetryHelper.RetryRequest(() =>
                         {
                             return httpClient.PostAsync(string.Empty, postHttpContent);
@@ -103,7 +108,14 @@ namespace AspNetCoreModule.Test
                 }
                 else
                 {
-                    response = await httpClient.GetAsync(string.Empty);
+                    if (postData == null)
+                    {
+                        response = await httpClient.GetAsync(string.Empty);
+                    }
+                    else
+                    {
+                        response = await httpClient.PostAsync(string.Empty, postHttpContent);
+                    }
                 }
 
                 if (response != null)
