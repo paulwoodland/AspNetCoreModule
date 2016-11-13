@@ -8,7 +8,6 @@ using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -172,12 +171,23 @@ namespace AspnetCoreModule.TestSites.Standard
             app.Run(context =>
             {
                 string response = "Running";
-                var testSleep = context.Request.Headers["test-sleep"];
-                if (testSleep.ToString() != string.Empty)
+                string[] paths = context.Request.Path.Value.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string item in paths)
                 {
-                    int sleepTime = Convert.ToInt32(testSleep.ToString());
-                    Thread.Sleep(sleepTime);
-                    response += ("; test-sleep: " + testSleep.ToString());
+                    string action = string.Empty;
+                    string parameter = string.Empty;
+
+                    action = "DoSleep";
+                    if (item.StartsWith(action))
+                    {
+                        int sleepTime = 1000;
+                        if (item.Length > action.Length)
+                        {
+                            parameter = item.Substring(action.Length);
+                            sleepTime = Convert.ToInt32(parameter);
+                        }
+                        Thread.Sleep(sleepTime);
+                    }
                 }
                 return context.Response.WriteAsync(response);
             });

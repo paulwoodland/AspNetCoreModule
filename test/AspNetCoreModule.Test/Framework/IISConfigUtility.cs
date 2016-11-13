@@ -196,6 +196,17 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
+        public void SetANCMConfig(string siteName, string appName, string attributeName, object attributeValue)
+        {
+            using (ServerManager serverManager = GetServerManager())
+            {
+                Configuration config = serverManager.GetWebConfiguration(siteName, appName);
+                ConfigurationSection aspNetCoreSection = config.GetSection("system.webServer/aspNetCore");
+                aspNetCoreSection[attributeName] = attributeValue;
+                serverManager.CommitChanges();
+            }
+        }
+
         public bool IsIISInstalled()
         {
             bool result = true;
