@@ -89,7 +89,7 @@ namespace AspNetCoreModule.Test
                 }
 
                 // RetryRequest does not support for 503/500 server error
-                if (expectedResponseStatus != HttpStatusCode.ServiceUnavailable && expectedResponseStatus != HttpStatusCode.InternalServerError)
+                if (expectedResponseStatus == HttpStatusCode.OK)
                 {
                     if (postData == null)
                     {

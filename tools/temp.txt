@@ -1,0 +1,1 @@
+dotnet build  test/AspNetCoreModule.Test/project.json --configuration Debug

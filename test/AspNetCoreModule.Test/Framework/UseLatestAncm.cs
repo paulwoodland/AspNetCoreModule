@@ -67,6 +67,13 @@ namespace AspNetCoreModule.Test.Framework
                     || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore.dll"))
                     || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore_schema.xml")))
                 {
+                    outputPath = Path.Combine(solutionRoot, "src", "AspNetCore", "bin", "Debug");
+                }
+
+                if (!File.Exists(Path.Combine(outputPath, "Win32", "aspnetcore.dll"))
+                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore.dll"))
+                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore_schema.xml")))
+                {
                     throw new ApplicationException("aspnetcore.dll is not available; build aspnetcore.dll for both x86 and x64 and then try again!!!");
                 }
             }

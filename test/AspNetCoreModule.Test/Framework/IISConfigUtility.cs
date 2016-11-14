@@ -8,6 +8,7 @@ using System;
 using System.IO;
 using System.Management;
 using System.ServiceProcess;
+using System.Threading;
 using static AspNetCoreModule.Test.Framework.TestUtility;
 
 namespace AspNetCoreModule.Test.Framework
@@ -203,8 +204,10 @@ namespace AspNetCoreModule.Test.Framework
                 Configuration config = serverManager.GetWebConfiguration(siteName, appName);
                 ConfigurationSection aspNetCoreSection = config.GetSection("system.webServer/aspNetCore");
                 aspNetCoreSection[attributeName] = attributeValue;
+
                 serverManager.CommitChanges();
             }
+            Thread.Sleep(500);
         }
 
         public bool IsIISInstalled()
