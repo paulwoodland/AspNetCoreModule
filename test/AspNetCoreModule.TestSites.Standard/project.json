@@ -1,15 +1,15 @@
 {
   "version": "1.1.0-*",
   "dependencies": {
-    "Microsoft.AspNetCore.WebSockets.Server": "0.1.0-rc2-final",
-    "Microsoft.AspNetCore.Server.IISIntegration": "1.1.0-*",
-    "Microsoft.AspNetCore.Server.Kestrel": "1.1.0-*",
-    "Microsoft.AspNetCore.Server.WebListener": "1.1.0-*",
-    "Microsoft.AspNetCore.WebUtilities": "1.1.0-*",
-    "Microsoft.Extensions.Configuration.CommandLine": "1.1.0-*",
-    "Microsoft.Extensions.Configuration.Json": "1.1.0-*",
-    "Microsoft.Extensions.Logging.Console": "1.1.0-*",
-    "Microsoft.Net.Http.Headers": "1.1.0-*"
+    "Microsoft.AspNetCore.WebSockets.Server": "*",
+    "Microsoft.AspNetCore.Server.IISIntegration": "1.2.0-*",
+    "Microsoft.AspNetCore.Server.Kestrel": "1.2.0-*",
+    "Microsoft.AspNetCore.Server.WebListener": "1.2.0-*",
+    "Microsoft.AspNetCore.WebUtilities": "1.2.0-*",
+    "Microsoft.Extensions.Configuration.CommandLine": "1.2.0-*",
+    "Microsoft.Extensions.Configuration.Json": "1.2.0-*",
+    "Microsoft.Extensions.Logging.Console": "1.2.0-*",
+    "Microsoft.Net.Http.Headers": "1.2.0-*"
   },
   "buildOptions": {
     "emitEntryPoint": true
@@ -20,11 +20,10 @@
     ]
   },
   "frameworks": {
-    "net451": {},
-    "netcoreapp1.0": {
+    "netcoreapp1.1": {
       "dependencies": {
         "Microsoft.NETCore.App": {
-          "version": "1.0.0-*",
+          "version": "1.1.0-*",
           "type": "platform"
         }
       }
