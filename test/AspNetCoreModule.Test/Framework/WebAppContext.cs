@@ -176,6 +176,11 @@ namespace AspNetCoreModule.Test.Framework
             TestUtility.FileCopy(fromfile, tofile);
         }
 
+        public string GetDirectoryPathWith(string subPath)
+        {
+            return Path.Combine(_physicalPath, subPath);
+        }
+
         public void DeleteFile(string file = "app_offline.htm")
         {
             string filePath = Path.Combine(_physicalPath, file);
@@ -193,6 +198,18 @@ namespace AspNetCoreModule.Test.Framework
             string fromfile = Path.Combine(_physicalPath, from);
             string tofile = Path.Combine(_physicalPath, to);
             TestUtility.FileMove(fromfile, tofile);
+        }
+        
+        public void DeleteDirectory(string directory)
+        {
+            string directoryPath = Path.Combine(_physicalPath, directory);
+            TestUtility.DeleteDirectory(directoryPath);
+        }
+        
+        public void CreateDirectory(string directory)
+        {
+            string directoryPath = Path.Combine(_physicalPath, directory);
+            TestUtility.CreateDirectory(directoryPath);
         }
     }
 }

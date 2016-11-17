@@ -42,14 +42,12 @@ namespace AspNetCoreModule.Test
 
             for (int i = 0; i < _repeatCount; i++)
             {
-                DateTime startTime;
-
-                startTime = DateTime.Now;
-                Thread.Sleep(500);
-
                 // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                 TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
+                Thread.Sleep(500);
+                DateTime startTime = DateTime.Now;
+                                
                 // verify 503 
                 await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), fileContent + "\r\n", HttpStatusCode.ServiceUnavailable);
 
@@ -60,7 +58,7 @@ namespace AspNetCoreModule.Test
                 Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
                 Assert.NotEqual(backendProcessId_old, backendProcessId);
                 backendProcessId_old = backendProcessId;
-                VerifyANCMEventLog(Convert.ToInt32(backendProcessId), startTime);
+                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
 
                 // rename back to app_offline.htm
                 TestEnv.StandardTestApp.MoveFile("_app_offline.htm", "app_offline.htm");
@@ -94,14 +92,12 @@ namespace AspNetCoreModule.Test
 
             for (int i = 0; i < _repeatCount; i++)
             {
-                DateTime startTime;
-
-                startTime = DateTime.Now;
-                Thread.Sleep(500);
-
                 // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                 TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
+                DateTime startTime = DateTime.Now;
+                Thread.Sleep(500);
+                                
                 // verify 503 
                 string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
                 await VerifyResponseBody(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), fileContent + "\r\n", HttpStatusCode.ServiceUnavailable);
@@ -113,7 +109,7 @@ namespace AspNetCoreModule.Test
                 Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
                 Assert.NotEqual(backendProcessId_old, backendProcessId);
                 backendProcessId_old = backendProcessId;
-                VerifyANCMEventLog(Convert.ToInt32(backendProcessId), startTime);
+                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
 
                 // create app_offline.htm again
                 TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");

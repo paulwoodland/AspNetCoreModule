@@ -31,6 +31,8 @@ namespace AspNetCoreModule.Test
         {
             TestEnv.StartTestcase();
 
+            DateTime startTime = DateTime.Now;
+
             TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
             TestEnv.ResetAspnetCoreModule(appPoolBitness);
             Thread.Sleep(500);
@@ -47,7 +49,7 @@ namespace AspNetCoreModule.Test
             await VerifyResponseBodyContain(TestEnv.WebSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
 
             // Verify process creation ANCM event log
-            VerifyANCMEventLog(Convert.ToInt32(backendProcessId), TestEnv.testHelper.StartTime);
+            Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
 
             // Verify websocket 
             using (WebSocketClientHelper websocketClient = new WebSocketClientHelper())

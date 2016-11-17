@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
+using System.Security.Principal;
+using System.Security.AccessControl;
 
 namespace AspNetCoreModule.Test.Framework
 {
@@ -22,7 +24,6 @@ namespace AspNetCoreModule.Test.Framework
         private ServerType _cleanupServerType;
         private bool _calledCleanupServerType = false;
 
-        public DateTime StartTime;
         public static ILogger Logger
         {
             get
@@ -39,7 +40,6 @@ namespace AspNetCoreModule.Test.Framework
 
         public TestUtility(ILogger logger)
         {
-            StartTime = DateTime.Now;
             _logger = logger;
         }
 
@@ -62,6 +62,89 @@ namespace AspNetCoreModule.Test.Framework
                 // ignore
             }
         }
+        public static bool RetryHelper<T> (
+                   Func<T, bool> verifier,
+                   T arg,
+                   Action<Exception> exceptionBlock = null,
+                   int retryCount = 3,
+                   int retryDelayMilliseconds = 1000
+                   )
+        {
+            for (var retry = 0; retry < retryCount; ++retry)
+            {
+                try
+                {
+                    if (verifier(arg))
+                        return true;
+                }
+                catch (Exception exception)
+                {
+                    exceptionBlock?.Invoke(exception);
+                }
+                Thread.Sleep(retryDelayMilliseconds);
+            }
+            return false;
+        }
+
+        public static bool RetryHelper<T1, T2>(
+                   Func<T1, T2, bool> verifier,
+                   T1 arg1,
+                   T2 arg2,
+                   Action<Exception> exceptionBlock = null,
+                   int retryCount = 3,
+                   int retryDelayMilliseconds = 1000
+                   )
+        {
+            for (var retry = 0; retry < retryCount; ++retry)
+            {
+                try
+                {
+                    if (verifier(arg1, arg2))
+                        return true;
+                }
+                catch (Exception exception)
+                {
+                    exceptionBlock?.Invoke(exception);
+                }
+                Thread.Sleep(retryDelayMilliseconds);
+            }
+            return false;
+        }
+
+        public static bool RetryHelper<T1, T2, T3>(
+                   Func<T1, T2, T3, bool> verifier,
+                   T1 arg1,
+                   T2 arg2,
+                   T3 arg3,
+                   Action<Exception> exceptionBlock = null,
+                   int retryCount = 3,
+                   int retryDelayMilliseconds = 1000
+                   )
+        {
+            for (var retry = 0; retry < retryCount; ++retry)
+            {
+                try
+                {
+                    if (verifier(arg1, arg2, arg3))
+                        return true;
+                }
+                catch (Exception exception)
+                {
+                    exceptionBlock?.Invoke(exception);
+                }
+                Thread.Sleep(retryDelayMilliseconds);
+            }
+            return false;
+        }
+
+        public static void GiveWritePermissionTo(string folder, SecurityIdentifier sid)
+        {
+            DirectorySecurity fsecurity = Directory.GetAccessControl(folder);
+            FileSystemAccessRule writerule = new FileSystemAccessRule(sid, FileSystemRights.Write, AccessControlType.Allow);            
+            fsecurity.AddAccessRule(writerule);
+            Directory.SetAccessControl(folder, fsecurity);
+            Thread.Sleep(500);
+        }
 
         public static void InitializeStandardAppRootPath(string outputPath)
         {
@@ -71,7 +154,7 @@ namespace AspNetCoreModule.Test.Framework
             }
 
             string appPath = GetApplicationPath(ApplicationType.Portable);
-            string publishPath = Path.Combine(appPath, "bin", "Debug", "netcoreapp1.0", "publish");                
+            string publishPath = Path.Combine(appPath, "bin", "Debug", "netcoreapp1.1", "publish");                
             RunCommand("dotnet", "publish " + appPath);
             DirectoryCopy(publishPath, outputPath);
         }
@@ -162,7 +245,7 @@ namespace AspNetCoreModule.Test.Framework
                 }
                 catch
                 {
-                    if (ignoreExceptionWhileDeletingExistingFile)
+                    if (!ignoreExceptionWhileDeletingExistingFile)
                     {
                         throw;
                     }
@@ -209,7 +292,7 @@ namespace AspNetCoreModule.Test.Framework
             if (!Directory.Exists(directoryPath))
             {
                 throw new ApplicationException("Failed to create directory: " + directoryPath);
-            }
+            }            
         }
 
         public static void DirectoryCopy(string from, string to)

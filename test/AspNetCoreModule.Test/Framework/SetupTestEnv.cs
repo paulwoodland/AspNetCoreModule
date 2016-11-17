@@ -18,7 +18,7 @@ namespace AspNetCoreModule.Test.Framework
         public WebAppContext URLRewriteApp;
         public TestUtility testHelper;
         private ILogger _logger;
-        private bool _globalSetupAlreadyCalled = false;        
+        private bool _globalSetupAlreadyCalled = false;
 
         public SetupTestEnv()
         {
@@ -92,10 +92,10 @@ namespace AspNetCoreModule.Test.Framework
             }
             
             // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-            TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
-        }
+            TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);            
+    }
 
-        public void EndTestcase()
+    public void EndTestcase()
         {
             // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
             TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);

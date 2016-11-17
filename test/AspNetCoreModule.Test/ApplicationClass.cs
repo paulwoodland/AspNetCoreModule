@@ -44,12 +44,13 @@ namespace AspNetCoreModule.Test
 
                 DateTime startTime = DateTime.Now;
                 Thread.Sleep(500);
+
                 string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
                 Assert.NotEqual(backendProcessId_old, backendProcessId);
                 backendProcessId_old = backendProcessId;
                 var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
                 Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                VerifyANCMEventLog(Convert.ToInt32(backendProcessId), startTime);
+                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
                 backendProcess.Kill();
                 Thread.Sleep(500);
             }
@@ -83,12 +84,13 @@ namespace AspNetCoreModule.Test
 
                 DateTime startTime = DateTime.Now;
                 Thread.Sleep(500);
+
                 string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
                 var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
                 Assert.NotEqual(backendProcessId_old, backendProcessId);
                 backendProcessId_old = backendProcessId;
                 Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                VerifyANCMEventLog(Convert.ToInt32(backendProcessId), startTime);
+                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
                 TestEnv.StandardTestApp.MoveFile("web.config", "_web.config");
                 Thread.Sleep(500);
                 TestEnv.StandardTestApp.MoveFile("_web.config", "web.config");
@@ -126,13 +128,15 @@ namespace AspNetCoreModule.Test
 
                 DateTime startTime = DateTime.Now;
                 Thread.Sleep(500);
+
                 string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
                 string backendProcessId = await GetResponse(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
                 var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
                 Assert.NotEqual(backendProcessId_old, backendProcessId);
                 backendProcessId_old = backendProcessId;
                 Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                VerifyANCMEventLog(Convert.ToInt32(backendProcessId), startTime);
+                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+
                 TestEnv.StandardTestApp.MoveFile("web.config", "_web.config");
                 Thread.Sleep(500);
                 TestEnv.StandardTestApp.MoveFile("_web.config", "web.config");
@@ -171,13 +175,14 @@ namespace AspNetCoreModule.Test
 
                 DateTime startTime = DateTime.Now;
                 Thread.Sleep(500);
+
                 string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
                 string backendProcessId = await GetResponse(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
                 var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
                 Assert.NotEqual(backendProcessId_old, backendProcessId);
                 backendProcessId_old = backendProcessId;
                 Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                VerifyANCMEventLog(Convert.ToInt32(backendProcessId), startTime);
+                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
                 TestEnv.RootAppContext.MoveFile("web.config", "_web.config");
                 Thread.Sleep(500);
                 TestEnv.RootAppContext.MoveFile("_web.config", "web.config");

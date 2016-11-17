@@ -20,21 +20,31 @@ namespace AspNetCoreModule.Test
     public abstract class Testclass : IClassFixture<UseLatestAncm>, IClassFixture<SetupTestEnv>
     {
         public static SetupTestEnv TestEnv;
-        
-        public static void VerifyANCMEventLog(int backendProcessId, DateTime startFrom)
+
+        public static bool VerifyANCMStartEvent(DateTime startFrom, string includeThis)
         {
-            var events = TestUtility.GetApplicationEvent(1001, startFrom);
+            return VerifyEventLog(1001, startFrom, includeThis);
+        }
+
+        public static bool VerifyANCMFailedToCreateLogEvent(DateTime startFrom, string includeThis)
+        {
+            return VerifyEventLog(1004, startFrom, includeThis);
+        }
+
+        public static bool VerifyEventLog(int eventId, DateTime startFrom, string includeThis = null)
+        {
+            var events = TestUtility.GetApplicationEvent(eventId, startFrom);
             Assert.True(events.Count > 0, "Verfiy expected event logs");
             bool findEvent = false;
             foreach (string item in events)
             {
-                if (item.Contains(backendProcessId.ToString()))
+                if (item.Contains(includeThis))
                 {
                     findEvent = true;
                     break;
                 }
             }
-            Assert.True(findEvent, "Verfiy the event log of the target backend process");
+            return findEvent;
         }
 
         public static async Task VerifyResponseStatus(Uri uri, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
