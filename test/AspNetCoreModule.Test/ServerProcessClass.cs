@@ -11,6 +11,7 @@ using System.Net;
 using System.Threading;
 using System.IO;
 using System.Security.Principal;
+using System.Diagnostics;
 
 namespace AspNetCoreModule.Test
 {
@@ -74,6 +75,51 @@ namespace AspNetCoreModule.Test
                 await VerifyResponseStatus(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), HttpStatusCode.BadGateway);
                 iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:02:00"); // 2 minute
                 await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK);
+            }
+
+            TestEnv.StandardTestApp.RestoreFile("web.config");
+            TestEnv.EndTestcase();
+        }
+
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        //[InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 25, 19)]
+        //[InlineData(IISConfigUtility.AppPoolBitness.noChange, 25, 19)]
+        //[InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 5, 4)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 0, 0)]        
+        public Task ShutdownTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfshutdownTimeLimit, int expectedClosingTime)
+        {
+            return DoShutdownTimeLimitTest(appPoolBitness, valueOfshutdownTimeLimit, expectedClosingTime);
+        }
+
+        private static async Task DoShutdownTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfshutdownTimeLimit, int expectedClosingTime)
+        {
+            TestEnv.StartTestcase();
+            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
+            TestEnv.ResetAspnetCoreModule(appPoolBitness);
+            Thread.Sleep(500);
+
+            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            {
+                // Set new value (10 second) to make the backend process get the Ctrl-C signal and measure when the recycle happens
+                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "shutdownTimeLimit", valueOfshutdownTimeLimit); 
+                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoClosingTimeSleep20000"), "Running", HttpStatusCode.OK);  // set 20 seconds for closing time sleep
+                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);  
+                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                
+                // Set a new value such as 100 to make the backend process being recycled
+                DateTime startTime = DateTime.Now;
+                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "shutdownTimeLimit", 100); 
+                backendProcess.WaitForExit(30000);
+                DateTime endTime = DateTime.Now;
+                var difference = endTime - startTime;
+                Assert.True(difference.Seconds >= expectedClosingTime);
+                Assert.True(difference.Seconds < expectedClosingTime + 3);
+                Assert.True(backendProcessId != await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK));
+                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
             }
 
             TestEnv.StandardTestApp.RestoreFile("web.config");

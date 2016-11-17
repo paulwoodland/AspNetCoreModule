@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Net.Http.Server;
 using System;
+using System.Threading;
 
 namespace AspnetCoreModule.TestSites.Standard
 {
@@ -51,6 +52,10 @@ namespace AspnetCoreModule.TestSites.Standard
             var host = builder.Build();
 
             host.Run();
+            if (StartupResponse.SleeptimeWhileClosing != 0)
+            {
+                Thread.Sleep(StartupResponse.SleeptimeWhileClosing);
+            }
         }
     }
 }

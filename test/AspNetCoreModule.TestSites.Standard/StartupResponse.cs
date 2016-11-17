@@ -16,6 +16,7 @@ namespace AspnetCoreModule.TestSites.Standard
 {
     public class StartupResponse
     {
+        public static int SleeptimeWhileClosing = 0;
         private async Task Echo(WebSocket webSocket)
         {
             var buffer = new byte[1024 * 4];
@@ -193,11 +194,27 @@ namespace AspnetCoreModule.TestSites.Standard
                         Thread.Sleep(sleepTime);
                     }
 
+                    action = "DoClosingTimeSleep";
+                    if (item.StartsWith(action))
+                    {
+                        /* 
+                          "DoClosingTimeSleep" command here.
+                          For example, if path contains "DoSleepWhileClosing" such as /DoClosingTimeSleep1000, there will be 1 second sleep time while closing
+                        */
+                        int sleepTime = 1000;
+                        if (item.Length > action.Length)
+                        {
+                            parameter = item.Substring(action.Length);
+                            sleepTime = Convert.ToInt32(parameter);
+                        }
+                        SleeptimeWhileClosing = sleepTime;                        
+                    }
+
                     action = "ExpandEnvironmentVariables";
                     if (item.StartsWith(action))
                     {
                         /* 
-                          Process "ExpandEnvironmentVariables" command here.
+                          "ExpandEnvironmentVariables" command here.
                           For example, if path contains "ExpandEnvironmentVariables" such as /ExpandEnvironmentVariablesFoo, return the expanded value for the %foo% environment variable
                         */
                         if (item.Length > action.Length)
