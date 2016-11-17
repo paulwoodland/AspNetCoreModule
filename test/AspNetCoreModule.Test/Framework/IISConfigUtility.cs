@@ -203,7 +203,25 @@ namespace AspNetCoreModule.Test.Framework
             {
                 Configuration config = serverManager.GetWebConfiguration(siteName, appName);
                 ConfigurationSection aspNetCoreSection = config.GetSection("system.webServer/aspNetCore");
-                aspNetCoreSection[attributeName] = attributeValue;
+                if (attributeName == "environmentVariable")
+                {
+                    string name = ((string[])attributeValue)[0];
+                    string value = ((string[])attributeValue)[1];
+                    ConfigurationElementCollection environmentVariablesCollection = aspNetCoreSection.GetCollection("environmentVariables");
+                    ConfigurationElement environmentVariableElement = environmentVariablesCollection.CreateElement("environmentVariable");
+                    environmentVariableElement["name"] = name;
+                    environmentVariableElement["value"] = value;
+                    var element = FindElement(environmentVariablesCollection, "add", "name", value);
+                    if (element != null)
+                    {
+                        throw new System.ApplicationException("duplicated collection item");
+                    }
+                    environmentVariablesCollection.Add(environmentVariableElement);
+                }
+                else
+                {
+                    aspNetCoreSection[attributeName] = attributeValue;
+                }
 
                 serverManager.CommitChanges();
             }

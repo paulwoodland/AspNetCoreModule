@@ -124,7 +124,12 @@ namespace AspNetCoreModule.Test
                 startTime = DateTime.Now;
                 Thread.Sleep(500);
                 iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", false);
+
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+
                 iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", true);
+
                 Assert.True(backendProcessId != (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK)));
 
                 // Verify log file is created now after backend process is recycled

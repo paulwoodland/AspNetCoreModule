@@ -86,7 +86,7 @@ namespace AspnetCoreModule.TestSites.Standard
                     return context.Response.WriteAsync(process.Id.ToString());
                 });
             });
-
+            
             app.Map("/EchoPostData", subApp =>
             {
                 subApp.Run(context =>
@@ -180,6 +180,10 @@ namespace AspnetCoreModule.TestSites.Standard
                     action = "DoSleep";
                     if (item.StartsWith(action))
                     {
+                        /* 
+                          Process "DoSleep" command here.
+                          For example, if path contains "DoSleep" such as /DoSleep1000, run Thread.Sleep(1000)
+                        */
                         int sleepTime = 1000;
                         if (item.Length > action.Length)
                         {
@@ -187,6 +191,31 @@ namespace AspnetCoreModule.TestSites.Standard
                             sleepTime = Convert.ToInt32(parameter);
                         }
                         Thread.Sleep(sleepTime);
+                    }
+
+                    action = "ExpandEnvironmentVariables";
+                    if (item.StartsWith(action))
+                    {
+                        /* 
+                          Process "ExpandEnvironmentVariables" command here.
+                          For example, if path contains "ExpandEnvironmentVariables" such as /ExpandEnvironmentVariablesFoo, return the expanded value for the %foo% environment variable
+                        */
+                        if (item.Length > action.Length)
+                        {
+                            parameter = item.Substring(action.Length);
+                            response = Environment.ExpandEnvironmentVariables("%" + parameter + "%");
+                        }                        
+                    }
+
+                    action = "GetEnvironmentVariables";
+                    if (item.StartsWith(action))
+                    {
+                        /* 
+                          Process "GetEnvironmentVariables" command here.
+                          For example, if path contains "DoSleep" such as /GetEnvironmentVariables, retrun the total number of available envrionment variables
+                        */
+                        parameter = item.Substring(action.Length);
+                        response = Environment.GetEnvironmentVariables().Count.ToString();
                     }
                 }
                 return context.Response.WriteAsync(response);
