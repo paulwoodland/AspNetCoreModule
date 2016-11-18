@@ -15,8 +15,6 @@ namespace AspNetCoreModule.Test
 {
     public class ApplicationClass : Testclass
     {
-        private const int _repeatCount = 3;
-
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
@@ -37,7 +35,8 @@ namespace AspNetCoreModule.Test
             Thread.Sleep(500);
 
             string backendProcessId_old = null;
-            for (int i = 0; i < _repeatCount; i++)
+            const int repeatCount = 3;
+            for (int i = 0; i < repeatCount; i++)
             {
                 // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                 TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
@@ -77,7 +76,8 @@ namespace AspNetCoreModule.Test
             Thread.Sleep(500);
 
             string backendProcessId_old = null;
-            for (int i = 0; i < _repeatCount; i++)
+            const int repeatCount = 3;
+            for (int i = 0; i < repeatCount; i++)
             {
                 // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                 TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
@@ -121,7 +121,8 @@ namespace AspNetCoreModule.Test
             Thread.Sleep(500);
 
             string backendProcessId_old = null;
-            for (int i = 0; i < _repeatCount; i++)
+            const int repeatCount = 3;
+            for (int i = 0; i < repeatCount; i++)
             {
                 // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                 TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
@@ -168,7 +169,8 @@ namespace AspNetCoreModule.Test
             Thread.Sleep(500);
 
             string backendProcessId_old = null;
-            for (int i = 0; i < _repeatCount; i++)
+            const int repeatCount = 3;
+            for (int i = 0; i < repeatCount; i++)
             {
                 // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                 TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
