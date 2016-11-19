@@ -187,5 +187,57 @@ namespace AspNetCoreModule.Test
             TestEnv.StandardTestApp.RestoreFile("web.config");
             TestEnv.EndTestcase();
         }
+
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, "dotnet.exe", "./")]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, "dotnet", @".\")]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, "$env", "")]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, "$env", "")]
+        public Task ProcessPathAndArgumentsTest(IISConfigUtility.AppPoolBitness appPoolBitness, string processPath, string argumentsPrefix)
+        {
+            return DoProcessPathAndArgumentsTest(appPoolBitness, processPath, argumentsPrefix);
+        }
+
+        private static async Task DoProcessPathAndArgumentsTest(IISConfigUtility.AppPoolBitness appPoolBitness, string processPath, string argumentsPrefix)
+        {
+            TestEnv.StartTestcase();
+            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
+            TestEnv.ResetAspnetCoreModule(appPoolBitness);
+            
+            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            {
+                string arguments = argumentsPrefix + TestEnv.StandardTestApp.GetArgumentFileName();
+                string tempProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                var tempBackendProcess = Process.GetProcessById(Convert.ToInt32(tempProcessId));
+
+                // replace $env with the actual test value
+                if (processPath == "$env")
+                {
+                    string tempString = Environment.ExpandEnvironmentVariables("%systemdrive%").ToLower();
+                    processPath = Path.Combine(tempBackendProcess.MainModule.FileName).ToLower().Replace(tempString, "%systemdrive%");
+                    arguments = TestEnv.StandardTestApp.GetDirectoryPathWith(arguments).ToLower().Replace(tempString, "%systemdrive%");
+                }
+
+                DateTime startTime = DateTime.Now;
+                Thread.Sleep(500);
+
+                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "processPath", processPath);
+                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "arguments", arguments);
+                Thread.Sleep(500);
+
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                Thread.Sleep(500);                
+
+                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+            }
+
+            TestEnv.StandardTestApp.RestoreFile("web.config");
+            TestEnv.EndTestcase();
+        }
     }
 }

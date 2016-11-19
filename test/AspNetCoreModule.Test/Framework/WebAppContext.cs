@@ -158,6 +158,25 @@ namespace AspNetCoreModule.Test.Framework
             return result;
         }
 
+        public string GetArgumentFileName()
+        {
+            string filePath = Path.Combine(_physicalPath, "web.config");
+            string result = null;
+
+            // read web.config
+            string fileContent = TestUtility.FileReadAllText(filePath);
+
+            // get the value of processPath attribute of aspNetCore element
+            if (fileContent != null)
+            {
+                result = TestUtility.XmlParser(fileContent, "aspNetCore", "arguments", null);
+            }
+
+            // split fileName from full path
+            result = Path.GetFileName(result);
+            return result;
+        }
+
         public void BackupFile(string from)
         {
             string fromfile = Path.Combine(_physicalPath, from);
