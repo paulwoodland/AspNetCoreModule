@@ -44,15 +44,19 @@ namespace AspNetCoreModule.Test
 
                 string backendProcessId_old = null;
                 const int repeatCount = 10;
+
+                DateTime startTime = DateTime.Now;
+                Thread.Sleep(500);
+
                 for (int i = 0; i < repeatCount; i++)
                 {
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                     TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-                    DateTime startTime = DateTime.Now;
+                    DateTime startTimeInsideLooping = DateTime.Now;
                     Thread.Sleep(500);
 
-                    var statusCode = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK, ReturnValueType.ResponseStatus);
+                    var statusCode = await GetResponseStatusCode(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"));
                     if (statusCode != HttpStatusCode.OK.ToString())
                     {
                         Assert.True(i >= valueOfRapidFailsPerMinute);
@@ -65,7 +69,7 @@ namespace AspNetCoreModule.Test
                     backendProcessId_old = backendProcessId;
                     var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
                     Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTimeInsideLooping, backendProcessId));
                     backendProcess.Kill();
                     Thread.Sleep(500);
                 }
@@ -76,6 +80,11 @@ namespace AspNetCoreModule.Test
                 else
                 {
                     Assert.True(rapidFailsTriggered);
+
+                    // verify event error log
+                    int errorEventId = 1003;
+                    string errorMessageContainThis = "'" + valueOfRapidFailsPerMinute + "'"; // part of error message
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2, arg3) => VerifyApplicationEventLog(arg1, arg2, arg3), errorEventId, startTime, errorMessageContainThis));
                 }
             }
             TestEnv.StandardTestApp.RestoreFile("web.config");

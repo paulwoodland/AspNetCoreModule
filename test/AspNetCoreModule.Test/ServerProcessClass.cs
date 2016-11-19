@@ -156,7 +156,7 @@ namespace AspNetCoreModule.Test
                 string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
                 string logPath = TestEnv.StandardTestApp.GetDirectoryPathWith("logs");
                 Assert.False(Directory.Exists(logPath));
-                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMFailedToCreateLogEvent(arg1, arg2), startTime, @"logs\stdout"));
+                Assert.True(TestUtility.RetryHelper((arg1, arg2, arg3) => VerifyApplicationEventLog(arg1, arg2, arg3), 1004, startTime, @"logs\stdout"));
                 Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
 
                 TestEnv.StandardTestApp.CreateDirectory("logs");

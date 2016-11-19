@@ -26,9 +26,9 @@ namespace AspNetCoreModule.Test
             return VerifyEventLog(1001, startFrom, includeThis);
         }
 
-        public static bool VerifyANCMFailedToCreateLogEvent(DateTime startFrom, string includeThis)
+        public static bool VerifyApplicationEventLog(int eventID, DateTime startFrom, string includeThis)
         {
-            return VerifyEventLog(1004, startFrom, includeThis);
+            return VerifyEventLog(eventID, startFrom, includeThis);
         }
 
         public static bool VerifyEventLog(int eventId, DateTime startFrom, string includeThis = null)
@@ -49,24 +49,30 @@ namespace AspNetCoreModule.Test
 
         public static async Task VerifyResponseStatus(Uri uri, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
-            await DoVerifyResponse(uri, null, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, null);
+            await SendReceive(uri, null, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, null);
         }                
         public static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
-            await DoVerifyResponse(uri, expectedResponseBody, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, null);
+            await SendReceive(uri, expectedResponseBody, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, null);
 
         }
         public static async Task VerifyPostResponseBody(Uri uri, KeyValuePair<string, string>[] postData, string expectedResponseBody, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {           
-            await DoVerifyResponse(uri, expectedResponseBody, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, postData);
+            await SendReceive(uri, expectedResponseBody, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, postData);
         }
         public static async Task VerifyResponseBodyContain(Uri uri, string[] expectedStrings, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
-            await DoVerifyResponse(uri, null, expectedStrings, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, null);
+            await SendReceive(uri, null, expectedStrings, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, null);
         }
+
         public static async Task<string> GetResponse(Uri uri, HttpStatusCode expectedResponseStatus, ReturnValueType returnValueType = ReturnValueType.ResponseBody, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
-            return await DoVerifyResponse(uri, null, null, expectedResponseStatus, returnValueType, numberOfRetryCount, verifyResponseFlag, null);
+            return await SendReceive(uri, null, null, expectedResponseStatus, returnValueType, numberOfRetryCount, verifyResponseFlag, null);
+        }
+
+        public static async Task<string> GetResponseStatusCode(Uri uri, int numberOfRetryCount = 2)
+        {
+            return await SendReceive(uri, null, null, HttpStatusCode.OK, ReturnValueType.ResponseStatus, numberOfRetryCount, false, null);
         }
         
         public enum ReturnValueType
@@ -76,7 +82,7 @@ namespace AspNetCoreModule.Test
             None
         }
         
-        public static async Task<string> DoVerifyResponse(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus, ReturnValueType returnValueType, int numberOfRetryCount, bool verifyResponseFlag, KeyValuePair<string, string>[] postData)
+        public static async Task<string> SendReceive(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus, ReturnValueType returnValueType, int numberOfRetryCount, bool verifyResponseFlag, KeyValuePair<string, string>[] postData)
         {
             string result = null;
             string responseText = "NotInitialized";
@@ -99,7 +105,7 @@ namespace AspNetCoreModule.Test
                 }
 
                 // RetryRequest does not support for 503/500 server error
-                if (expectedResponseStatus == HttpStatusCode.OK)
+                if (returnValueType != ReturnValueType.ResponseStatus && expectedResponseStatus == HttpStatusCode.OK)
                 {
                     if (postData == null)
                     {
@@ -130,8 +136,7 @@ namespace AspNetCoreModule.Test
 
                 if (response != null)
                 {
-                    responseStatus = response.StatusCode.ToString();
-
+                    responseStatus = response.StatusCode.ToString();                    
                     if (verifyResponseFlag)
                     {
                         if (expectedResponseBody != null)

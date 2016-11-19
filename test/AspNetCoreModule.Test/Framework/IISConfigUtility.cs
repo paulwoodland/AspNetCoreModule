@@ -228,6 +228,32 @@ namespace AspNetCoreModule.Test.Framework
             Thread.Sleep(500);
         }
 
+        public void ConfigureCustomLogging(string siteName, string appName, int statusCode, int subStatusCode, string path)
+        {
+            using (ServerManager serverManager = GetServerManager())
+            {
+                Configuration config = serverManager.GetWebConfiguration(siteName, appName);
+                ConfigurationSection httpErrorsSection = config.GetSection("system.webServer/httpErrors");
+                httpErrorsSection["errorMode"] = @"Custom";
+
+                ConfigurationElementCollection httpErrorsCollection = httpErrorsSection.GetCollection();
+                ConfigurationElement errorElement = FindElement(httpErrorsCollection, "error", "statusCode", statusCode.ToString(), "subStatusCode", subStatusCode.ToString());
+                if (errorElement != null)
+                {
+                    httpErrorsCollection.Remove(errorElement);
+                }
+
+                ConfigurationElement errorElement2 = httpErrorsCollection.CreateElement("error");
+                errorElement2["statusCode"] = statusCode;
+                errorElement2["subStatusCode"] = subStatusCode;
+                errorElement2["path"] = path;
+                httpErrorsCollection.Add(errorElement2);
+                
+                serverManager.CommitChanges();
+            }
+            Thread.Sleep(500);
+        }
+
         public bool IsIISInstalled()
         {
             bool result = true;
