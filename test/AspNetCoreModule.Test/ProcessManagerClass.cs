@@ -9,9 +9,8 @@ using Microsoft.AspNetCore.Testing.xunit;
 using Xunit;
 using System.Net;
 using System.Threading;
-using System.IO;
-using System.Security.Principal;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace AspNetCoreModule.Test
 {
@@ -87,6 +86,79 @@ namespace AspNetCoreModule.Test
                     Assert.True(TestUtility.RetryHelper((arg1, arg2, arg3) => VerifyApplicationEventLog(arg1, arg2, arg3), errorEventId, startTime, errorMessageContainThis));
                 }
             }
+            TestEnv.StandardTestApp.RestoreFile("web.config");
+            TestEnv.EndTestcase();
+        }
+
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 10)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 2)]
+        public Task ProcessesPerApplicationTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfProcessesPerApplication)
+        {
+            return DoProcessesPerApplicationTest(appPoolBitness, valueOfProcessesPerApplication);
+        }
+
+        private static async Task DoProcessesPerApplicationTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfProcessesPerApplication)
+        {
+            TestEnv.StartTestcase();
+            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
+            TestEnv.ResetAspnetCoreModule(appPoolBitness);
+            Thread.Sleep(500);
+
+            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            {
+                DateTime startTime = DateTime.Now;
+
+                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "processesPerApplication", valueOfProcessesPerApplication);
+                HashSet<int> processIDs = new HashSet<int>();
+                
+                for (int i=0; i < 20; i++)
+                {
+                    string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                    int id = Convert.ToInt32(backendProcessId);
+                    if (!processIDs.Contains(id))
+                    {
+                        processIDs.Add(id);
+                    }
+
+                    if (i == (valueOfProcessesPerApplication - 1))
+                    {
+                        Assert.Equal(valueOfProcessesPerApplication, processIDs.Count);
+                    }
+                }
+
+                Assert.Equal(valueOfProcessesPerApplication, processIDs.Count);
+                foreach (var id in processIDs)
+                {
+                    var backendProcess = Process.GetProcessById(id);
+                    Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, id.ToString()));
+                }
+
+                // reset the value with 1 again
+                processIDs = new HashSet<int>();
+                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "processesPerApplication", 1);
+                Thread.Sleep(3000);
+
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                Thread.Sleep(500);
+
+                for (int i = 0; i < 20; i++)
+                {
+                    string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                    int id = Convert.ToInt32(backendProcessId);
+                    if (!processIDs.Contains(id))
+                    {
+                        processIDs.Add(id);
+                    }
+                }
+                Assert.Equal(1, processIDs.Count);
+            }
+
             TestEnv.StandardTestApp.RestoreFile("web.config");
             TestEnv.EndTestcase();
         }

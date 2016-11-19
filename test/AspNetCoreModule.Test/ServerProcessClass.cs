@@ -25,10 +25,10 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
         public Task StartupTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return DoStartupTimeLimit(appPoolBitness);
+            return DoStartupTimeLimitTest(appPoolBitness);
         }
 
-        private static async Task DoStartupTimeLimit(IISConfigUtility.AppPoolBitness appPoolBitness)
+        private static async Task DoStartupTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             TestEnv.StartTestcase();
             TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
