@@ -585,6 +585,7 @@ namespace AspNetCoreModule.Test.Framework
             p.WaitForExit();
             if (checkStandardError && standardError != string.Empty)
             {
+                Console.ReadKey();
                 throw new Exception("Failed to run " + fileName + " " + arguments + ", Error: " + standardError + ", StandardOutput: " + standardOutput);
             }
         }

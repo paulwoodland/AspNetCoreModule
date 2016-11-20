@@ -44,7 +44,7 @@ namespace AspNetCoreModule.Test.Framework
             testHelper = new TestUtility(_logger);
             if (!testHelper.StartTestMachine(ServerType.IIS))
             {
-                return;
+                throw new System.ApplicationException("Failed to clean up initial test enviornment");
             }
 
             //

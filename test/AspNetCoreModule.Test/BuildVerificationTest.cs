@@ -17,7 +17,7 @@ using Xunit.Sdk;
 namespace AspNetCoreModule.Test
 {
     public class BuildVerificationTest : IClassFixture<UseLatestAncm>
-    {        
+    {
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -27,8 +27,8 @@ namespace AspNetCoreModule.Test
         {
             return DoVerifyANCM(serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
         }
-        
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")] 
+
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -37,7 +37,7 @@ namespace AspNetCoreModule.Test
         {
             return DoVerifyANCM(serverType, runtimeFlavor, architecture, applicationBaseUrl, CheckChunkedAsync, ApplicationType.Portable);
         }
-        
+
         public async Task DoVerifyANCM(ServerType serverType, RuntimeFlavor runtimeFlavor, RuntimeArchitecture architecture, string applicationBaseUrl, Func<HttpClient, ILogger, Task> scenario, ApplicationType applicationType)
         {
             var logger = new LoggerFactory()

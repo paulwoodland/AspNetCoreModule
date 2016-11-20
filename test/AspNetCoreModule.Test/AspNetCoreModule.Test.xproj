@@ -9,7 +9,6 @@
     <ProjectGuid>4dda7560-aa29-4161-a5ea-a7e8f3997321</ProjectGuid>
     <RootNamespace>AspNetCoreModule.Test</RootNamespace>
     <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)'=='' ">.\obj</BaseIntermediateOutputPath>
-    <OutputPath Condition="'$(OutputPath)'=='' ">.\bin\</OutputPath>
   </PropertyGroup>
   <PropertyGroup>
     <SchemaVersion>2.0</SchemaVersion>

@@ -70,10 +70,25 @@ namespace AspNetCoreModule.Test
             using (var iisConfig = new IISConfigUtility(ServerType.IIS))
             {
                 iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:02:00"); // 2 minute
+
+                Thread.Sleep(500);
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+
                 await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK);
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:01:00"); // 2 minute
+                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:01:00"); // 1 minute
+
+                Thread.Sleep(500);
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+
                 await VerifyResponseStatus(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), HttpStatusCode.BadGateway);
                 iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:02:00"); // 2 minute
+
+                Thread.Sleep(500);
+                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+
                 await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK);
             }
 
