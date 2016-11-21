@@ -3,7 +3,6 @@
 
 using System;
 using System.IO;
-using System.Threading;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Extensions.Logging;
 
@@ -33,8 +32,12 @@ namespace AspNetCoreModule.Test.Framework
 
         public void GlobalSetup()
         {
+            // 
+            // System.Diagnostics.Debugger.Launch();
+            //
+
             TestUtility.LogTrace("Start of E2ETestEnv");
-            
+
             //
             // Initialize test machine
             //
