@@ -623,7 +623,7 @@ namespace AspNetCoreModule.Test.Framework
         public static string GetApplicationPath(ApplicationType applicationType)
         {
             var applicationBasePath = PlatformServices.Default.Application.ApplicationBasePath;
-            string solutionPath = UseLatestAncm.GetSolutionDirectory();
+            string solutionPath = GlobalSetup.GetSolutionDirectory();
             string applicationPath = string.Empty;
             applicationPath = Path.Combine(solutionPath, "test", "AspNetCoreModule.TestSites.Standard");
             if (applicationType == ApplicationType.Standalone)

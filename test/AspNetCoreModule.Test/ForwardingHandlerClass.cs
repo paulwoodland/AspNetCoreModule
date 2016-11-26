@@ -31,22 +31,18 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoPostMethodTest(IISConfigUtility.AppPoolBitness appPoolBitness, string testData)
         {
-            TestEnv.StartTestcase();
-
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            Thread.Sleep(500);
-
-            var postFormData = new[]
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                new KeyValuePair<string, string>("FirstName", "Mickey"),
-                new KeyValuePair<string, string>("LastName", "Mouse"),
-                new KeyValuePair<string, string>("TestData", testData),
-            };
-            var expectedResponseBody = "FirstName=Mickey&LastName=Mouse&TestData=" + testData;
-            await VerifyPostResponseBody(TestEnv.StandardTestApp.GetHttpUri("EchoPostData"), postFormData, expectedResponseBody, HttpStatusCode.OK);
-            
-            TestEnv.EndTestcase();
+                var postFormData = new[]
+                {
+                    new KeyValuePair<string, string>("FirstName", "Mickey"),
+                    new KeyValuePair<string, string>("LastName", "Mouse"),
+                    new KeyValuePair<string, string>("TestData", testData),
+                };
+                var expectedResponseBody = "FirstName=Mickey&LastName=Mouse&TestData=" + testData;
+                await VerifyPostResponseBody(TestEnv.StandardTestApp.GetHttpUri("EchoPostData"), postFormData, expectedResponseBody, HttpStatusCode.OK);
+
+            }
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -65,50 +61,48 @@ namespace AspNetCoreModule.Test
             int errorEventId = 1000;
             string errorMessageContainThis = "bogus"; // bogus path value to cause 502.3 error
 
-            TestEnv.StartTestcase();
-
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            TestEnv.StandardTestApp.DeleteFile("custom502-3.htm");
-            string curstomErrorMessage = "ANCMTest502-3";
-            TestEnv.StandardTestApp.CreateFile(new string[] { curstomErrorMessage }, "custom502-3.htm");
-
-            Thread.Sleep(500);
-
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                DateTime startTime = DateTime.Now;
+                TestEnv.StandardTestApp.DeleteFile("custom502-3.htm");
+                string curstomErrorMessage = "ANCMTest502-3";
+                TestEnv.StandardTestApp.CreateFile(new string[] { curstomErrorMessage }, "custom502-3.htm");
+
                 Thread.Sleep(500);
 
-                iisConfig.ConfigureCustomLogging(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, 502, 3, "custom502-3.htm");
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "disableStartUpErrorPage", true);
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "processPath", errorMessageContainThis);
-                
-                var responseBody = await GetResponse(TestEnv.StandardTestApp.GetHttpUri(), HttpStatusCode.BadGateway);
-                responseBody = responseBody.Replace("\r", "").Replace("\n", "").Trim();
-                Assert.True(responseBody == curstomErrorMessage);
-                
-                // verify event error log
-                Assert.True(TestUtility.RetryHelper((arg1, arg2, arg3) => VerifyApplicationEventLog(arg1, arg2, arg3), errorEventId, startTime, errorMessageContainThis));
+                using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                {
+                    DateTime startTime = DateTime.Now;
+                    Thread.Sleep(500);
 
-                // try again after setting "false" value
-                startTime = DateTime.Now;
-                Thread.Sleep(500);
+                    iisConfig.ConfigureCustomLogging(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, 502, 3, "custom502-3.htm");
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "disableStartUpErrorPage", true);
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "processPath", errorMessageContainThis);
 
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "disableStartUpErrorPage", false);
-                Thread.Sleep(500);
+                    var responseBody = await GetResponse(TestEnv.StandardTestApp.GetHttpUri(), HttpStatusCode.BadGateway);
+                    responseBody = responseBody.Replace("\r", "").Replace("\n", "").Trim();
+                    Assert.True(responseBody == curstomErrorMessage);
 
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    // verify event error log
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2, arg3) => VerifyApplicationEventLog(arg1, arg2, arg3), errorEventId, startTime, errorMessageContainThis));
 
-                responseBody = await GetResponse(TestEnv.StandardTestApp.GetHttpUri(), HttpStatusCode.BadGateway);
-                Assert.True(responseBody.Contains("808681"));
+                    // try again after setting "false" value
+                    startTime = DateTime.Now;
+                    Thread.Sleep(500);
 
-                // verify event error log
-                Assert.True(TestUtility.RetryHelper((arg1, arg2, arg3) => VerifyApplicationEventLog(arg1, arg2, arg3), errorEventId, startTime, errorMessageContainThis));
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "disableStartUpErrorPage", false);
+                    Thread.Sleep(500);
+
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+
+                    responseBody = await GetResponse(TestEnv.StandardTestApp.GetHttpUri(), HttpStatusCode.BadGateway);
+                    Assert.True(responseBody.Contains("808681"));
+
+                    // verify event error log
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2, arg3) => VerifyApplicationEventLog(arg1, arg2, arg3), errorEventId, startTime, errorMessageContainThis));
+                }
+                TestEnv.StandardTestApp.RestoreFile("web.config");
             }
-            TestEnv.StandardTestApp.RestoreFile("web.config");
-            TestEnv.EndTestcase();
         }
     }
 }

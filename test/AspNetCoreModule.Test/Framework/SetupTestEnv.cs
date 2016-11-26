@@ -5,6 +5,11 @@ using System;
 using System.IO;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Extensions.Logging;
+using System.Threading;
+using Microsoft.Extensions.PlatformAbstractions;
+using System.Linq;
+using static AspNetCoreModule.Test.Framework.TestUtility;
+using System.IO.Compression;
 
 namespace AspNetCoreModule.Test.Framework
 {
@@ -17,20 +22,15 @@ namespace AspNetCoreModule.Test.Framework
         public WebAppContext URLRewriteApp;
         public TestUtility testHelper;
         private ILogger _logger;
-        private bool _globalSetupAlreadyCalled = false;
-
-        public SetupTestEnv()
-        {
-            Testclass.TestEnv = this;
-        }
 
         public void Dispose()
         {
-            TestUtility.LogTrace("End of E2ETestEnv");
-            testHelper.EndTestMachine(); 
+            TestUtility.LogTrace("End of test!!!");
+            testHelper.EndTestMachine();
         }
 
-        public void GlobalSetup()
+
+        public SetupTestEnv(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             // 
             // System.Diagnostics.Debugger.Launch();
@@ -53,7 +53,7 @@ namespace AspNetCoreModule.Test.Framework
             //
             // Initialize context variables
             //
-            string solutionPath = UseLatestAncm.GetSolutionDirectory();
+            string solutionPath = GlobalSetup.GetSolutionDirectory();
             string siteName = "StandardTestSite";
             TestsiteContext = new WebSiteContext("localhost", siteName, 1234);
             RootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), TestsiteContext);
@@ -84,27 +84,12 @@ namespace AspNetCoreModule.Test.Framework
                 URLRewriteApp.RestoreFile("web.config");
                 URLRewriteApp.DeleteFile("app_offline.htm");
             }
-            _globalSetupAlreadyCalled = true;
-        }
 
-        public void StartTestcase()
-        {
-            if (!_globalSetupAlreadyCalled)
-            {
-                GlobalSetup();
-            }
-            
-            // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-            TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);            
-    }
-
-    public void EndTestcase()
-        {
             // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
             TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
         }
 
-        public void SetAppPoolBitness(string appPoolName, IISConfigUtility.AppPoolBitness appPoolBitness)
+        public void InitializeAppPoolBitness(string appPoolName, IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             using (var iisConfig = new IISConfigUtility(ServerType.IIS))
             {
@@ -118,21 +103,6 @@ namespace AspNetCoreModule.Test.Framework
                 }
                 iisConfig.RecycleAppPool(RootAppContext.AppPoolName);
             }
-        }
-
-        public void ResetAspnetCoreModule(IISConfigUtility.AppPoolBitness appPoolBitness)
-        {
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
-            {
-                if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
-                {
-                    iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X86_path, "bitness32");
-                }
-                else
-                {
-                    iisConfig.AddModule("AspNetCoreModule", UseLatestAncm.Aspnetcore_X64_path, "bitness64");
-                }
-            }
-        }
+        }        
     }
 }

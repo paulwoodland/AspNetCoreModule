@@ -28,32 +28,28 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoRecycleApplicationAfterBeingKilled(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            TestEnv.StartTestcase();
-
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            Thread.Sleep(500);
-
-            string backendProcessId_old = null;
-            const int repeatCount = 3;
-            for (int i = 0; i < repeatCount; i++)
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                string backendProcessId_old = null;
+                const int repeatCount = 3;
+                for (int i = 0; i < repeatCount; i++)
+                {
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-                DateTime startTime = DateTime.Now;
-                Thread.Sleep(500);
+                    DateTime startTime = DateTime.Now;
+                    Thread.Sleep(500);
 
-                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
-                Assert.NotEqual(backendProcessId_old, backendProcessId);
-                backendProcessId_old = backendProcessId;
-                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
-                Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
-                backendProcess.Kill();
-                Thread.Sleep(500);
+                    string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                    Assert.NotEqual(backendProcessId_old, backendProcessId);
+                    backendProcessId_old = backendProcessId;
+                    var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                    Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+                    backendProcess.Kill();
+                    Thread.Sleep(500);
+                }
             }
-            TestEnv.EndTestcase();
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -69,37 +65,33 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoRecycleApplicationAfterWebConfigUpdated(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            TestEnv.StartTestcase();
-
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            Thread.Sleep(500);
-
-            string backendProcessId_old = null;
-            const int repeatCount = 3;
-            for (int i = 0; i < repeatCount; i++)
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                string backendProcessId_old = null;
+                const int repeatCount = 3;
+                for (int i = 0; i < repeatCount; i++)
+                {
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-                DateTime startTime = DateTime.Now;
-                Thread.Sleep(500);
+                    DateTime startTime = DateTime.Now;
+                    Thread.Sleep(500);
 
-                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
-                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
-                Assert.NotEqual(backendProcessId_old, backendProcessId);
-                backendProcessId_old = backendProcessId;
-                Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
-                TestEnv.StandardTestApp.MoveFile("web.config", "_web.config");
-                Thread.Sleep(500);
-                TestEnv.StandardTestApp.MoveFile("_web.config", "web.config");
+                    string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                    var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                    Assert.NotEqual(backendProcessId_old, backendProcessId);
+                    backendProcessId_old = backendProcessId;
+                    Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+                    TestEnv.StandardTestApp.MoveFile("web.config", "_web.config");
+                    Thread.Sleep(500);
+                    TestEnv.StandardTestApp.MoveFile("_web.config", "web.config");
+                }
+
+                // restore web.config
+                TestEnv.StandardTestApp.RestoreFile("web.config");
+
             }
-
-            // restore web.config
-            TestEnv.StandardTestApp.RestoreFile("web.config");
-
-            TestEnv.EndTestcase();
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -115,38 +107,35 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoRecycleApplicationWithURLRewrite(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            TestEnv.StartTestcase();
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            Thread.Sleep(500);
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            {   
+                string backendProcessId_old = null;
+                const int repeatCount = 3;
+                for (int i = 0; i < repeatCount; i++)
+                {
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-            string backendProcessId_old = null;
-            const int repeatCount = 3;
-            for (int i = 0; i < repeatCount; i++)
-            {
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    DateTime startTime = DateTime.Now;
+                    Thread.Sleep(500);
 
-                DateTime startTime = DateTime.Now;
-                Thread.Sleep(500);
+                    string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
+                    string backendProcessId = await GetResponse(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
+                    var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                    Assert.NotEqual(backendProcessId_old, backendProcessId);
+                    backendProcessId_old = backendProcessId;
+                    Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
 
-                string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
-                string backendProcessId = await GetResponse(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
-                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
-                Assert.NotEqual(backendProcessId_old, backendProcessId);
-                backendProcessId_old = backendProcessId;
-                Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+                    TestEnv.StandardTestApp.MoveFile("web.config", "_web.config");
+                    Thread.Sleep(500);
+                    TestEnv.StandardTestApp.MoveFile("_web.config", "web.config");
+                }
 
-                TestEnv.StandardTestApp.MoveFile("web.config", "_web.config");
-                Thread.Sleep(500);
-                TestEnv.StandardTestApp.MoveFile("_web.config", "web.config");
+                // restore web.config
+                TestEnv.StandardTestApp.RestoreFile("web.config");
+
             }
-
-            // restore web.config
-            TestEnv.StandardTestApp.RestoreFile("web.config");
-
-            TestEnv.EndTestcase();
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -162,38 +151,34 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoRecycleParentApplicationWithURLRewrite(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            TestEnv.StartTestcase();
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            {   
+                string backendProcessId_old = null;
+                const int repeatCount = 3;
+                for (int i = 0; i < repeatCount; i++)
+                {
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            Thread.Sleep(500);
+                    DateTime startTime = DateTime.Now;
+                    Thread.Sleep(500);
 
-            string backendProcessId_old = null;
-            const int repeatCount = 3;
-            for (int i = 0; i < repeatCount; i++)
-            {
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
+                    string backendProcessId = await GetResponse(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
+                    var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                    Assert.NotEqual(backendProcessId_old, backendProcessId);
+                    backendProcessId_old = backendProcessId;
+                    Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+                    TestEnv.RootAppContext.MoveFile("web.config", "_web.config");
+                    Thread.Sleep(500);
+                    TestEnv.RootAppContext.MoveFile("_web.config", "web.config");
+                }
 
-                DateTime startTime = DateTime.Now;
-                Thread.Sleep(500);
+                // restore web.config
+                TestEnv.RootAppContext.RestoreFile("web.config");
 
-                string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
-                string backendProcessId = await GetResponse(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
-                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
-                Assert.NotEqual(backendProcessId_old, backendProcessId);
-                backendProcessId_old = backendProcessId;
-                Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
-                TestEnv.RootAppContext.MoveFile("web.config", "_web.config");
-                Thread.Sleep(500);
-                TestEnv.RootAppContext.MoveFile("_web.config", "web.config");
             }
-
-            // restore web.config
-            TestEnv.RootAppContext.RestoreFile("web.config");
-
-            TestEnv.EndTestcase();
         }
     }
 }

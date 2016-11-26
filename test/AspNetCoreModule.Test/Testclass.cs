@@ -4,23 +4,17 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Threading;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Xunit;
 using Xunit.Sdk;
-using AspNetCoreModule.Test.WebSocketClient;
 using System.Net;
-using System.Text;
 using AspNetCoreModule.Test.Framework;
-using System.Net.Http.Headers;
 using System.Collections.Generic;
 
 namespace AspNetCoreModule.Test
 {
-    public abstract class Testclass : IClassFixture<UseLatestAncm>, IClassFixture<SetupTestEnv>
+    public abstract class Testclass : IClassFixture<GlobalSetup>
     {
-        public static SetupTestEnv TestEnv;
-
         public static bool VerifyANCMStartEvent(DateTime startFrom, string includeThis)
         {
             return VerifyEventLog(1001, startFrom, includeThis);

@@ -30,41 +30,37 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoAppOfflineTestWithRenaming(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            TestEnv.StartTestcase();
-
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            Thread.Sleep(500);
-
-            string backendProcessId_old = null;
-            string fileContent = "BackEndAppOffline";
-            TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
-
-            for (int i = 0; i < _repeatCount; i++)
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                string backendProcessId_old = null;
+                string fileContent = "BackEndAppOffline";
+                TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
 
-                Thread.Sleep(500);
-                DateTime startTime = DateTime.Now;
-                                
-                // verify 503 
-                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), fileContent + "\r\n", HttpStatusCode.ServiceUnavailable);
+                for (int i = 0; i < _repeatCount; i++)
+                {
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-                // rename app_offline.htm to _app_offline.htm and verify 200
-                TestEnv.StandardTestApp.MoveFile("app_offline.htm", "_app_offline.htm");
-                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
-                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
-                Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                Assert.NotEqual(backendProcessId_old, backendProcessId);
-                backendProcessId_old = backendProcessId;
-                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+                    Thread.Sleep(500);
+                    DateTime startTime = DateTime.Now;
 
-                // rename back to app_offline.htm
-                TestEnv.StandardTestApp.MoveFile("_app_offline.htm", "app_offline.htm");
+                    // verify 503 
+                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), fileContent + "\r\n", HttpStatusCode.ServiceUnavailable);
+
+                    // rename app_offline.htm to _app_offline.htm and verify 200
+                    TestEnv.StandardTestApp.MoveFile("app_offline.htm", "_app_offline.htm");
+                    string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                    var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                    Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                    Assert.NotEqual(backendProcessId_old, backendProcessId);
+                    backendProcessId_old = backendProcessId;
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+
+                    // rename back to app_offline.htm
+                    TestEnv.StandardTestApp.MoveFile("_app_offline.htm", "app_offline.htm");
+                }
+
             }
-            
-            TestEnv.EndTestcase();
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -80,42 +76,38 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoAppOfflineTestWithUrlRewriteAndDeleting(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            TestEnv.StartTestcase();
-
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            Thread.Sleep(500);
-
-            string backendProcessId_old = null;
-            string fileContent = "BackEndAppOffline2";
-            TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
-
-            for (int i = 0; i < _repeatCount; i++)
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
-
-                DateTime startTime = DateTime.Now;
-                Thread.Sleep(500);
-                                
-                // verify 503 
-                string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
-                await VerifyResponseBody(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), fileContent + "\r\n", HttpStatusCode.ServiceUnavailable);
-
-                // delete app_offline.htm and verify 200 
-                TestEnv.StandardTestApp.DeleteFile("app_offline.htm");
-                string backendProcessId = await GetResponse(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
-                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
-                Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                Assert.NotEqual(backendProcessId_old, backendProcessId);
-                backendProcessId_old = backendProcessId;
-                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
-
-                // create app_offline.htm again
+                string backendProcessId_old = null;
+                string fileContent = "BackEndAppOffline2";
                 TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
-            }
 
-            TestEnv.EndTestcase();
+                for (int i = 0; i < _repeatCount; i++)
+                {
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+
+                    DateTime startTime = DateTime.Now;
+                    Thread.Sleep(500);
+
+                    // verify 503 
+                    string urlForUrlRewrite = TestEnv.URLRewriteApp.URL + "/Rewrite2/" + TestEnv.StandardTestApp.URL + "/GetProcessId";
+                    await VerifyResponseBody(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), fileContent + "\r\n", HttpStatusCode.ServiceUnavailable);
+
+                    // delete app_offline.htm and verify 200 
+                    TestEnv.StandardTestApp.DeleteFile("app_offline.htm");
+                    string backendProcessId = await GetResponse(TestEnv.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
+                    var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                    Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                    Assert.NotEqual(backendProcessId_old, backendProcessId);
+                    backendProcessId_old = backendProcessId;
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+
+                    // create app_offline.htm again
+                    TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
+                }
+
+            }
         }
     }
 }

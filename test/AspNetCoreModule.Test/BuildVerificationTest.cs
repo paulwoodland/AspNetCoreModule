@@ -16,7 +16,7 @@ using Xunit.Sdk;
 
 namespace AspNetCoreModule.Test
 {
-    public class BuildVerificationTest : IClassFixture<UseLatestAncm>
+    public class BuildVerificationTest : Testclass
     {
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
@@ -68,7 +68,7 @@ namespace AspNetCoreModule.Test
                 using (var deployer = ApplicationDeployerFactory.Create(deploymentParameters, logger))
                 {
                     var deploymentResult = deployer.Deploy();
-                    string solutionPath = UseLatestAncm.GetSolutionDirectory();
+                    string solutionPath = GlobalSetup.GetSolutionDirectory();
                     var applicationBaseAddress = new Uri(deploymentResult.ApplicationBaseUri);
 
                     var httpClientHandler = new HttpClientHandler();

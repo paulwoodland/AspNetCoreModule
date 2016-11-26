@@ -29,46 +29,42 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoWebSocketTest(IISConfigUtility.AppPoolBitness appPoolBitness, string testData)
         {
-            TestEnv.StartTestcase();
-
-            DateTime startTime = DateTime.Now;
-
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            Thread.Sleep(500);
-
-            await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
-
-            // Get Process ID
-            string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
-
-            // Verify WebSocket without setting subprotocol
-            await VerifyResponseBodyContain(TestEnv.WebSocketApp.GetHttpUri("echo.aspx"), new string[] { "Socket Open" }, HttpStatusCode.OK); // echo.aspx has hard coded path for the websocket server
-
-            // Verify WebSocket subprotocol
-            await VerifyResponseBodyContain(TestEnv.WebSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
-
-            // Verify process creation ANCM event log
-            Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
-
-            // Verify websocket 
-            using (WebSocketClientHelper websocketClient = new WebSocketClientHelper())
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                var frameReturned = websocketClient.Connect(TestEnv.StandardTestApp.GetHttpUri("websocket"), true, true);
-                Assert.True(frameReturned.Content.Contains("Connection: Upgrade"));
-                Assert.True(frameReturned.Content.Contains("Upgrade: Websocket"));
-                Assert.True(frameReturned.Content.Contains("HTTP/1.1 101 Switching Protocols"));
+                DateTime startTime = DateTime.Now;
 
-                VerifySendingWebSocketData(websocketClient, testData);
+                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
 
-                frameReturned = websocketClient.Close();
-                Assert.True(frameReturned.FrameType == FrameType.Close, "Closing Handshake");
+                // Get Process ID
+                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+
+                // Verify WebSocket without setting subprotocol
+                await VerifyResponseBodyContain(TestEnv.WebSocketApp.GetHttpUri("echo.aspx"), new string[] { "Socket Open" }, HttpStatusCode.OK); // echo.aspx has hard coded path for the websocket server
+
+                // Verify WebSocket subprotocol
+                await VerifyResponseBodyContain(TestEnv.WebSocketApp.GetHttpUri("echoSubProtocol.aspx"), new string[] { "Socket Open", "mywebsocketsubprotocol" }, HttpStatusCode.OK); // echoSubProtocol.aspx has hard coded path for the websocket server
+
+                // Verify process creation ANCM event log
+                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+
+                // Verify websocket 
+                using (WebSocketClientHelper websocketClient = new WebSocketClientHelper())
+                {
+                    var frameReturned = websocketClient.Connect(TestEnv.StandardTestApp.GetHttpUri("websocket"), true, true);
+                    Assert.True(frameReturned.Content.Contains("Connection: Upgrade"));
+                    Assert.True(frameReturned.Content.Contains("Upgrade: Websocket"));
+                    Assert.True(frameReturned.Content.Contains("HTTP/1.1 101 Switching Protocols"));
+
+                    VerifySendingWebSocketData(websocketClient, testData);
+
+                    frameReturned = websocketClient.Close();
+                    Assert.True(frameReturned.FrameType == FrameType.Close, "Closing Handshake");
+                }
+
+                // send a simple request again and verify the response body
+                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
+
             }
-            
-            // send a simple request again and verify the response body
-            await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
-
-            TestEnv.EndTestcase();
         }
 
         public static bool VerifySendingWebSocketData(WebSocketClientHelper websocketClient, string testData)

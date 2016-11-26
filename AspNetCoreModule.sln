@@ -25,6 +25,10 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AspnetCoreModule.TestSites.
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AspNetCoreModule.TestSites.TestWebSocket", "test\AspNetCoreModule.TestSites.TestWebSocket\AspNetCoreModule.TestSites.TestWebSocket.xproj", "{9755F612-A155-4BDD-9E20-37ADE0B4B3BA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCoreModule.FunctionalTest", "test\AspNetCoreModule.FunctionalTest\AspNetCoreModule.FunctionalTest.csproj", "{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "temp", "temp", "{852453A5-4976-41B4-BA45-9DA06B6A1963}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -119,6 +123,22 @@ Global
 		{9755F612-A155-4BDD-9E20-37ADE0B4B3BA}.Release|x64.Build.0 = Debug|Any CPU
 		{9755F612-A155-4BDD-9E20-37ADE0B4B3BA}.Release|x86.ActiveCfg = Release|Any CPU
 		{9755F612-A155-4BDD-9E20-37ADE0B4B3BA}.Release|x86.Build.0 = Release|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Debug|Win32.Build.0 = Debug|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Debug|x64.Build.0 = Debug|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Debug|x86.Build.0 = Debug|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Release|Win32.ActiveCfg = Release|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Release|Win32.Build.0 = Release|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Release|x64.ActiveCfg = Release|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Release|x64.Build.0 = Release|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Release|x86.ActiveCfg = Release|Any CPU
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -129,5 +149,6 @@ Global
 		{4DDA7560-AA29-4161-A5EA-A7E8F3997321} = {02F461DC-5166-4E88-AAD5-CF110016A647}
 		{030225D8-4EE8-47E5-B692-2A96B3B51A38} = {02F461DC-5166-4E88-AAD5-CF110016A647}
 		{9755F612-A155-4BDD-9E20-37ADE0B4B3BA} = {02F461DC-5166-4E88-AAD5-CF110016A647}
+		{FB383E4C-A762-4FEA-BEFF-B3E6F4FA40C5} = {852453A5-4976-41B4-BA45-9DA06B6A1963}
 	EndGlobalSection
 EndGlobal

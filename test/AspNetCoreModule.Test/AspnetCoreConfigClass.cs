@@ -27,39 +27,37 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoEnvironmentVariablesTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            TestEnv.StartTestcase();
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                DateTime startTime = DateTime.Now;
-                Thread.Sleep(500);
+                using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                {
+                    DateTime startTime = DateTime.Now;
+                    Thread.Sleep(500);
 
-                string totalNumber = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetEnvironmentVariables"), HttpStatusCode.OK);
-                Assert.True(totalNumber == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetEnvironmentVariables"), HttpStatusCode.OK)));
+                    string totalNumber = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetEnvironmentVariables"), HttpStatusCode.OK);
+                    Assert.True(totalNumber == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetEnvironmentVariables"), HttpStatusCode.OK)));
 
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "environmentVariable", new string[] {"ANCMTestFoo", "foo" });
-                Thread.Sleep(500);
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "environmentVariable", new string[] { "ANCMTestFoo", "foo" });
+                    Thread.Sleep(500);
 
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-                int expectedValue = Convert.ToInt32(totalNumber) + 1;
-                Assert.True(expectedValue.ToString() == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetEnvironmentVariables"), HttpStatusCode.OK)));
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "environmentVariable", new string[] { "ANCMTestBar", "bar" });
-                Thread.Sleep(500);
+                    int expectedValue = Convert.ToInt32(totalNumber) + 1;
+                    Assert.True(expectedValue.ToString() == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetEnvironmentVariables"), HttpStatusCode.OK)));
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "environmentVariable", new string[] { "ANCMTestBar", "bar" });
+                    Thread.Sleep(500);
 
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-                expectedValue++;
-                Assert.True("foo" == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("ExpandEnvironmentVariablesANCMTestFoo"), HttpStatusCode.OK)));
-                Assert.True("bar" == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("ExpandEnvironmentVariablesANCMTestBar"), HttpStatusCode.OK)));
+                    expectedValue++;
+                    Assert.True("foo" == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("ExpandEnvironmentVariablesANCMTestFoo"), HttpStatusCode.OK)));
+                    Assert.True("bar" == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("ExpandEnvironmentVariablesANCMTestBar"), HttpStatusCode.OK)));
+                }
+
+                TestEnv.StandardTestApp.RestoreFile("web.config");
             }
-
-            TestEnv.StandardTestApp.RestoreFile("web.config");
-            TestEnv.EndTestcase();
         }
     }
 }

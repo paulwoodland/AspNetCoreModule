@@ -30,23 +30,20 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoStartupTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            TestEnv.StartTestcase();
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            Thread.Sleep(500);
-
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:01:00"); // 1 minute
-                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep3000"), "Running", HttpStatusCode.OK);
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "startupTimeLimit", 1);  // 1 second
-                await VerifyResponseStatus(TestEnv.StandardTestApp.GetHttpUri("DoSleep3000"), HttpStatusCode.BadGateway);
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "startupTimeLimit", 10); // 10 seconds
-                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep3000"), "Running", HttpStatusCode.OK);
-            }
+                using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                {
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:01:00"); // 1 minute
+                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep3000"), "Running", HttpStatusCode.OK);
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "startupTimeLimit", 1);  // 1 second
+                    await VerifyResponseStatus(TestEnv.StandardTestApp.GetHttpUri("DoSleep3000"), HttpStatusCode.BadGateway);
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "startupTimeLimit", 10); // 10 seconds
+                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep3000"), "Running", HttpStatusCode.OK);
+                }
 
-            TestEnv.StandardTestApp.RestoreFile("web.config");
-            TestEnv.EndTestcase();
+                TestEnv.StandardTestApp.RestoreFile("web.config");
+            }
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -62,38 +59,35 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoRequestTimeoutTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            TestEnv.StartTestcase();
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            Thread.Sleep(500);
-
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:02:00"); // 2 minute
+                using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                {
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:02:00"); // 2 minute
 
-                Thread.Sleep(500);
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    Thread.Sleep(500);
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK);
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:01:00"); // 1 minute
+                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK);
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:01:00"); // 1 minute
 
-                Thread.Sleep(500);
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    Thread.Sleep(500);
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-                await VerifyResponseStatus(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), HttpStatusCode.BadGateway);
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:02:00"); // 2 minute
+                    await VerifyResponseStatus(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), HttpStatusCode.BadGateway);
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:02:00"); // 2 minute
 
-                Thread.Sleep(500);
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    Thread.Sleep(500);
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK);
+                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK);
+                }
+
+                TestEnv.StandardTestApp.RestoreFile("web.config");
             }
-
-            TestEnv.StandardTestApp.RestoreFile("web.config");
-            TestEnv.EndTestcase();
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -113,34 +107,31 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoShutdownTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfshutdownTimeLimit, int expectedClosingTime)
         {
-            TestEnv.StartTestcase();
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            Thread.Sleep(500);
-
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                // Set new value (10 second) to make the backend process get the Ctrl-C signal and measure when the recycle happens
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "shutdownTimeLimit", valueOfshutdownTimeLimit); 
-                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoClosingTimeSleep20000"), "Running", HttpStatusCode.OK);  // set 20 seconds for closing time sleep
-                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);  
-                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
-                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
-                
-                // Set a new value such as 100 to make the backend process being recycled
-                DateTime startTime = DateTime.Now;
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "shutdownTimeLimit", 100); 
-                backendProcess.WaitForExit(30000);
-                DateTime endTime = DateTime.Now;
-                var difference = endTime - startTime;
-                Assert.True(difference.Seconds >= expectedClosingTime);
-                Assert.True(difference.Seconds < expectedClosingTime + 3);
-                Assert.True(backendProcessId != await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK));
-                await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
-            }
+                using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                {
+                    // Set new value (10 second) to make the backend process get the Ctrl-C signal and measure when the recycle happens
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "shutdownTimeLimit", valueOfshutdownTimeLimit);
+                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoClosingTimeSleep20000"), "Running", HttpStatusCode.OK);  // set 20 seconds for closing time sleep
+                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
+                    string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                    var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
 
-            TestEnv.StandardTestApp.RestoreFile("web.config");
-            TestEnv.EndTestcase();
+                    // Set a new value such as 100 to make the backend process being recycled
+                    DateTime startTime = DateTime.Now;
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "shutdownTimeLimit", 100);
+                    backendProcess.WaitForExit(30000);
+                    DateTime endTime = DateTime.Now;
+                    var difference = endTime - startTime;
+                    Assert.True(difference.Seconds >= expectedClosingTime);
+                    Assert.True(difference.Seconds < expectedClosingTime + 3);
+                    Assert.True(backendProcessId != await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK));
+                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
+                }
+
+                TestEnv.StandardTestApp.RestoreFile("web.config");
+            }
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -156,51 +147,50 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoStdoutLogEnabledTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            TestEnv.StartTestcase();
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            TestEnv.StandardTestApp.DeleteDirectory("logs");
-            
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                DateTime startTime = DateTime.Now;
-                Thread.Sleep(500);
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", true); 
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogFile", @".\logs\stdout");
+                TestEnv.StandardTestApp.DeleteDirectory("logs");
 
-                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
-                string logPath = TestEnv.StandardTestApp.GetDirectoryPathWith("logs");
-                Assert.False(Directory.Exists(logPath));
-                Assert.True(TestUtility.RetryHelper((arg1, arg2, arg3) => VerifyApplicationEventLog(arg1, arg2, arg3), 1004, startTime, @"logs\stdout"));
-                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+                using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                {
+                    DateTime startTime = DateTime.Now;
+                    Thread.Sleep(500);
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", true);
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogFile", @".\logs\stdout");
 
-                TestEnv.StandardTestApp.CreateDirectory("logs");
+                    string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                    string logPath = TestEnv.StandardTestApp.GetDirectoryPathWith("logs");
+                    Assert.False(Directory.Exists(logPath));
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2, arg3) => VerifyApplicationEventLog(arg1, arg2, arg3), 1004, startTime, @"logs\stdout"));
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
 
-                // verify the log file is not created because backend process is not recycled
-                Assert.True(Directory.GetFiles(logPath).Length == 0);
-                Assert.True(backendProcessId == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK)));
+                    TestEnv.StandardTestApp.CreateDirectory("logs");
 
-                // reset web.config to recycle backend process and give write permission to the Users local group to which IIS workerprocess identity belongs
-                SecurityIdentifier sid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
-                TestUtility.GiveWritePermissionTo(logPath, sid);
+                    // verify the log file is not created because backend process is not recycled
+                    Assert.True(Directory.GetFiles(logPath).Length == 0);
+                    Assert.True(backendProcessId == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK)));
 
-                startTime = DateTime.Now;
-                Thread.Sleep(500);
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", false);
+                    // reset web.config to recycle backend process and give write permission to the Users local group to which IIS workerprocess identity belongs
+                    SecurityIdentifier sid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+                    TestUtility.GiveWritePermissionTo(logPath, sid);
 
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    startTime = DateTime.Now;
+                    Thread.Sleep(500);
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", false);
 
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", true);
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
 
-                Assert.True(backendProcessId != (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK)));
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", true);
 
-                // Verify log file is created now after backend process is recycled
-                Assert.True(TestUtility.RetryHelper(p => { return Directory.GetFiles(p).Length > 0 ? true : false; }, logPath));
+                    Assert.True(backendProcessId != (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK)));
+
+                    // Verify log file is created now after backend process is recycled
+                    Assert.True(TestUtility.RetryHelper(p => { return Directory.GetFiles(p).Length > 0 ? true : false; }, logPath));
+                }
+
+                TestEnv.StandardTestApp.RestoreFile("web.config");
             }
-
-            TestEnv.StandardTestApp.RestoreFile("web.config");
-            TestEnv.EndTestcase();
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -218,41 +208,39 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoProcessPathAndArgumentsTest(IISConfigUtility.AppPoolBitness appPoolBitness, string processPath, string argumentsPrefix)
         {
-            TestEnv.StartTestcase();
-            TestEnv.SetAppPoolBitness(TestEnv.StandardTestApp.AppPoolName, appPoolBitness);
-            TestEnv.ResetAspnetCoreModule(appPoolBitness);
-            
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+            using (var TestEnv = new SetupTestEnv(appPoolBitness))
             {
-                string arguments = argumentsPrefix + TestEnv.StandardTestApp.GetArgumentFileName();
-                string tempProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
-                var tempBackendProcess = Process.GetProcessById(Convert.ToInt32(tempProcessId));
-
-                // replace $env with the actual test value
-                if (processPath == "$env")
+                using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {
-                    string tempString = Environment.ExpandEnvironmentVariables("%systemdrive%").ToLower();
-                    processPath = Path.Combine(tempBackendProcess.MainModule.FileName).ToLower().Replace(tempString, "%systemdrive%");
-                    arguments = TestEnv.StandardTestApp.GetDirectoryPathWith(arguments).ToLower().Replace(tempString, "%systemdrive%");
+                    string arguments = argumentsPrefix + TestEnv.StandardTestApp.GetArgumentFileName();
+                    string tempProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                    var tempBackendProcess = Process.GetProcessById(Convert.ToInt32(tempProcessId));
+
+                    // replace $env with the actual test value
+                    if (processPath == "$env")
+                    {
+                        string tempString = Environment.ExpandEnvironmentVariables("%systemdrive%").ToLower();
+                        processPath = Path.Combine(tempBackendProcess.MainModule.FileName).ToLower().Replace(tempString, "%systemdrive%");
+                        arguments = TestEnv.StandardTestApp.GetDirectoryPathWith(arguments).ToLower().Replace(tempString, "%systemdrive%");
+                    }
+
+                    DateTime startTime = DateTime.Now;
+                    Thread.Sleep(500);
+
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "processPath", processPath);
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "arguments", arguments);
+                    Thread.Sleep(500);
+
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    Thread.Sleep(500);
+
+                    string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
                 }
 
-                DateTime startTime = DateTime.Now;
-                Thread.Sleep(500);
-
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "processPath", processPath);
-                iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "arguments", arguments);
-                Thread.Sleep(500);
-
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
-                Thread.Sleep(500);                
-
-                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
-                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+                TestEnv.StandardTestApp.RestoreFile("web.config");
             }
-
-            TestEnv.StandardTestApp.RestoreFile("web.config");
-            TestEnv.EndTestcase();
         }
     }
 }
