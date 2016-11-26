@@ -23,6 +23,8 @@ namespace AspNetCoreModule.Test.Framework
         public TestUtility testHelper;
         private ILogger _logger;
 
+        private static int _tcpPort = 81;
+
         public void Dispose()
         {
             TestUtility.LogTrace("End of test!!!");
@@ -53,9 +55,12 @@ namespace AspNetCoreModule.Test.Framework
             //
             // Initialize context variables
             //
+
             string solutionPath = GlobalSetup.GetSolutionDirectory();
-            string siteName = "StandardTestSite";
-            TestsiteContext = new WebSiteContext("localhost", siteName, 1234);
+            int tcpPort = _tcpPort++; 
+            
+            string siteName = "StandardTestSite" + tcpPort.ToString();
+            TestsiteContext = new WebSiteContext("localhost", siteName, tcpPort);
             RootAppContext = new WebAppContext("/", Path.Combine(solutionPath, "test", "WebRoot", "WebSite1"), TestsiteContext);
             string standardAppRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTestPublishTemp");
             TestUtility.InitializeStandardAppRootPath(standardAppRootPath);
@@ -68,7 +73,19 @@ namespace AspNetCoreModule.Test.Framework
             //
             using (var iisConfig = new IISConfigUtility(ServerType.IIS))
             {
-                iisConfig.CreateSite(TestsiteContext.SiteName, RootAppContext.PhysicalPath, 555, TestsiteContext.TcpPort, RootAppContext.AppPoolName);
+                iisConfig.CreateAppPool(TestsiteContext.SiteName);
+                if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
+                {
+                    if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
+                    {
+                        iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", true);
+                    }
+                    else
+                    {
+                        iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", false);
+                    }
+                }
+                iisConfig.CreateSite(TestsiteContext.SiteName, RootAppContext.PhysicalPath, 555, TestsiteContext.TcpPort, TestsiteContext.SiteName);
                 RootAppContext.RestoreFile("web.config");
                 RootAppContext.DeleteFile("app_offline.htm");
 
@@ -84,25 +101,6 @@ namespace AspNetCoreModule.Test.Framework
                 URLRewriteApp.RestoreFile("web.config");
                 URLRewriteApp.DeleteFile("app_offline.htm");
             }
-
-            // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-            TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
         }
-
-        public void InitializeAppPoolBitness(string appPoolName, IISConfigUtility.AppPoolBitness appPoolBitness)
-        {
-            using (var iisConfig = new IISConfigUtility(ServerType.IIS))
-            {
-                if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
-                {
-                    iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", true);
-                }
-                else
-                {
-                    iisConfig.SetAppPoolSetting(RootAppContext.AppPoolName, "enable32BitAppOnWin64", false);
-                }
-                iisConfig.RecycleAppPool(RootAppContext.AppPoolName);
-            }
-        }        
     }
 }
