@@ -41,7 +41,6 @@ namespace AspNetCoreModule.Test
                 };
                 var expectedResponseBody = "FirstName=Mickey&LastName=Mouse&TestData=" + testData;
                 await VerifyPostResponseBody(TestEnv.StandardTestApp.GetHttpUri("EchoPostData"), postFormData, expectedResponseBody, HttpStatusCode.OK);
-
             }
         }
 
