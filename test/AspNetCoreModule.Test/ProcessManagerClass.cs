@@ -59,6 +59,7 @@ namespace AspNetCoreModule.Test
                             rapidFailsTriggered = true;
                             break;
                         }
+
                         string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
                         Assert.NotEqual(backendProcessId_old, backendProcessId);
                         backendProcessId_old = backendProcessId;

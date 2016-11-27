@@ -17,7 +17,8 @@ namespace AspNetCoreModule.Test.Framework
     public class GlobalTestEnvironment : IDisposable
     {
         private string _setupScriptPath = null;
-        public static string Aspnetcore_X64_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "aspnetcore_private.dll");
+        public static string Aspnetcore_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "aspnetcore_private.dll");
+        public static string Aspnetcore_path_original = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "aspnetcore.dll");
         public static string Aspnetcore_X86_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "syswow64", "inetsrv", "aspnetcore_private.dll");
         public static string IISExpressAspnetcoreSchema_path = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%"), "IIS Express", "config", "schema", "aspnetcore_schema.xml");
         public static string IISAspnetcoreSchema_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "config", "schema", "aspnetcore_schema.xml");
@@ -34,9 +35,30 @@ namespace AspNetCoreModule.Test.Framework
             {
                 PostFixes = new List<string>();
             }
-                        
-            TestUtility.LogTrace("Initializing test environment");
-            UpdateAspnetCoreBinaryFiles();
+
+            if (_referenceCount == 1)
+            {
+                /*try
+                {
+                    IISConfigUtility.RestoreAppHostConfig();
+                }
+                catch
+                {
+                    // ignore
+                }*/
+
+                TestUtility.LogTrace("Initializing test environment");
+
+                UpdateAspnetCoreBinaryFiles();
+
+                if (!ReplaceExistingFiles)
+                {
+                    using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                    {
+                        iisConfig.AddModule("AspNetCoreModule", Aspnetcore_path, null);
+                    }
+                }
+            }
         }
 
         public void Dispose()
@@ -72,10 +94,19 @@ namespace AspNetCoreModule.Test.Framework
                         // ignore
                     }
                 }
+
+                if (!ReplaceExistingFiles)
+                {
+                    using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                    {
+                        iisConfig.AddModule("AspNetCoreModule", Aspnetcore_path_original, null);
+                    }
+                }
+
                 TestUtility.LogTrace("End of test!!!");
             }
         }
-
+        
         private void UpdateAspnetCoreBinaryFiles()
         {
             var solutionRoot = GetSolutionDirectory();
@@ -134,7 +165,7 @@ namespace AspNetCoreModule.Test.Framework
                     TestUtility.RestartServices(RestartOption.KillWorkerProcess);
                     TestUtility.RestartServices(RestartOption.StopW3svcStartW3svc);
                     Thread.Sleep(1000);
-                    TestUtility.FileCopy(Path.Combine(outputPath, "x64", "aspnetcore.dll"), Aspnetcore_X64_path);
+                    TestUtility.FileCopy(Path.Combine(outputPath, "x64", "aspnetcore.dll"), Aspnetcore_path);
                     if (TestUtility.IsOSAmd64)
                     {
                         TestUtility.FileCopy(Path.Combine(outputPath, "Win32", "aspnetcore.dll"), Aspnetcore_X86_path);
