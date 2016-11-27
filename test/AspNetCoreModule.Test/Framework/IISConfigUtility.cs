@@ -26,6 +26,8 @@ namespace AspNetCoreModule.Test.Framework
         }
 
         private ServerType _serverType = ServerType.IIS;
+        private string _iisExpressConfigPath = null;
+
         public enum AppPoolBitness
         {
             enable32Bit,
@@ -36,9 +38,10 @@ namespace AspNetCoreModule.Test.Framework
         {
         }
 
-        public IISConfigUtility(ServerType type)
+        public IISConfigUtility(ServerType type, string iisExpressConfigPath = null)
         {
             _serverType = type;
+            _iisExpressConfigPath = iisExpressConfigPath;
         }
 
         public static void BackupAppHostConfig()
@@ -55,6 +58,12 @@ namespace AspNetCoreModule.Test.Framework
         {
             string fromfile = Strings.AppHostConfigPath + ".ancmtest.bak";
             string tofile = Strings.AppHostConfigPath;
+
+            if (!File.Exists(fromfile) && !File.Exists(tofile))
+            {
+                // IIS is not installed, don't do anything here
+                return;
+            }
 
             // backup first if the backup file is not available
             if (!File.Exists(fromfile))
@@ -73,13 +82,16 @@ namespace AspNetCoreModule.Test.Framework
         {
             if (_serverType == ServerType.IISExpress)
             {
-                return new ServerManager();
+                return new ServerManager(
+                    false,                         // readOnly 
+                    _iisExpressConfigPath          // applicationhost.config path for IISExpress
+                );
             }
             else
             {
                 return new ServerManager(
                     false,                         // readOnly 
-                    Strings.AppHostConfigPath      // applicationhost.config path
+                    Strings.AppHostConfigPath      // applicationhost.config path for IIS
                 );
             }
         }

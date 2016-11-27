@@ -419,7 +419,8 @@ namespace AspNetCoreModule.Test.Framework
             StopWasStartW3svc,
             StopW3svcStartW3svc,
             KillWorkerProcess,            
-            KillVSJitDebugger
+            KillVSJitDebugger,
+            KillIISExpress
         }
         public static void RestartServices(RestartOption option)
         {
@@ -447,7 +448,27 @@ namespace AspNetCoreModule.Test.Framework
                 case RestartOption.KillVSJitDebugger:
                     KillVSJitDebugger();
                     break;
+                case RestartOption.KillIISExpress:
+                    KillIISExpress();
+                    break;
             };
+        }
+
+        public static void KillIISExpress()
+        {
+            string query = "Select * from Win32_Process Where Name = \"iisexpress.exe\"";
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+            ManagementObjectCollection processList = searcher.Get();
+
+            foreach (ManagementObject obj in processList)
+            {
+                string[] argList = new string[] { string.Empty, string.Empty };
+                bool foundProcess = true;
+                if (foundProcess)
+                {
+                    obj.InvokeMethod("Terminate", null);
+                }
+            }
         }
 
         public static void KillVSJitDebugger()
@@ -533,27 +554,39 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public static void RunCommand(string fileName, string arguments = null, bool checkStandardError = true)
+        public static int RunCommand(string fileName, string arguments = null, bool checkStandardError = true, bool waitForExit=true)
         {
+            int pid = -1;
             Process p = new Process();
             p.StartInfo.FileName = fileName;
             if (arguments != null)
             {
                 p.StartInfo.Arguments = arguments;
             }
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.RedirectStandardError = true;
+
+            if (waitForExit)
+            {
+                p.StartInfo.RedirectStandardOutput = true;
+                p.StartInfo.RedirectStandardError = true;
+            }
+            
             p.StartInfo.UseShellExecute = false;
-            p.StartInfo.CreateNoWindow = true;
-            p.Start();
-            string standardOutput = p.StandardOutput.ReadToEnd();
-            string standardError = p.StandardError.ReadToEnd();
-            p.WaitForExit();
+            p.StartInfo.CreateNoWindow = true;            
+            p.Start();            
+            pid = p.Id;
+            string standardOutput = string.Empty;
+            string standardError = string.Empty;
+            if (waitForExit)
+            {
+                standardOutput = p.StandardOutput.ReadToEnd();
+                standardError = p.StandardError.ReadToEnd();
+                p.WaitForExit();
+            }
             if (checkStandardError && standardError != string.Empty)
             {
-                Console.ReadKey();
                 throw new Exception("Failed to run " + fileName + " " + arguments + ", Error: " + standardError + ", StandardOutput: " + standardOutput);
             }
+            return pid;  
         }
 
         public static void CallIISReset()

@@ -177,7 +177,6 @@ namespace AspNetCoreModule.Test
 
                 // restore web.config
                 TestEnv.RootAppContext.RestoreFile("web.config");
-
             }
         }
     }

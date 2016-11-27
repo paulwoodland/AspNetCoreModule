@@ -4,7 +4,6 @@
 using System;
 using System.IO;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
-using Microsoft.Extensions.Logging;
 using System.Threading;
 using Microsoft.Extensions.PlatformAbstractions;
 using System.Linq;
@@ -20,7 +19,7 @@ namespace AspNetCoreModule.Test.Framework
         public static string Aspnetcore_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "aspnetcore_private.dll");
         public static string Aspnetcore_path_original = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "aspnetcore.dll");
         public static string Aspnetcore_X86_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "syswow64", "inetsrv", "aspnetcore_private.dll");
-        public static string IISExpressAspnetcoreSchema_path = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%"), "IIS Express", "config", "schema", "aspnetcore_schema.xml");
+        public static string IISExpressAspnetcoreSchema_path = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles%"), "IIS Express", "config", "schema", "aspnetcore_schema.xml");
         public static string IISAspnetcoreSchema_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "config", "schema", "aspnetcore_schema.xml");
         public static bool UseSolutionOutputFiles = true;
         public static bool ReplaceExistingFiles = false;
@@ -38,19 +37,19 @@ namespace AspNetCoreModule.Test.Framework
 
             if (_referenceCount == 1)
             {
-                /*try
+                TestUtility.RestartServices(TestUtility.RestartOption.KillIISExpress);
+
+                TestUtility.LogTrace("Initializing global test environment");
+                try
                 {
                     IISConfigUtility.RestoreAppHostConfig();
                 }
                 catch
                 {
                     // ignore
-                }*/
-
-                TestUtility.LogTrace("Initializing test environment");
+                }
 
                 UpdateAspnetCoreBinaryFiles();
-
                 if (!ReplaceExistingFiles)
                 {
                     using (var iisConfig = new IISConfigUtility(ServerType.IIS))
@@ -66,6 +65,8 @@ namespace AspNetCoreModule.Test.Framework
             _referenceCount--;
             if (_referenceCount == 0)
             {
+                TestUtility.RestartServices(TestUtility.RestartOption.KillIISExpress);
+
                 RollbackAspnetCoreBinaryFileChanges();
 
                 foreach (var postfix in PostFixes)
