@@ -37,8 +37,7 @@ namespace AspNetCoreModule.Test
                 string backendProcessId_old = null;
                 
                 DateTime startTime = DateTime.Now;
-                Thread.Sleep(500);
-
+                                
                 string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
                 Assert.NotEqual(backendProcessId_old, backendProcessId);
                 var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));

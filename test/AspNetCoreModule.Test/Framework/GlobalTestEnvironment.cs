@@ -24,19 +24,24 @@ namespace AspNetCoreModule.Test.Framework
         public static bool UseSolutionOutputFiles = true;
         public static bool ReplaceExistingFiles = false;
         public static int _referenceCount = 0;
-        public static List<string> PostFixes = null;
+        public static List<string> CleanupQueue = null;
         
         public GlobalTestEnvironment()
         {
             _referenceCount++;
 
-            if (PostFixes == null)
+            if (CleanupQueue == null)
             {
-                PostFixes = new List<string>();
+                CleanupQueue = new List<string>();
             }
 
             if (_referenceCount == 1)
             {
+                if (Environment.ExpandEnvironmentVariables("%ANCMDebug%").ToLower() == "true")
+                {
+                    System.Diagnostics.Debugger.Launch();                    
+                }
+
                 TestUtility.RestartServices(TestUtility.RestartOption.KillIISExpress);
 
                 TestUtility.LogTrace("Initializing global test environment");
@@ -63,13 +68,14 @@ namespace AspNetCoreModule.Test.Framework
         public void Dispose()
         {
             _referenceCount--;
+
             if (_referenceCount == 0)
             {
                 TestUtility.RestartServices(TestUtility.RestartOption.KillIISExpress);
 
                 RollbackAspnetCoreBinaryFileChanges();
 
-                foreach (var postfix in PostFixes)
+                foreach (var postfix in CleanupQueue)
                 {
                     string siteName = "StandardTestSite" + postfix;
                     string siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", postfix);

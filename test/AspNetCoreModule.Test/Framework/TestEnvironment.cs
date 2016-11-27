@@ -23,7 +23,7 @@ namespace AspNetCoreModule.Test.Framework
         public WebAppContext URLRewriteApp;
         public TestUtility testHelper;
         private ILogger _logger;
-        private int _iisExpressPid = -1;
+        private int _iisExpressPidBackup = -1;
 
         private static int _siteId = 81;
         private string postfix = string.Empty;
@@ -32,9 +32,9 @@ namespace AspNetCoreModule.Test.Framework
         {
             TestUtility.LogTrace("End of test!!!");            
 
-            if (_iisExpressPid != -1)
+            if (_iisExpressPidBackup != -1)
             {
-                var iisExpressProcess = Process.GetProcessById(Convert.ToInt32(_iisExpressPid));
+                var iisExpressProcess = Process.GetProcessById(Convert.ToInt32(_iisExpressPidBackup));
                 iisExpressProcess.Kill();
                 iisExpressProcess.WaitForExit();
             }
@@ -43,9 +43,6 @@ namespace AspNetCoreModule.Test.Framework
         public TestEnvironment(IISConfigUtility.AppPoolBitness appPoolBitness, ServerType serverType = ServerType.IIS)
         {
             TestUtility.LogTrace("Start of E2ETestEnv");
-            // 
-            // System.Diagnostics.Debugger.Launch();
-            //
 
             string solutionPath = GlobalTestEnvironment.GetSolutionDirectory();
 
@@ -60,7 +57,7 @@ namespace AspNetCoreModule.Test.Framework
             //
             _logger = new LoggerFactory()
                     .AddConsole()
-                    .CreateLogger(string.Format("P1"));
+                    .CreateLogger(string.Format("ANCMTest"));
             testHelper = new TestUtility(_logger);
 
             //
@@ -68,7 +65,6 @@ namespace AspNetCoreModule.Test.Framework
             //
             string siteRootPath = string.Empty;
             string siteName = string.Empty;
-
             for (int i = 0; i < 3; i++)
             {
                 string postfix = Path.GetRandomFileName();
@@ -76,7 +72,10 @@ namespace AspNetCoreModule.Test.Framework
                 siteName = "StandardTestSite" + postfix;
                 if (!Directory.Exists(siteRootPath))
                 {
-                    GlobalTestEnvironment.PostFixes.Add(postfix);
+                    if (serverType == ServerType.IIS)
+                    {
+                        GlobalTestEnvironment.CleanupQueue.Add(postfix);
+                    }
                     break;
                 }
             }
@@ -107,11 +106,27 @@ namespace AspNetCoreModule.Test.Framework
             DirectoryCopy(publishPath, standardAppRootPath);
 
             int tcpPort = _siteId++;
-            TestsiteContext = new WebSiteContext("localhost", siteName, tcpPort);
+
+            // initialize variables
+            string appPoolName = null;
+            if (serverType == ServerType.IIS)
+            {
+                appPoolName = siteName;
+            }
+            if (serverType == ServerType.IISExpress)
+            {
+                appPoolName = "Clr4IntegratedAppPool";
+            }
+            
+            TestsiteContext = new WebSiteContext("localhost", siteName, tcpPort);            
             RootAppContext = new WebAppContext("/", Path.Combine(siteRootPath, "WebSite1"), TestsiteContext);
+            RootAppContext.AppPoolName = appPoolName;
             StandardTestApp = new WebAppContext("/StandardTestApp", standardAppRootPath, TestsiteContext);
+            StandardTestApp.AppPoolName = appPoolName;
             WebSocketApp = new WebAppContext("/WebSocket", Path.Combine(siteRootPath, "WebSocket"), TestsiteContext);
+            WebSocketApp.AppPoolName = appPoolName;
             URLRewriteApp = new WebAppContext("/URLRewriteApp", Path.Combine(siteRootPath, "URLRewrite"), TestsiteContext);
+            URLRewriteApp.AppPoolName = appPoolName;
 
             string iisExpressConfigPath = null;
             if (serverType == ServerType.IISExpress)
@@ -125,10 +140,10 @@ namespace AspNetCoreModule.Test.Framework
             //
             using (var iisConfig = new IISConfigUtility(serverType, iisExpressConfigPath))
             {
-                iisConfig.CreateAppPool(TestsiteContext.SiteName);
-                if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
+                if (serverType == ServerType.IIS)
                 {
-                    if (serverType == ServerType.IIS)
+                    iisConfig.CreateAppPool(appPoolName);
+                    if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
                     {
                         if (appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
                         {
@@ -140,33 +155,37 @@ namespace AspNetCoreModule.Test.Framework
                         }
                     }
                 }
-                iisConfig.CreateSite(TestsiteContext.SiteName, RootAppContext.PhysicalPath, _siteId, TestsiteContext.TcpPort, TestsiteContext.SiteName);
+
+                iisConfig.CreateSite(TestsiteContext.SiteName, RootAppContext.PhysicalPath, _siteId, TestsiteContext.TcpPort, appPoolName);
                 RootAppContext.RestoreFile("web.config");
                 RootAppContext.DeleteFile("app_offline.htm");
 
-                iisConfig.CreateApp(TestsiteContext.SiteName, StandardTestApp.Name, StandardTestApp.PhysicalPath);
+                iisConfig.CreateApp(TestsiteContext.SiteName, StandardTestApp.Name, StandardTestApp.PhysicalPath, appPoolName);
                 StandardTestApp.RestoreFile("web.config");
                 StandardTestApp.DeleteFile("app_offline.htm");
 
-                iisConfig.CreateApp(TestsiteContext.SiteName, WebSocketApp.Name, WebSocketApp.PhysicalPath);
+                iisConfig.CreateApp(TestsiteContext.SiteName, WebSocketApp.Name, WebSocketApp.PhysicalPath, appPoolName);
                 WebSocketApp.RestoreFile("web.config");
                 WebSocketApp.DeleteFile("app_offline.htm");
 
-                iisConfig.CreateApp(TestsiteContext.SiteName, URLRewriteApp.Name, URLRewriteApp.PhysicalPath);
+                iisConfig.CreateApp(TestsiteContext.SiteName, URLRewriteApp.Name, URLRewriteApp.PhysicalPath, appPoolName);
                 URLRewriteApp.RestoreFile("web.config");
                 URLRewriteApp.DeleteFile("app_offline.htm");
             }
 
             if (serverType == ServerType.IISExpress)
             {
+                string cmdline;
+                string argument = "/siteid:" + _siteId + " /config:" + iisExpressConfigPath;
                 if (Directory.Exists(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%")) && appPoolBitness == IISConfigUtility.AppPoolBitness.enable32Bit)
                 {
-                    _iisExpressPid = RunCommand(Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%"), "IIS Express", "iisexpress.exe"), "/siteid:" + _siteId + " /config:\"" + iisExpressConfigPath + "\"", true, false);
+                    cmdline = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles(x86)%"), "IIS Express", "iisexpress.exe");
                 }
                 else
                 {
-                    _iisExpressPid = RunCommand(Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles%"), "IIS Express", "iisexpress.exe"), "/siteid:" + _siteId + " /config:\"" + iisExpressConfigPath + "\"", true, false);
+                    cmdline = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles%"), "IIS Express", "iisexpress.exe");                    
                 }
+                _iisExpressPidBackup = RunCommand(cmdline, argument, false, false);
             }
         }
     }

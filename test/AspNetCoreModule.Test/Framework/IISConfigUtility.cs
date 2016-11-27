@@ -176,7 +176,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void CreateApp(string siteName, string appName, string physicalPath)
+        public void CreateApp(string siteName, string appName, string physicalPath, string appPoolName = "DefaultAppPool")
         {
             LogTrace("Creating web app : " + siteName + "/" + appName);
             using (ServerManager serverManager = GetServerManager())
@@ -196,6 +196,7 @@ namespace AspNetCoreModule.Test.Framework
                 string appPath = @"/" + appName;
                 appPath = appPath.Replace("//", "/");
                 applicationElement["path"] = appPath;
+                applicationElement["applicationPool"] = appPoolName;
 
                 ConfigurationElementCollection applicationCollection = applicationElement.GetCollection();
 
