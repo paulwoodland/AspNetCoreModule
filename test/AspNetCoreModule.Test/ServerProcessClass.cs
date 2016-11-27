@@ -67,21 +67,21 @@ namespace AspNetCoreModule.Test
 
                     Thread.Sleep(500);
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
 
                     await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK);
                     iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:01:00"); // 1 minute
 
                     Thread.Sleep(500);
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
 
                     await VerifyResponseStatus(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), HttpStatusCode.BadGateway);
                     iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:02:00"); // 2 minute
 
                     Thread.Sleep(500);
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
 
                     await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK);
                 }
@@ -179,7 +179,7 @@ namespace AspNetCoreModule.Test
                     iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", false);
 
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
 
                     iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", true);
 
@@ -232,7 +232,7 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
 
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
                     Thread.Sleep(500);
 
                     string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);

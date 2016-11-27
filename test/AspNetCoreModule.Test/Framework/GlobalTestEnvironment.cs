@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Server.IntegrationTesting;
 using System.Threading;
 using Microsoft.Extensions.PlatformAbstractions;
 using System.Linq;
-using static AspNetCoreModule.Test.Framework.TestUtility;
 using System.IO.Compression;
 using System.Collections.Generic;
 
@@ -42,7 +41,7 @@ namespace AspNetCoreModule.Test.Framework
                     System.Diagnostics.Debugger.Launch();                    
                 }
 
-                TestUtility.RestartServices(TestUtility.RestartOption.KillIISExpress);
+                TestUtility.RestartServices(RestartOption.KillIISExpress);
 
                 TestUtility.LogTrace("Initializing global test environment");
                 try
@@ -71,7 +70,7 @@ namespace AspNetCoreModule.Test.Framework
 
             if (_referenceCount == 0)
             {
-                TestUtility.RestartServices(TestUtility.RestartOption.KillIISExpress);
+                TestUtility.RestartServices(RestartOption.KillIISExpress);
 
                 RollbackAspnetCoreBinaryFileChanges();
 

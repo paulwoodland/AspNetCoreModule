@@ -17,6 +17,17 @@ using System.Security.AccessControl;
 
 namespace AspNetCoreModule.Test.Framework
 {
+    public enum RestartOption
+    {
+        CallIISReset,
+        StopHttpStartW3svc,
+        StopWasStartW3svc,
+        StopW3svcStartW3svc,
+        KillWorkerProcess,
+        KillVSJitDebugger,
+        KillIISExpress
+    }
+
     public class TestUtility
     {
         public static ILogger _logger = null;
@@ -411,17 +422,8 @@ namespace AspNetCoreModule.Test.Framework
 
             return builder.ToString();
         }
-        
-        public enum RestartOption
-        {
-            CallIISReset,
-            StopHttpStartW3svc,
-            StopWasStartW3svc,
-            StopW3svcStartW3svc,
-            KillWorkerProcess,            
-            KillVSJitDebugger,
-            KillIISExpress
-        }
+       
+
         public static void RestartServices(RestartOption option)
         {
             switch (option)

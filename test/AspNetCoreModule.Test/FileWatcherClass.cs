@@ -39,7 +39,7 @@ namespace AspNetCoreModule.Test
                 for (int i = 0; i < _repeatCount; i++)
                 {
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
 
                     Thread.Sleep(500);
                     DateTime startTime = DateTime.Now;
@@ -85,7 +85,7 @@ namespace AspNetCoreModule.Test
                 for (int i = 0; i < _repeatCount; i++)
                 {
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
                     Thread.Sleep(500);

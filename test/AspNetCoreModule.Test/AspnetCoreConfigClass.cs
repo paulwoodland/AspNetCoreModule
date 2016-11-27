@@ -41,7 +41,7 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
 
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
 
                     int expectedValue = Convert.ToInt32(totalNumber) + 1;
                     Assert.True(expectedValue.ToString() == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetEnvironmentVariables"), HttpStatusCode.OK)));
@@ -49,7 +49,7 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
 
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
 
                     expectedValue++;
                     Assert.True("foo" == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("ExpandEnvironmentVariablesANCMTestFoo"), HttpStatusCode.OK)));

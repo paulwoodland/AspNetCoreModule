@@ -5,11 +5,6 @@ using System;
 using System.IO;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Extensions.Logging;
-using System.Threading;
-using Microsoft.Extensions.PlatformAbstractions;
-using System.Linq;
-using static AspNetCoreModule.Test.Framework.TestUtility;
-using System.IO.Compression;
 using System.Diagnostics;
 
 namespace AspNetCoreModule.Test.Framework
@@ -49,7 +44,7 @@ namespace AspNetCoreModule.Test.Framework
             if (serverType == ServerType.IIS)
             {
                 // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
             }
 
             //
@@ -79,15 +74,15 @@ namespace AspNetCoreModule.Test.Framework
                     break;
                 }
             }
-            DirectoryCopy(Path.Combine(solutionPath, "test", "WebRoot"), siteRootPath);
+            TestUtility.DirectoryCopy(Path.Combine(solutionPath, "test", "WebRoot"), siteRootPath);
 
             string standardAppRootPath = Path.Combine(siteRootPath, "StandardTestApp");
-            string appPath = GetApplicationPath(ApplicationType.Portable);
+            string appPath = TestUtility.GetApplicationPath(ApplicationType.Portable);
 
             string publishPath = Path.Combine(appPath, "bin", "Debug", "netcoreapp1.1", "publish");
             if (!Directory.Exists(publishPath))
             {
-                RunCommand("dotnet", "publish " + appPath);
+                TestUtility.RunCommand("dotnet", "publish " + appPath);
             }
             bool checkPublishedFiles = false;
             string[] publishedFiles = Directory.GetFiles(publishPath);
@@ -103,7 +98,7 @@ namespace AspNetCoreModule.Test.Framework
             {
                 throw new System.ApplicationException("check published files at " + publishPath);
             }
-            DirectoryCopy(publishPath, standardAppRootPath);
+            TestUtility.DirectoryCopy(publishPath, standardAppRootPath);
 
             int tcpPort = _siteId++;
 
@@ -132,7 +127,7 @@ namespace AspNetCoreModule.Test.Framework
             if (serverType == ServerType.IISExpress)
             {
                 iisExpressConfigPath = Path.Combine(siteRootPath, "http.config");
-                FileCopy(Path.Combine(solutionPath, "test", "AspNetCoreModule.Test", "http.config"), iisExpressConfigPath);
+                TestUtility.FileCopy(Path.Combine(solutionPath, "test", "AspNetCoreModule.Test", "http.config"), iisExpressConfigPath);
             }
 
             //
@@ -185,7 +180,7 @@ namespace AspNetCoreModule.Test.Framework
                 {
                     cmdline = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles%"), "IIS Express", "iisexpress.exe");                    
                 }
-                _iisExpressPidBackup = RunCommand(cmdline, argument, false, false);
+                _iisExpressPidBackup = TestUtility.RunCommand(cmdline, argument, false, false);
             }
         }
     }

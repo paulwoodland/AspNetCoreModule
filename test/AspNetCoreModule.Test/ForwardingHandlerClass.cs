@@ -93,7 +93,7 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
 
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(TestUtility.RestartOption.KillVSJitDebugger);
+                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
 
                     responseBody = await GetResponse(TestEnv.StandardTestApp.GetHttpUri(), HttpStatusCode.BadGateway);
                     Assert.True(responseBody.Contains("808681"));

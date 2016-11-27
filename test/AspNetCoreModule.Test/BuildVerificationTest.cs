@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Testing.xunit;
 using Microsoft.Net.Http.Headers;
 using Xunit;
 using Xunit.Sdk;
-using System.Threading;
 using System.Diagnostics;
 using System.Net;
 
