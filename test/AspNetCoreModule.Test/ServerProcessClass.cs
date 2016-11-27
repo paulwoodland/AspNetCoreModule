@@ -30,7 +30,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoStartupTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {
@@ -59,7 +59,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoRequestTimeoutTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {
@@ -107,7 +107,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoShutdownTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfshutdownTimeLimit, int expectedClosingTime)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {
@@ -147,7 +147,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoStdoutLogEnabledTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 TestEnv.StandardTestApp.DeleteDirectory("logs");
 
@@ -208,7 +208,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoProcessPathAndArgumentsTest(IISConfigUtility.AppPoolBitness appPoolBitness, string processPath, string argumentsPrefix)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {

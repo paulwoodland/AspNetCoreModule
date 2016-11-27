@@ -30,7 +30,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoAppOfflineTestWithRenaming(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 string backendProcessId_old = null;
                 string fileContent = "BackEndAppOffline";
@@ -76,7 +76,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoAppOfflineTestWithUrlRewriteAndDeleting(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 string backendProcessId_old = null;
                 string fileContent = "BackEndAppOffline2";

@@ -30,7 +30,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoRapidFailsPerMinuteTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfRapidFailsPerMinute)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {
@@ -99,7 +99,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoProcessesPerApplicationTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfProcessesPerApplication)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {

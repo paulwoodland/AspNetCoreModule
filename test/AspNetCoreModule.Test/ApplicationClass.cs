@@ -28,7 +28,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoRecycleApplicationAfterBeingKilled(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 string backendProcessId_old = null;
                 const int repeatCount = 3;
@@ -65,7 +65,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoRecycleApplicationAfterWebConfigUpdated(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 string backendProcessId_old = null;
                 const int repeatCount = 3;
@@ -107,7 +107,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoRecycleApplicationWithURLRewrite(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {   
                 string backendProcessId_old = null;
                 const int repeatCount = 3;
@@ -151,7 +151,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoRecycleParentApplicationWithURLRewrite(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {   
                 string backendProcessId_old = null;
                 const int repeatCount = 3;

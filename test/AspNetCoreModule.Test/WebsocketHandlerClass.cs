@@ -29,7 +29,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoWebSocketTest(IISConfigUtility.AppPoolBitness appPoolBitness, string testData)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 DateTime startTime = DateTime.Now;
 

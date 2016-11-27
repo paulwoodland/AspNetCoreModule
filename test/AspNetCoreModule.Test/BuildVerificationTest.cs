@@ -45,11 +45,7 @@ namespace AspNetCoreModule.Test
                             .CreateLogger(string.Format("ANCM BVT:{0}:{1}:{2}:{3}", serverType, runtimeFlavor, architecture, applicationType));
 
             TestUtility testContext = new TestUtility(logger);
-            if (!testContext.StartTestMachine(serverType))
-            {
-                return;
-            }
-
+            
             using (logger.BeginScope("ANCM BVT"))
             {
                 string applicationPath = TestUtility.GetApplicationPath(applicationType);
@@ -68,7 +64,7 @@ namespace AspNetCoreModule.Test
                 using (var deployer = ApplicationDeployerFactory.Create(deploymentParameters, logger))
                 {
                     var deploymentResult = deployer.Deploy();
-                    string solutionPath = GlobalSetup.GetSolutionDirectory();
+                    string solutionPath = GlobalTestEnvironment.GetSolutionDirectory();
                     var applicationBaseAddress = new Uri(deploymentResult.ApplicationBaseUri);
 
                     var httpClientHandler = new HttpClientHandler();
@@ -100,8 +96,6 @@ namespace AspNetCoreModule.Test
                     await scenario(httpClient, logger);
                 }
             }
-
-            testContext.EndTestMachine();
         }
 
         private static async Task CheckChunkedAsync(HttpClient client, ILogger logger)

@@ -21,9 +21,6 @@ namespace AspNetCoreModule.Test.Framework
     {
         public static ILogger _logger = null;
 
-        private ServerType _cleanupServerType;
-        private bool _calledCleanupServerType = false;
-
         public static ILogger Logger
         {
             get
@@ -42,26 +39,7 @@ namespace AspNetCoreModule.Test.Framework
         {
             _logger = logger;
         }
-
-        public bool StartTestMachine(ServerType serverType)
-        {
-            _cleanupServerType = serverType;
-            _calledCleanupServerType = true;
-            return DoCleanupTestEnv(false);
-        }
-
-        public void EndTestMachine()
-        {
-            try
-            {
-                _calledCleanupServerType = false;
-                DoCleanupTestEnv(true);
-            }
-            catch
-            {
-                // ignore
-            }
-        }
+        
         public static bool RetryHelper<T> (
                    Func<T, bool> verifier,
                    T arg,
@@ -145,19 +123,7 @@ namespace AspNetCoreModule.Test.Framework
             Directory.SetAccessControl(folder, fsecurity);
             Thread.Sleep(500);
         }
-
-        public static void InitializeStandardAppRootPath(string outputPath)
-        {
-            if (Directory.Exists(outputPath))
-            {
-                DeleteDirectory(outputPath);                
-            }
-
-            string appPath = GetApplicationPath(ApplicationType.Portable);
-            string publishPath = Path.Combine(appPath, "bin", "Debug", "netcoreapp1.1", "publish");                
-            RunCommand("dotnet", "publish " + appPath);
-            DirectoryCopy(publishPath, outputPath);
-        }
+        
         public static bool IsOSAmd64
         {
             get
@@ -623,7 +589,7 @@ namespace AspNetCoreModule.Test.Framework
         public static string GetApplicationPath(ApplicationType applicationType)
         {
             var applicationBasePath = PlatformServices.Default.Application.ApplicationBasePath;
-            string solutionPath = GlobalSetup.GetSolutionDirectory();
+            string solutionPath = GlobalTestEnvironment.GetSolutionDirectory();
             string applicationPath = string.Empty;
             applicationPath = Path.Combine(solutionPath, "test", "AspNetCoreModule.TestSites.Standard");
             if (applicationType == ApplicationType.Standalone)
@@ -688,70 +654,6 @@ namespace AspNetCoreModule.Test.Framework
         {
             Uri uri = new Uri("http://" + domain);
             return uri.DnsSafeHost;
-        }
-
-        private bool DoCleanupTestEnv(bool cleanupOnly)
-        {
-            if (_calledCleanupServerType == false)
-            {
-                throw new System.ApplicationException("Initial CleanupTestEnv was not called");
-            }
-
-            if (_cleanupServerType != ServerType.IIS)
-            {
-                return true;
-            }
-            
-            using (var iisConfig = new IISConfigUtility(_cleanupServerType))
-            {
-                if (cleanupOnly == false)
-                {
-                    try
-                    {
-                        IISConfigUtility.RestoreAppHostConfig();
-                    }
-                    catch
-                    {
-                        // ignore this initial exception
-                    }
-
-                    if (!iisConfig.IsIISInstalled())
-                    {
-                        LogTrace("IIS is not installed on this machine. Skipping!!!");
-                        return false;
-                    }
-
-                    if (!iisConfig.IsUrlRewriteInstalledForIIS())
-                    {
-                        LogTrace("IIS UrlRewrite module is not installed on this machine. Skipping!!!");
-                        return false;
-                    }
-
-                    if (!iisConfig.IsAncmInstalled(_cleanupServerType))
-                    {
-                        LogTrace("AspnetCore module is not installed on this machine. Skipping!!!");
-                        return false;
-                    }
-                }
-
-                // restore the applicationhost.config file with the backup file; if the backup file does not exist, it will be created here as well.
-                RestartServices(RestartOption.KillVSJitDebugger);
-                RestartServices(RestartOption.KillWorkerProcess);
-                IISConfigUtility.RestoreAppHostConfig();
-
-                // start DefaultAppPool in case it is stopped
-                iisConfig.StartAppPool(IISConfigUtility.Strings.DefaultAppPool);
-
-                // start w3svc service in case it is not started
-                StartW3svc();
-
-                if (iisConfig.GetServiceStatus("w3svc") != "Running")
-                {
-                    LogTrace("w3svc service is not runing. Skipping!!!");
-                    return false;
-                }
-            }
-            return true;
         }
     }
 }

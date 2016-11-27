@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace AspNetCoreModule.Test
 {
-    public abstract class Testclass : IClassFixture<GlobalSetup>
+    public abstract class Testclass : IClassFixture<GlobalTestEnvironment>
     {
         public static bool VerifyANCMStartEvent(DateTime startFrom, string includeThis)
         {

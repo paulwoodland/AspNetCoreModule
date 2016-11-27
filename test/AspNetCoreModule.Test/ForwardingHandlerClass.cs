@@ -31,7 +31,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoPostMethodTest(IISConfigUtility.AppPoolBitness appPoolBitness, string testData)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 var postFormData = new[]
                 {
@@ -61,7 +61,7 @@ namespace AspNetCoreModule.Test
             int errorEventId = 1000;
             string errorMessageContainThis = "bogus"; // bogus path value to cause 502.3 error
 
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 TestEnv.StandardTestApp.DeleteFile("custom502-3.htm");
                 string curstomErrorMessage = "ANCMTest502-3";

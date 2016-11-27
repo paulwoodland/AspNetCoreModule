@@ -273,14 +273,14 @@ namespace AspNetCoreModule.Test.Framework
             bool result = true;
             if (servertype == ServerType.IIS)
             {
-                if (!File.Exists(GlobalSetup.IISAspnetcoreSchema_path))
+                if (!File.Exists(GlobalTestEnvironment.IISAspnetcoreSchema_path))
                 {
                     result = false;
                 }
             }            
             else
             {
-                if (!File.Exists(GlobalSetup.IISExpressAspnetcoreSchema_path))
+                if (!File.Exists(GlobalTestEnvironment.IISExpressAspnetcoreSchema_path))
                 {
                     result = false;
                 }

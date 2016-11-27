@@ -10,10 +10,11 @@ using Microsoft.Extensions.PlatformAbstractions;
 using System.Linq;
 using static AspNetCoreModule.Test.Framework.TestUtility;
 using System.IO.Compression;
+using System.Collections.Generic;
 
 namespace AspNetCoreModule.Test.Framework
 {
-    public class GlobalSetup : IDisposable
+    public class GlobalTestEnvironment : IDisposable
     {
         private string _setupScriptPath = null;
         public static string Aspnetcore_X64_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "aspnetcore_private.dll");
@@ -22,17 +23,57 @@ namespace AspNetCoreModule.Test.Framework
         public static string IISAspnetcoreSchema_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "config", "schema", "aspnetcore_schema.xml");
         public static bool UseSolutionOutputFiles = true;
         public static bool ReplaceExistingFiles = false;
+        public static int _referenceCount = 0;
+        public static List<string> PostFixes = null;
         
-        public GlobalSetup()
+        public GlobalTestEnvironment()
         {
+            _referenceCount++;
+
+            if (PostFixes == null)
+            {
+                PostFixes = new List<string>();
+            }
+                        
             TestUtility.LogTrace("Initializing test environment");
             UpdateAspnetCoreBinaryFiles();
         }
 
         public void Dispose()
         {
-            RollbackAspnetCoreBinaryFileChanges();
-            TestUtility.LogTrace("End of test!!!");
+            _referenceCount--;
+            if (_referenceCount == 0)
+            {
+                RollbackAspnetCoreBinaryFileChanges();
+
+                foreach (var postfix in PostFixes)
+                {
+                    string siteName = "StandardTestSite" + postfix;
+                    string siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", postfix);
+                    try
+                    {
+                        using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                        {
+                            iisConfig.DeleteSite(siteName);
+                            iisConfig.DeleteAppPool(siteName);
+                        }
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+
+                    try
+                    {
+                        TestUtility.DeleteDirectory(siteRootPath);
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+                }
+                TestUtility.LogTrace("End of test!!!");
+            }
         }
 
         private void UpdateAspnetCoreBinaryFiles()
@@ -166,6 +207,6 @@ namespace AspNetCoreModule.Test.Framework
             }
 
             return nupkg;
-        }
+        }        
     }
 }

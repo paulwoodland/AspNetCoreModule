@@ -27,7 +27,7 @@ namespace AspNetCoreModule.Test
 
         private static async Task DoEnvironmentVariablesTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            using (var TestEnv = new SetupTestEnv(appPoolBitness))
+            using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {

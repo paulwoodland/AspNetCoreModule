@@ -141,43 +141,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\AspNetCoreModule.Test\ApplicationClass.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\AspnetCoreConfigClass.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\BuildVerificationTest.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\FileWatcherClass.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\ForwardingHandlerClass.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\WebSocketClientHelper\Frame.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\WebSocketClientHelper\Frames.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\WebSocketClientHelper\FrameType.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\HttpClientHelper\HttpClientHelper.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\Framework\IISConfigUtility.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\Framework\IISServer.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\ProcessManagerClass.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\Framework\GlobalSetup.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\ServerProcessClass.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\Framework\SetupTestEnv.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\Testclass.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\Framework\TestUtility.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\Framework\WebAppContext.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\Framework\WebSiteContext.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\WebSocketClientHelper\WebSocketClientHelper.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\WebSocketClientHelper\WebSocketClientUtility.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\WebSocketClientHelper\WebSocketConnect.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\WebSocketClientHelper\WebSocketConstants.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\WebsocketHandlerClass.cs" />
-    <Compile Include="..\AspNetCoreModule.Test\WebSocketClientHelper\WebSocketState.cs" />
+    <Compile Include="*.cs" />
+    <Compile Include="WebSocketClientHelper\*.cs" />
+    <Compile Include="HttpClientHelper\*.cs" />
+    <Compile Include="Framework\*.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
