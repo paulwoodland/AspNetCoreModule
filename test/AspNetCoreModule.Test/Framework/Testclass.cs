@@ -11,7 +11,7 @@ using System.Net;
 using AspNetCoreModule.Test.Framework;
 using System.Collections.Generic;
 
-namespace AspNetCoreModule.Test
+namespace AspNetCoreModule.Test.Framework
 {
     public abstract class Testclass : IClassFixture<GlobalTestEnvironment>
     {

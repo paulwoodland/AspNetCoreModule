@@ -59,7 +59,6 @@ namespace AspNetCoreModule.Test
                     // rename back to app_offline.htm
                     TestEnv.StandardTestApp.MoveFile("_app_offline.htm", "app_offline.htm");
                 }
-
             }
         }
 
@@ -106,7 +105,6 @@ namespace AspNetCoreModule.Test
                     // create app_offline.htm again
                     TestEnv.StandardTestApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
                 }
-
             }
         }
     }

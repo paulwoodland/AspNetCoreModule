@@ -290,7 +290,7 @@ namespace AspNetCoreModule.Test.Framework
             }
             else
             {
-                LogTrace("Directory not found " + from);
+                TestUtility.LogWarning("Directory not found " + from);
             }
         }
 
@@ -335,7 +335,7 @@ namespace AspNetCoreModule.Test.Framework
             processList = searcher.Get();
             if (processList.Count > 0)
             {
-                LogTrace("Failed to kill process " + processFileName);
+                TestUtility.LogWarning("Failed to kill process " + processFileName);
             }            
         }
 
@@ -652,7 +652,7 @@ namespace AspNetCoreModule.Test.Framework
             }
             for (int i = 0; i < 5; i++)
             {
-                LogTrace("Waiting 1 seconds for eventlog to clear...");
+                TestUtility.LogWarning("Waiting 1 seconds for eventlog to clear...");
                 Thread.Sleep(1000);
                 EventLog systemLog = new EventLog("Application");
                 if (systemLog.Entries.Count == 0)
@@ -667,7 +667,7 @@ namespace AspNetCoreModule.Test.Framework
             var result = new List<String>();
             for (int i = 0; i < 5; i++)
             {
-                LogTrace("Waiting 1 seconds for eventlog to update...");
+                TestUtility.LogWarning("Waiting 1 seconds for eventlog to update...");
                 Thread.Sleep(1000);
                 EventLog systemLog = new EventLog("Application");
                 foreach (EventLogEntry entry in systemLog.Entries)

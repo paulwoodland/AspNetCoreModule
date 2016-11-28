@@ -152,25 +152,25 @@ namespace AspNetCoreModule.Test
                 if (sentString.Length != recString.Length)
                 {
                     result = false;
-                    TestUtility.LogTrace("Same size of data sent(" + sentString.Length + ") and received(" + recString.Length + ")");
+                    TestUtility.LogWarning("Same size of data sent(" + sentString.Length + ") and received(" + recString.Length + ")");
                 }
 
                 if (sentString.ToString() != recString.ToString())
                 {
                     result = false;
-                    TestUtility.LogTrace("Not matched string in sent and received");
+                    TestUtility.LogWarning("Not matched string in sent and received");
                 }
                 if (pongString.Length != pingString.Length)
                 {
                     result = false;
-                    TestUtility.LogTrace("Ping received; Ping (" + pingString.Length + ") and Pong (" + pongString.Length + ")");
+                    TestUtility.LogWarning("Ping received; Ping (" + pingString.Length + ") and Pong (" + pongString.Length + ")");
                 }
                 websocketClient.Connection.DataSent.Clear();
                 websocketClient.Connection.DataReceived.Clear();
             }
             else
             {
-                TestUtility.LogTrace("Retrying...  so far data sent(" + sentString.Length + ") and received(" + recString.Length + ")");
+                TestUtility.LogWarning("Retrying...  so far data sent(" + sentString.Length + ") and received(" + recString.Length + ")");
                 result = false;
             }
             return result;

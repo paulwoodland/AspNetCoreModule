@@ -46,16 +46,16 @@ namespace AspNetCoreModule.Test.HttpClientHelper
             if (doLogging)
             {
                 if (hostName == null)
-                    TestUtility.LogTrace(String.Format("HttpClient::sendRequest() {0} with no hostname", uri));
+                    TestUtility.LogWarning(String.Format("HttpClient::sendRequest() {0} with no hostname", uri));
                 else
-                    TestUtility.LogTrace(String.Format("HttpClient::sendRequest() {0} with hostname {1}", uri, hostName));
+                    TestUtility.LogWarning(String.Format("HttpClient::sendRequest() {0} with hostname {1}", uri, hostName));
             }
 
             ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(ValidateRemoteCertificate);
 
             if (useLegacy)
             {
-                TestUtility.LogTrace(String.Format("Using SSL3"));
+                TestUtility.LogWarning(String.Format("Using SSL3"));
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3;
             }
 
@@ -80,9 +80,9 @@ namespace AspNetCoreModule.Test.HttpClientHelper
                             using (StreamReader myReader = new StreamReader(myStream))
                             {
                                 string text = myReader.ReadToEnd();
-                                TestUtility.LogTrace("\n\n");
-                                TestUtility.LogTrace(text);
-                                TestUtility.LogTrace("\n\n");
+                                TestUtility.LogWarning("\n\n");
+                                TestUtility.LogWarning(text);
+                                TestUtility.LogWarning("\n\n");
                             }
                         }
                     }
@@ -199,9 +199,9 @@ namespace AspNetCoreModule.Test.HttpClientHelper
                 _backgroundRequestThread.Abort();
 
             if (host == null)
-                TestUtility.LogTrace(String.Format("########## Starting background requests to {0} with no hostname ##########", uri));
+                TestUtility.LogWarning(String.Format("########## Starting background requests to {0} with no hostname ##########", uri));
             else
-                TestUtility.LogTrace(String.Format("########## Starting background requests to {0} with hostname {1} ##########", uri, host));
+                TestUtility.LogWarning(String.Format("########## Starting background requests to {0} with hostname {1} ##########", uri, host));
 
 
             ParameterizedThreadStart threadStart = new ParameterizedThreadStart(BackgroundRequestLoop);
@@ -212,7 +212,7 @@ namespace AspNetCoreModule.Test.HttpClientHelper
 
         public void StopBackgroundRequests()
         {
-            TestUtility.LogTrace(String.Format("####################### Stopping background requests #######################"));
+            TestUtility.LogWarning(String.Format("####################### Stopping background requests #######################"));
 
             if (_backgroundRequestThread != null && _backgroundRequestThread.ThreadState == System.Threading.ThreadState.Running)
                 _backgroundRequestThread.Abort();
@@ -222,7 +222,7 @@ namespace AspNetCoreModule.Test.HttpClientHelper
 
         public void DoSleep(int sleepMs)
         {
-            TestUtility.LogTrace(String.Format("################## Sleeping for {0} ms ##################", sleepMs));
+            TestUtility.LogWarning(String.Format("################## Sleeping for {0} ms ##################", sleepMs));
             Thread.Sleep(sleepMs);
         }
     }

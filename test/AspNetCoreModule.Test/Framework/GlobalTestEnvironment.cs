@@ -14,7 +14,7 @@ namespace AspNetCoreModule.Test.Framework
 {
     public class GlobalTestEnvironment : IDisposable
     {
-        private string _setupScriptPath = null;
+        public static int SiteId = 81;
         public static string Aspnetcore_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "aspnetcore_private.dll");
         public static string Aspnetcore_path_original = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "aspnetcore.dll");
         public static string Aspnetcore_X86_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "syswow64", "inetsrv", "aspnetcore_private.dll");
@@ -24,9 +24,15 @@ namespace AspNetCoreModule.Test.Framework
         public static bool ReplaceExistingFiles = false;
         public static int _referenceCount = 0;
         public static List<string> CleanupQueue = null;
-        
+
+        private static bool _globalTestEnvironmentCompleted = false;
+
+        private string _setupScriptPath = null;
+
         public GlobalTestEnvironment()
         {
+            TestUtility.LogWarning("GlobalTestEnvironment::GlobalTestEnvironment()");
+
             _referenceCount++;
 
             if (CleanupQueue == null)
@@ -36,6 +42,9 @@ namespace AspNetCoreModule.Test.Framework
 
             if (_referenceCount == 1)
             {
+                _globalTestEnvironmentCompleted = false;
+
+                TestUtility.LogWarning("GlobalTestEnvironment::Start of global setup");
                 if (Environment.ExpandEnvironmentVariables("%ANCMDebug%").ToLower() == "true")
                 {
                     System.Diagnostics.Debugger.Launch();                    
@@ -43,7 +52,7 @@ namespace AspNetCoreModule.Test.Framework
 
                 TestUtility.RestartServices(RestartOption.KillIISExpress);
 
-                TestUtility.LogTrace("Initializing global test environment");
+                TestUtility.LogWarning("Initializing global test environment");
                 try
                 {
                     IISConfigUtility.RestoreAppHostConfig();
@@ -61,11 +70,32 @@ namespace AspNetCoreModule.Test.Framework
                         iisConfig.AddModule("AspNetCoreModule", Aspnetcore_path, null);
                     }
                 }
+                TestUtility.LogWarning("GlobalTestEnvironment::End of global setup");
+                _globalTestEnvironmentCompleted = true;
+            }
+
+            for (int i=0; i<120; i++)                    
+            {
+                if (_globalTestEnvironmentCompleted)
+                {
+                    break;
+                }   
+                else
+                {
+                    TestUtility.LogWarning("GlobalTestEnvironment:: Waiting global setup...");
+                                        Thread.Sleep(500);
+                }                 
+            }
+            if (!_globalTestEnvironmentCompleted)
+            {
+                throw new System.ApplicationException("GlobalTestEnvironment is not completed...");
             }
         }
 
         public void Dispose()
         {
+            TestUtility.LogWarning("GlobalTestEnvironment::Dispose()");
+
             _referenceCount--;
 
             if (_referenceCount == 0)

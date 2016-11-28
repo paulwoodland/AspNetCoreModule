@@ -9,7 +9,6 @@ using System.IO;
 using System.Management;
 using System.ServiceProcess;
 using System.Threading;
-using static AspNetCoreModule.Test.Framework.TestUtility;
 
 namespace AspNetCoreModule.Test.Framework
 {
@@ -38,6 +37,24 @@ namespace AspNetCoreModule.Test.Framework
         {
         }
 
+        public ServerManager GetServerManager()
+        {
+            if (_serverType == ServerType.IISExpress)
+            {
+                return new ServerManager(
+                    false,                         // readOnly 
+                    _iisExpressConfigPath          // applicationhost.config path for IISExpress
+                );
+            }
+            else
+            {
+                return new ServerManager(
+                        false,                         // readOnly 
+                        Strings.AppHostConfigPath      // applicationhost.config path for IIS
+                    );
+            }
+        }
+
         public IISConfigUtility(ServerType type, string iisExpressConfigPath = null)
         {
             _serverType = type;
@@ -50,7 +67,7 @@ namespace AspNetCoreModule.Test.Framework
             string tofile = Strings.AppHostConfigPath + ".ancmtest.bak";
             if (File.Exists(fromfile))
             {
-                FileCopy(fromfile, tofile, overWrite: false);
+                TestUtility.FileCopy(fromfile, tofile, overWrite: false);
             }
         }
 
@@ -74,31 +91,13 @@ namespace AspNetCoreModule.Test.Framework
             // try again after the ininial clean up 
             if (File.Exists(fromfile))
             {
-                FileCopy(fromfile, tofile, true, true);
+                TestUtility.FileCopy(fromfile, tofile, true, true);
             }
         }
 
-        public ServerManager GetServerManager()
+        public void SetAppPoolSetting(string appPoolName, string attribute, object value, bool commitDelay = false)
         {
-            if (_serverType == ServerType.IISExpress)
-            {
-                return new ServerManager(
-                    false,                         // readOnly 
-                    _iisExpressConfigPath          // applicationhost.config path for IISExpress
-                );
-            }
-            else
-            {
-                return new ServerManager(
-                    false,                         // readOnly 
-                    Strings.AppHostConfigPath      // applicationhost.config path for IIS
-                );
-            }
-        }
-        
-        public void SetAppPoolSetting(string appPoolName, string attribute, object value)
-        {
-            LogTrace("Setting Apppool : " + appPoolName + "::" + attribute.ToString() + " <== " + value.ToString());
+            TestUtility.LogWarning("Setting Apppool : " + appPoolName + "::" + attribute.ToString() + " <== " + value.ToString());
             using (ServerManager serverManager = GetServerManager())
             {
                 Configuration config = serverManager.GetApplicationHostConfiguration();
@@ -108,7 +107,10 @@ namespace AspNetCoreModule.Test.Framework
                 if (addElement == null) throw new InvalidOperationException("Element not found!");
                 var attributeName = attribute.ToString();
                 addElement[attributeName] = value;
-                serverManager.CommitChanges();
+
+                if (!commitDelay) {
+                    serverManager.CommitChanges();
+                } 
             }
         }
 
@@ -136,9 +138,10 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void CreateSite(string siteName, string physicalPath, int siteId, int tcpPort, string appPoolName = "DefaultAppPool")
+        public void CreateSite(string siteName, string physicalPath, int siteId, int tcpPort, string appPoolName = "DefaultAppPool", bool commitDelay = false)
         {
-            LogTrace("Creating web site : " + siteName);
+            TestUtility.LogWarning("Creating web site : " + siteName);
+
             using (ServerManager serverManager = GetServerManager())
             {
                 Configuration config = serverManager.GetApplicationHostConfiguration();
@@ -172,13 +175,15 @@ namespace AspNetCoreModule.Test.Framework
                 siteCollection.Add(applicationElement);
                 sitesCollection.Add(siteElement);
 
-                serverManager.CommitChanges();
+                if (!commitDelay) {
+                    serverManager.CommitChanges();
+                }
             }
         }
 
-        public void CreateApp(string siteName, string appName, string physicalPath, string appPoolName = "DefaultAppPool")
+        public void CreateApp(string siteName, string appName, string physicalPath, string appPoolName = "DefaultAppPool", bool commitDelay = false)
         {
-            LogTrace("Creating web app : " + siteName + "/" + appName);
+            TestUtility.LogWarning("Creating web app : " + siteName + "/" + appName);
             using (ServerManager serverManager = GetServerManager())
             {
                 Configuration config = serverManager.GetApplicationHostConfiguration();
@@ -206,11 +211,13 @@ namespace AspNetCoreModule.Test.Framework
                 applicationCollection.Add(virtualDirectoryElement);
                 siteCollection.Add(applicationElement);
 
-                serverManager.CommitChanges();
+                if (!commitDelay) {
+                    serverManager.CommitChanges();
+                }
             }
         }
 
-        public void SetANCMConfig(string siteName, string appName, string attributeName, object attributeValue)
+        public void SetANCMConfig(string siteName, string appName, string attributeName, object attributeValue, bool commitDelay = false)
         {
             using (ServerManager serverManager = GetServerManager())
             {
@@ -236,12 +243,13 @@ namespace AspNetCoreModule.Test.Framework
                     aspNetCoreSection[attributeName] = attributeValue;
                 }
 
-                serverManager.CommitChanges();
-            }
-            Thread.Sleep(500);
+                if (!commitDelay) {
+                    serverManager.CommitChanges();
+                }
+            }            
         }
 
-        public void ConfigureCustomLogging(string siteName, string appName, int statusCode, int subStatusCode, string path)
+        public void ConfigureCustomLogging(string siteName, string appName, int statusCode, int subStatusCode, string path, bool commitDelay = false)
         {
             using (ServerManager serverManager = GetServerManager())
             {
@@ -262,7 +270,9 @@ namespace AspNetCoreModule.Test.Framework
                 errorElement2["path"] = path;
                 httpErrorsCollection.Add(errorElement2);
                 
-                serverManager.CommitChanges();
+                if (!commitDelay) {
+                    serverManager.CommitChanges();
+                }
             }
             Thread.Sleep(500);
         }
@@ -328,7 +338,7 @@ namespace AspNetCoreModule.Test.Framework
             var toRewrite64 = Path.Combine(Strings.IIS64BitPath, "rewrite.dll");
             var toRewrite32 = Path.Combine(Strings.IIS32BitPath, "rewrite.dll");
 
-            if (IsOSAmd64)
+            if (TestUtility.IsOSAmd64)
             {
                 if (!File.Exists(toRewrite64))
                 {
@@ -361,7 +371,7 @@ namespace AspNetCoreModule.Test.Framework
             return result;
         }
 
-        public bool RemoveModule(string moduleName)
+        public bool RemoveModule(string moduleName, bool commitDelay = false)
         {
             bool result = true;
             using (ServerManager serverManager = GetServerManager())
@@ -382,12 +392,14 @@ namespace AspNetCoreModule.Test.Framework
                 {
                     modulesCollection.Remove(module);
                 }
-                serverManager.CommitChanges();
+                if (!commitDelay) {
+                    serverManager.CommitChanges();
+                }
             }
             return result;
         }
 
-        public bool AddModule(string moduleName, string image, string preCondition)
+        public bool AddModule(string moduleName, string image, string preCondition, bool commitDelay = false)
         {
             RemoveModule(moduleName);
 
@@ -413,7 +425,9 @@ namespace AspNetCoreModule.Test.Framework
                 module["name"] = moduleName;
                 modulesCollection.Add(module);
 
-                serverManager.CommitChanges();
+                if (!commitDelay) {
+                    serverManager.CommitChanges();
+                }
             }
             return result;
         }
@@ -450,71 +464,74 @@ namespace AspNetCoreModule.Test.Framework
             return null;
         }
 
-        public void CreateAppPool(string poolName, bool alwaysRunning = false)
+        public void CreateAppPool(string poolName, bool alwaysRunning = false, bool commitDelay = false)
         {
             try
             {
-                LogTrace(String.Format("#################### Adding App Pool {0} with startMode = {1} ####################", poolName, alwaysRunning ? "AlwaysRunning" : "OnDemand"));
-
+                TestUtility.LogTrace(String.Format("#################### Adding App Pool {0} with startMode = {1} ####################", poolName, alwaysRunning ? "AlwaysRunning" : "OnDemand"));
                 using (ServerManager serverManager = GetServerManager())
                 {
                     serverManager.ApplicationPools.Add(poolName);
                     ApplicationPool apppool = serverManager.ApplicationPools[poolName];
                     apppool.ManagedPipelineMode = ManagedPipelineMode.Integrated;
                     if (alwaysRunning)
+                    {
                         apppool.SetAttributeValue("startMode", "AlwaysRunning");
-                    serverManager.CommitChanges();
+                    }
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
-
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Create app pool {0} failed. Reason: {1} ####################", poolName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Create app pool {0} failed. Reason: {1} ####################", poolName, ex.Message));
             }
         }
 
-        public void SetIdleTimeoutForAppPool(string appPoolName, int idleTimeoutMinutes)
+        public void SetIdleTimeoutForAppPool(string appPoolName, int idleTimeoutMinutes, bool commitDelay = false)
         {
-            LogTrace(String.Format("#################### Setting idleTimeout to {0} minutes for AppPool {1} ####################", idleTimeoutMinutes, appPoolName));
-
+            TestUtility.LogTrace(String.Format("#################### Setting idleTimeout to {0} minutes for AppPool {1} ####################", idleTimeoutMinutes, appPoolName));
             try
             {
                 using (ServerManager serverManager = GetServerManager())
                 {
                     ApplicationPoolCollection appPools = serverManager.ApplicationPools;
                     appPools[appPoolName].ProcessModel.IdleTimeout = TimeSpan.FromMinutes(idleTimeoutMinutes);
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Setting idleTimeout to {0} minutes for AppPool {1} failed. Reason: {2} ####################", idleTimeoutMinutes, appPoolName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Setting idleTimeout to {0} minutes for AppPool {1} failed. Reason: {2} ####################", idleTimeoutMinutes, appPoolName, ex.Message));
             }
         }
 
-        public void SetMaxProcessesForAppPool(string appPoolName, int maxProcesses)
+        public void SetMaxProcessesForAppPool(string appPoolName, int maxProcesses, bool commitDelay = false)
         {
-            LogTrace(String.Format("#################### Setting maxProcesses to {0} for AppPool {1} ####################", maxProcesses, appPoolName));
-
+            TestUtility.LogTrace(String.Format("#################### Setting maxProcesses to {0} for AppPool {1} ####################", maxProcesses, appPoolName));
             try
             {
                 using (ServerManager serverManager = GetServerManager())
                 {
                     ApplicationPoolCollection appPools = serverManager.ApplicationPools;
                     appPools[appPoolName].ProcessModel.MaxProcesses = maxProcesses;
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Setting maxProcesses to {0} for AppPool {1} failed. Reason: {2} ####################", maxProcesses, appPoolName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Setting maxProcesses to {0} for AppPool {1} failed. Reason: {2} ####################", maxProcesses, appPoolName, ex.Message));
             }
         }
 
-        public void SetIdentityForAppPool(string appPoolName, string userName, string password)
+        public void SetIdentityForAppPool(string appPoolName, string userName, string password, bool commitDelay = false)
         {
-            LogTrace(String.Format("#################### Setting userName {0} and password {1} for AppPool {2} ####################", userName, password, appPoolName));
-
+            TestUtility.LogTrace(String.Format("#################### Setting userName {0} and password {1} for AppPool {2} ####################", userName, password, appPoolName));
             try
             {
                 using (ServerManager serverManager = GetServerManager())
@@ -523,20 +540,22 @@ namespace AspNetCoreModule.Test.Framework
                     appPools[appPoolName].ProcessModel.IdentityType = ProcessModelIdentityType.SpecificUser;
                     appPools[appPoolName].ProcessModel.UserName = userName;
                     appPools[appPoolName].ProcessModel.Password = password;
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Setting userName {0} and password {1} for AppPool {2} failed. Reason: {2} ####################", userName, password, appPoolName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Setting userName {0} and password {1} for AppPool {2} failed. Reason: {2} ####################", userName, password, appPoolName, ex.Message));
             }
         }
 
-        public void SetStartModeAlwaysRunningForAppPool(string appPoolName, bool alwaysRunning)
+        public void SetStartModeAlwaysRunningForAppPool(string appPoolName, bool alwaysRunning, bool commitDelay = false)
         {
             string startMode = alwaysRunning ? "AlwaysRunning" : "OnDemand";
 
-            LogTrace(String.Format("#################### Setting startMode to {0} for AppPool {1} ####################", startMode, appPoolName));
+            TestUtility.LogTrace(String.Format("#################### Setting startMode to {0} for AppPool {1} ####################", startMode, appPoolName));
 
             try
             {
@@ -544,12 +563,14 @@ namespace AspNetCoreModule.Test.Framework
                 {
                     ApplicationPoolCollection appPools = serverManager.ApplicationPools;
                     appPools[appPoolName]["startMode"] = startMode;
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Setting startMode to {0} for AppPool {1} failed. Reason: {2} ####################", startMode, appPoolName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Setting startMode to {0} for AppPool {1} failed. Reason: {2} ####################", startMode, appPoolName, ex.Message));
             }
         }
 
@@ -563,10 +584,10 @@ namespace AspNetCoreModule.Test.Framework
             StartOrStopAppPool(appPoolName, false);
         }
 
-        private void StartOrStopAppPool(string appPoolName, bool start)
+        private void StartOrStopAppPool(string appPoolName, bool start, bool commitDelay = false)
         {
             string action = start ? "Starting" : "Stopping";
-            LogTrace(String.Format("#################### {0} app pool {1} ####################", action, appPoolName));
+            TestUtility.LogTrace(String.Format("#################### {0} app pool {1} ####################", action, appPoolName));
 
             try
             {
@@ -577,13 +598,15 @@ namespace AspNetCoreModule.Test.Framework
                         appPools[appPoolName].Start();
                     else
                         appPools[appPoolName].Stop();
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
                 string message = ex.Message;
-                LogTrace(String.Format("#################### {0} app pool {1} failed. Reason: {2} ####################", action, appPoolName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### {0} app pool {1} failed. Reason: {2} ####################", action, appPoolName, ex.Message));
             }
         }
 
@@ -595,50 +618,54 @@ namespace AspNetCoreModule.Test.Framework
                 {
                     ApplicationPoolCollection appPools = serverManager.ApplicationPools;
                     if (appPools[appPoolName].State == state)
-                        LogTrace(String.Format("Verified state for app pool {0} is {1}.", appPoolName, state.ToString()));
+                        TestUtility.LogWarning(String.Format("Verified state for app pool {0} is {1}.", appPoolName, state.ToString()));
                     else
-                        LogTrace(String.Format("Unexpected state {0} for app pool  {1}.", state, appPoolName.ToString()));
+                        TestUtility.LogWarning(String.Format("Unexpected state {0} for app pool  {1}.", state, appPoolName.ToString()));
                 }
             }
             catch (Exception ex)
             {
-                LogError(String.Format("#################### Failed to verify state for app pool {0}. Reason: {1} ####################", appPoolName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Failed to verify state for app pool {0}. Reason: {1} ####################", appPoolName, ex.Message));
             }
         }
 
-        public void DeleteAppPool(string poolName)
+        public void DeleteAppPool(string poolName, bool commitDelay = false)
         {
             try
             {
                 using (ServerManager serverManager = GetServerManager())
                 {
-                    LogTrace(String.Format("#################### Deleting App Pool {0} ####################", poolName));
+                    TestUtility.LogTrace(String.Format("#################### Deleting App Pool {0} ####################", poolName));
 
                     ApplicationPoolCollection appPools = serverManager.ApplicationPools;
                     appPools.Remove(appPools[poolName]);
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogError(String.Format("#################### Delete app pool {0} failed. Reason: {1} ####################", poolName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Delete app pool {0} failed. Reason: {1} ####################", poolName, ex.Message));
             }
         }
 
-        public void DeleteAllAppPools()
+        public void DeleteAllAppPools(bool commitDelay = false)
         {
-            LogTrace(String.Format("#################### Deleting all app pools ####################"));
+            TestUtility.LogTrace(String.Format("#################### Deleting all app pools ####################"));
 
             using (ServerManager serverManager = GetServerManager())
             {
                 ApplicationPoolCollection appPools = serverManager.ApplicationPools;
                 while (appPools.Count > 0)
                     appPools.RemoveAt(0);
-                serverManager.CommitChanges();
+                if (!commitDelay) {
+                    serverManager.CommitChanges();
+                }
             }
         }
 
-        public void CreateSiteEx(int siteId, string siteName, string poolName, string dirRoot, string Ip, int Port, string host)
+        public void CreateSiteEx(int siteId, string siteName, string poolName, string dirRoot, string Ip, int Port, string host, bool commitDelay = false)
         {
             try
             {
@@ -654,7 +681,7 @@ namespace AspNetCoreModule.Test.Framework
                     if (host != null)
                         bindingInfo += host;
 
-                    LogTrace(String.Format("#################### Adding Site {0} with App Pool {1} with BindingInfo {2} ####################", siteName, poolName, bindingInfo));
+                    TestUtility.LogTrace(String.Format("#################### Adding Site {0} with App Pool {1} with BindingInfo {2} ####################", siteName, poolName, bindingInfo));
 
                     SiteCollection sites = serverManager.Sites;
                     Site site = sites.CreateElement();
@@ -679,12 +706,14 @@ namespace AspNetCoreModule.Test.Framework
 
                     site.Bindings.Add(b);
 
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Create site {0} failed. Reason: {1} ####################", siteName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Create site {0} failed. Reason: {1} ####################", siteName, ex.Message));
             }
         }
 
@@ -698,10 +727,10 @@ namespace AspNetCoreModule.Test.Framework
             StartOrStopSite(siteName, false);
         }
 
-        private void StartOrStopSite(string siteName, bool start)
+        private void StartOrStopSite(string siteName, bool start, bool commitDelay = false)
         {
             string action = start ? "Starting" : "Stopping";
-            LogTrace(String.Format("#################### {0} site {1} ####################", action, siteName));
+            TestUtility.LogTrace(String.Format("#################### {0} site {1} ####################", action, siteName));
 
             try
             {
@@ -718,12 +747,14 @@ namespace AspNetCoreModule.Test.Framework
                         sites[siteName].Stop();
                         sites[siteName].SetAttributeValue("serverAutoStart", false);
                     }
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### {0} site {1} failed. Reason: {2} ####################", action, siteName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### {0} site {1} failed. Reason: {2} ####################", action, siteName, ex.Message));
             }
         }
 
@@ -743,13 +774,13 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void AddApplicationToSite(string siteName, string appPath, string physicalPath, string poolName)
+        public void AddApplicationToSite(string siteName, string appPath, string physicalPath, string poolName, bool commitDelay = false)
         {
             try
             {
                 using (ServerManager serverManager = GetServerManager())
                 {
-                    LogTrace(String.Format("#################### Adding Application {0} with App Pool {1} to Site {2} ####################", appPath, poolName, siteName));
+                    TestUtility.LogTrace(String.Format("#################### Adding Application {0} with App Pool {1} to Site {2} ####################", appPath, poolName, siteName));
 
                     SiteCollection sites = serverManager.Sites;
                     Application app = sites[siteName].Applications.CreateElement();
@@ -763,73 +794,81 @@ namespace AspNetCoreModule.Test.Framework
 
                     app.VirtualDirectories.Add(vdir);
 
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Add Application {0} with App Pool {1} to Site {2} failed. Reason: {3} ####################", appPath, poolName, siteName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Add Application {0} with App Pool {1} to Site {2} failed. Reason: {3} ####################", appPath, poolName, siteName, ex.Message));
             }
         }
 
-        public void ChangeApplicationPool(string siteName, int appIndex, string poolName)
+        public void ChangeApplicationPool(string siteName, int appIndex, string poolName, bool commitDelay = false)
         {
             try
             {
                 using (ServerManager serverManager = GetServerManager())
                 {
-                    LogTrace(String.Format("#################### Changing Application Pool for App {0} of Site {1} to {2} ####################", appIndex, siteName, poolName));
+                    TestUtility.LogTrace(String.Format("#################### Changing Application Pool for App {0} of Site {1} to {2} ####################", appIndex, siteName, poolName));
 
                     serverManager.Sites[siteName].Applications[appIndex].SetAttributeValue("applicationPool", poolName);
 
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Changing Application Pool for App {0} of Site {1} to {2} failed. Reason: {3} ####################", appIndex, siteName, poolName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Changing Application Pool for App {0} of Site {1} to {2} failed. Reason: {3} ####################", appIndex, siteName, poolName, ex.Message));
             }
         }
 
-        public void ChangeApplicationPath(string siteName, int appIndex, string path)
+        public void ChangeApplicationPath(string siteName, int appIndex, string path, bool commitDelay = false)
         {
             try
             {
                 using (ServerManager serverManager = GetServerManager())
                 {
-                    LogTrace(String.Format("#################### Changing Path for App {0} of Site {1} to {2} ####################", appIndex, siteName, path));
+                    TestUtility.LogTrace(String.Format("#################### Changing Path for App {0} of Site {1} to {2} ####################", appIndex, siteName, path));
 
                     serverManager.Sites[siteName].Applications[appIndex].SetAttributeValue("path", path);
 
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Changing Path for App {0} of Site {1} to {2} failed. Reason: {3} ####################", appIndex, siteName, path, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Changing Path for App {0} of Site {1} to {2} failed. Reason: {3} ####################", appIndex, siteName, path, ex.Message));
             }
         }
 
-        public void RemoveApplication(string siteName, int appIndex)
+        public void RemoveApplication(string siteName, int appIndex, bool commitDelay = false)
         {
             try
             {
                 using (ServerManager serverManager = GetServerManager())
                 {
-                    LogTrace(String.Format("#################### Deleting App {0} from Site {1} ####################", appIndex, siteName));
+                    TestUtility.LogTrace(String.Format("#################### Deleting App {0} from Site {1} ####################", appIndex, siteName));
 
                     serverManager.Sites[siteName].Applications.RemoveAt(appIndex);
 
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Deleting App {0} from Site {1} failed. Reason: {2} ####################", appIndex, siteName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Deleting App {0} from Site {1} failed. Reason: {2} ####################", appIndex, siteName, ex.Message));
             }
         }
 
-        public void AddBindingToSite(string siteName, string Ip, int Port, string host)
+        public void AddBindingToSite(string siteName, string Ip, int Port, string host, bool commitDelay = false)
         {
             string bindingInfo = "";
             if (Ip == null)
@@ -841,7 +880,7 @@ namespace AspNetCoreModule.Test.Framework
             if (host != null)
                 bindingInfo += host;
 
-            LogTrace(String.Format("#################### Adding Binding {0} to Site {1} ####################", bindingInfo, siteName));
+            TestUtility.LogWarning(String.Format("#################### Adding Binding {0} to Site {1} ####################", bindingInfo, siteName));
 
             try
             {
@@ -854,106 +893,116 @@ namespace AspNetCoreModule.Test.Framework
 
                     sites[siteName].Bindings.Add(b);
 
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Adding Binding {0} to Site {1} failed. Reason: {2} ####################", bindingInfo, siteName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Adding Binding {0} to Site {1} failed. Reason: {2} ####################", bindingInfo, siteName, ex.Message));
             }
         }
 
-        public void RemoveBindingFromSite(string siteName, BindingInfo bindingInfo)
+        public void RemoveBindingFromSite(string siteName, BindingInfo bindingInfo, bool commitDelay = false)
         {
             try
             {
                 using (ServerManager serverManager = GetServerManager())
                 {
-                    LogTrace(String.Format("#################### Removing Binding {0} from Site {1} ####################", bindingInfo.ToBindingString(), siteName));
+                    TestUtility.LogTrace(String.Format("#################### Removing Binding {0} from Site {1} ####################", bindingInfo.ToBindingString(), siteName));
 
                     for (int i = 0; i < serverManager.Sites[siteName].Bindings.Count; i++)
                     {
                         if (serverManager.Sites[siteName].Bindings[i].BindingInformation.ToString() == bindingInfo.ToBindingString())
                         {
                             serverManager.Sites[siteName].Bindings.RemoveAt(i);
-                            serverManager.CommitChanges();
+                            if (!commitDelay) {
+                                serverManager.CommitChanges();
+                            }
                             return;
                         }
                     }
 
-                    LogTrace(String.Format("#################### Remove binding failed because binding was not found ####################"));
+                    TestUtility.LogWarning(String.Format("#################### Remove binding failed because binding was not found ####################"));
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Remove binding failed. Reason: {0} ####################", ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Remove binding failed. Reason: {0} ####################", ex.Message));
             }
         }
 
-        public void ModifyBindingForSite(string siteName, BindingInfo bindingInfoOld, BindingInfo bindingInfoNew)
+        public void ModifyBindingForSite(string siteName, BindingInfo bindingInfoOld, BindingInfo bindingInfoNew, bool commitDelay = false)
         {
             try
             {
                 using (ServerManager serverManager = GetServerManager())
                 {
-                    LogTrace(String.Format("#################### Changing Binding {0} for Site {1} to {2} ####################", bindingInfoOld.ToBindingString(), siteName, bindingInfoNew.ToBindingString()));
+                    TestUtility.LogTrace(String.Format("#################### Changing Binding {0} for Site {1} to {2} ####################", bindingInfoOld.ToBindingString(), siteName, bindingInfoNew.ToBindingString()));
 
                     for (int i = 0; i < serverManager.Sites[siteName].Bindings.Count; i++)
                     {
                         if (serverManager.Sites[siteName].Bindings[i].BindingInformation.ToString() == bindingInfoOld.ToBindingString())
                         {
                             serverManager.Sites[siteName].Bindings[i].SetAttributeValue("bindingInformation", bindingInfoNew.ToBindingString());
-                            serverManager.CommitChanges();
+                            if (!commitDelay) {
+                                serverManager.CommitChanges();
+                            }
                             return;
                         }
                     }
 
-                    LogTrace(String.Format("#################### Modify binding failed because binding was not found ####################"));
+                    TestUtility.LogWarning(String.Format("#################### Modify binding failed because binding was not found ####################"));
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Changing binding failed. Reason: {0} ####################", ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Changing binding failed. Reason: {0} ####################", ex.Message));
             }
         }
 
-        public void DeleteSite(string siteName)
+        public void DeleteSite(string siteName, bool commitDelay = false)
         {
             try
             {
                 using (ServerManager serverManager = GetServerManager())
                 {
-                    LogTrace(String.Format("#################### Deleting Site {0} ####################", siteName));
+                    TestUtility.LogTrace(String.Format("#################### Deleting Site {0} ####################", siteName));
 
                     SiteCollection sites = serverManager.Sites;
                     sites.Remove(sites[siteName]);
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Delete site {0} failed. Reason: {1} ####################", siteName, ex.Message));
+                TestUtility.LogWarning(String.Format("#################### Delete site {0} failed. Reason: {1} ####################", siteName, ex.Message));
             }
         }
 
-        public void DeleteAllSites()
+        public void DeleteAllSites(bool commitDelay = false)
         {
             using (ServerManager serverManager = GetServerManager())
             {
-                LogTrace(String.Format("#################### Deleting all sites ####################"));
+                TestUtility.LogTrace(String.Format("#################### Deleting all sites ####################"));
 
                 SiteCollection sites = serverManager.Sites;
                 while (sites.Count > 0)
                     sites.RemoveAt(0);
-                serverManager.CommitChanges();
+                if (!commitDelay) {
+                    serverManager.CommitChanges();
+                }
             }
         }
 
-        public void SetDynamicSiteRegistrationThreshold(int threshold)
+        public void SetDynamicSiteRegistrationThreshold(int threshold, bool commitDelay = false)
         {
             try
             {
-                LogTrace(String.Format("#################### Changing dynamicRegistrationThreshold to {0} ####################", threshold));
+                TestUtility.LogTrace(String.Format("#################### Changing dynamicRegistrationThreshold to {0} ####################", threshold));
 
                 using (ServerManager serverManager = new ServerManager())
                 {
@@ -962,12 +1011,14 @@ namespace AspNetCoreModule.Test.Framework
                     ConfigurationSection webLimitsSection = config.GetSection("system.applicationHost/webLimits");
                     webLimitsSection["dynamicRegistrationThreshold"] = threshold;
 
-                    serverManager.CommitChanges();
+                    if (!commitDelay) {
+                        serverManager.CommitChanges();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogTrace(String.Format("#################### Changing dynamicRegistrationThreshold failed. Reason: {0} ####################", ex.Message));
+                TestUtility.LogTrace(String.Format("#################### Changing dynamicRegistrationThreshold failed. Reason: {0} ####################", ex.Message));
             }
         }
 
@@ -1008,9 +1059,9 @@ namespace AspNetCoreModule.Test.Framework
             for (int i = 0; i < owners.Length; i++)
             {
                 if (ownersFound[i])
-                    LogTrace(String.Format("w3wp.exe with owner {0} found", owners[i]));
+                    TestUtility.LogTrace(String.Format("w3wp.exe with owner {0} found", owners[i]));
                 else
-                    LogError(String.Format("w3wp.exe with owner {0} not found", owners[i]));
+                    TestUtility.LogTrace(String.Format("w3wp.exe with owner {0} not found", owners[i]));
             }
 
             return null;
