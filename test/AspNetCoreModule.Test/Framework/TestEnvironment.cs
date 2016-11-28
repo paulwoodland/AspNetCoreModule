@@ -61,9 +61,9 @@ namespace AspNetCoreModule.Test.Framework
             string siteName = string.Empty;
             for (int i = 0; i < 3; i++)
             {
-                string postfix = Path.GetRandomFileName();
-                siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", Path.GetRandomFileName());
-                siteName = "StandardTestSite" + postfix;
+                string postfix = "ANCMTest" + Path.GetRandomFileName();
+                siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", postfix);
+                siteName = postfix;
                 if (!Directory.Exists(siteRootPath))
                 {
                     if (serverType == ServerType.IIS)

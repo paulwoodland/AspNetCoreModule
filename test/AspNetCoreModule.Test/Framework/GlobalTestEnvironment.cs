@@ -106,7 +106,7 @@ namespace AspNetCoreModule.Test.Framework
 
                 foreach (var postfix in CleanupQueue)
                 {
-                    string siteName = "StandardTestSite" + postfix;
+                    string siteName = postfix;
                     string siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", postfix);
                     try
                     {

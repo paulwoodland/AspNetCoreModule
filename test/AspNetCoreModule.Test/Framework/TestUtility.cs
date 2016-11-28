@@ -665,23 +665,17 @@ namespace AspNetCoreModule.Test.Framework
         public static List<String> GetApplicationEvent(int id, DateTime startFrom)
         {
             var result = new List<String>();
-            for (int i = 0; i < 5; i++)
+            TestUtility.LogWarning("Waiting 1 seconds for eventlog to update...");
+            Thread.Sleep(1000);
+            EventLog systemLog = new EventLog("Application");
+            foreach (EventLogEntry entry in systemLog.Entries)
             {
-                TestUtility.LogWarning("Waiting 1 seconds for eventlog to update...");
-                Thread.Sleep(1000);
-                EventLog systemLog = new EventLog("Application");
-                foreach (EventLogEntry entry in systemLog.Entries)
+                if (entry.InstanceId == id && entry.TimeWritten >= startFrom)
                 {
-                    if (entry.TimeWritten > startFrom &&  entry.InstanceId == id)
-                    {
-                        result.Add(entry.ReplacementStrings[0]);
-                    }
-                }
-                if (result.Count > 0)
-                {
-                    break;
+                    result.Add(entry.ReplacementStrings[0]);
                 }
             }
+            
             return result;
         }
 

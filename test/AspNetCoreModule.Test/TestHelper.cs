@@ -227,8 +227,8 @@ namespace AspNetCoreModule.Test
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                     TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
 
-                    Thread.Sleep(500);
                     DateTime startTime = DateTime.Now;
+                    Thread.Sleep(1100);
 
                     // verify 503 
                     await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), fileContent + "\r\n", HttpStatusCode.ServiceUnavailable);
@@ -388,19 +388,13 @@ namespace AspNetCoreModule.Test
                         backendProcess.Kill();
                         Thread.Sleep(500);
                     }
-                    if (valueOfRapidFailsPerMinute == 0)
-                    {
-                        Assert.False(rapidFailsTriggered);
-                    }
-                    else
-                    {
-                        Assert.True(rapidFailsTriggered);
+                    
+                    Assert.True(rapidFailsTriggered);
 
-                        // verify event error log
-                        int errorEventId = 1003;
-                        string errorMessageContainThis = "'" + valueOfRapidFailsPerMinute + "'"; // part of error message
-                        Assert.True(TestUtility.RetryHelper((arg1, arg2, arg3) => VerifyApplicationEventLog(arg1, arg2, arg3), errorEventId, startTime, errorMessageContainThis));
-                    }
+                    // verify event error log
+                    int errorEventId = 1003;
+                    string errorMessageContainThis = "'" + valueOfRapidFailsPerMinute + "'"; // part of error message
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2, arg3) => VerifyApplicationEventLog(arg1, arg2, arg3), errorEventId, startTime, errorMessageContainThis));
                 }
                 TestEnv.StandardTestApp.RestoreFile("web.config");
             }
