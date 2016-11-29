@@ -73,7 +73,6 @@ namespace AspNetCoreModule.Test
             return DoWebSocketTest(appPoolBitness, testData);
         }
 
-        /// failed until here
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
