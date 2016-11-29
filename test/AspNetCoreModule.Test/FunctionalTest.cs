@@ -27,7 +27,7 @@ namespace AspNetCoreModule.Test
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(ServerType.IIS, IISConfigUtility.AppPoolBitness.noChange)]
         [InlineData(ServerType.IIS, IISConfigUtility.AppPoolBitness.enable32Bit)]
-        public Task BasicTestOnIIS(IISConfigUtility.AppPoolBitness appPoolBitness, ServerType serverType)
+        public Task BasicTestOnIIS(ServerType serverType, IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             return DoBasicTest(serverType, appPoolBitness);
         }
