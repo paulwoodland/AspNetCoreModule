@@ -21,7 +21,7 @@ using System.Security.Principal;
 
 namespace AspNetCoreModule.Test
 {
-    public class TestHelper
+    public class BaseTestClass: IClassFixture<GlobalTestEnvironment>
     {
         private const int _repeatCount = 3;
 

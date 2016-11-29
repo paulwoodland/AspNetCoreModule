@@ -9,9 +9,8 @@ using Xunit;
 
 namespace AspNetCoreModule.Test
 {
-    public class TestClass : IClassFixture<GlobalTestEnvironment>
+    public class FunctionalTest : BaseTestClass
     {
-
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
@@ -20,7 +19,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
         public Task AppOfflineTestWithRenaming(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return TestHelper.DoAppOfflineTestWithRenaming(appPoolBitness);
+            return DoAppOfflineTestWithRenaming(appPoolBitness);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -32,7 +31,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 0)]
         public Task RapidFailsPerMinuteTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfRapidFailsPerMinute)
         {
-            return TestHelper.DoRapidFailsPerMinuteTest(appPoolBitness, valueOfRapidFailsPerMinute);
+            return DoRapidFailsPerMinuteTest(appPoolBitness, valueOfRapidFailsPerMinute);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -47,7 +46,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, 0, 0)]
         public Task ShutdownTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfshutdownTimeLimit, int expectedClosingTime)
         {
-            return TestHelper.DoShutdownTimeLimitTest(appPoolBitness, valueOfshutdownTimeLimit, expectedClosingTime);
+            return DoShutdownTimeLimitTest(appPoolBitness, valueOfshutdownTimeLimit, expectedClosingTime);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -60,7 +59,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, 2)]
         public Task StartupTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness, int starupTimeLimit)
         {
-            return TestHelper.DoStartupTimeLimitTest(appPoolBitness, starupTimeLimit);
+            return DoStartupTimeLimitTest(appPoolBitness, starupTimeLimit);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -71,7 +70,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, "a")]
         public Task WebSocketTest(IISConfigUtility.AppPoolBitness appPoolBitness, string testData)
         {
-            return TestHelper.DoWebSocketTest(appPoolBitness, testData);
+            return DoWebSocketTest(appPoolBitness, testData);
         }
 
         /// failed until here
@@ -82,7 +81,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, ServerType.IISExpress)]
         public Task VerifyANCMOnIISExpress(IISConfigUtility.AppPoolBitness appPoolBitness, ServerType serverType)
         {
-            return TestHelper.DoVerifyANCM(appPoolBitness, serverType);
+            return DoVerifyANCM(appPoolBitness, serverType);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -93,7 +92,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
         public Task RecycleApplicationAfterBeingKilled(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return TestHelper.DoRecycleApplicationAfterBeingKilled(appPoolBitness);
+            return DoRecycleApplicationAfterBeingKilled(appPoolBitness);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -104,7 +103,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
         public Task RecycleApplicationAfterWebConfigUpdated(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return TestHelper.DoRecycleApplicationAfterWebConfigUpdated(appPoolBitness);
+            return DoRecycleApplicationAfterWebConfigUpdated(appPoolBitness);
         }
         
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -115,7 +114,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
         public Task RecycleApplicationWithURLRewrite(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return TestHelper.DoRecycleApplicationWithURLRewrite(appPoolBitness);
+            return DoRecycleApplicationWithURLRewrite(appPoolBitness);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -126,7 +125,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
         public Task RecycleParentApplicationWithURLRewrite(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return TestHelper.DoRecycleParentApplicationWithURLRewrite(appPoolBitness);
+            return DoRecycleParentApplicationWithURLRewrite(appPoolBitness);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -137,7 +136,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
         public Task EnvironmentVariablesTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return TestHelper.DoEnvironmentVariablesTest(appPoolBitness);
+            return DoEnvironmentVariablesTest(appPoolBitness);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -148,7 +147,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
         public Task AppOfflineTestWithUrlRewriteAndDeleting(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return TestHelper.DoAppOfflineTestWithUrlRewriteAndDeleting(appPoolBitness);
+            return DoAppOfflineTestWithUrlRewriteAndDeleting(appPoolBitness);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -159,7 +158,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, "a")]
         public Task PostMethodTest(IISConfigUtility.AppPoolBitness appPoolBitness, string testData)
         {
-            return TestHelper.DoPostMethodTest(appPoolBitness, testData);
+            return DoPostMethodTest(appPoolBitness, testData);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -170,7 +169,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
         public Task DisableStartUpErrorPageTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return TestHelper.DoDisableStartUpErrorPageTest(appPoolBitness);
+            return DoDisableStartUpErrorPageTest(appPoolBitness);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -181,7 +180,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, 2)]
         public Task ProcessesPerApplicationTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfProcessesPerApplication)
         {
-            return TestHelper.DoProcessesPerApplicationTest(appPoolBitness, valueOfProcessesPerApplication);
+            return DoProcessesPerApplicationTest(appPoolBitness, valueOfProcessesPerApplication);
         }
         
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -194,7 +193,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, "00:01:00")]
         public Task RequestTimeoutTest(IISConfigUtility.AppPoolBitness appPoolBitness, string requestTimeout)
         {
-            return TestHelper.DoRequestTimeoutTest(appPoolBitness, requestTimeout);
+            return DoRequestTimeoutTest(appPoolBitness, requestTimeout);
         }
         
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -205,7 +204,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
         public Task StdoutLogEnabledTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return TestHelper.DoStdoutLogEnabledTest(appPoolBitness);
+            return DoStdoutLogEnabledTest(appPoolBitness);
         }
         
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -218,7 +217,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, "$env", "")]
         public Task ProcessPathAndArgumentsTest(IISConfigUtility.AppPoolBitness appPoolBitness, string processPath, string argumentsPrefix)
         {
-            return TestHelper.DoProcessPathAndArgumentsTest(appPoolBitness, processPath, argumentsPrefix);
+            return DoProcessPathAndArgumentsTest(appPoolBitness, processPath, argumentsPrefix);
         }
     }
 }
