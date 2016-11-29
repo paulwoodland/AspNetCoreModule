@@ -32,6 +32,32 @@ namespace AspNetCoreModule.Test
             None
         }
 
+        public static async Task DoBasicTest(ServerType serverType, IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            using (var TestEnv = new TestEnvironment(appPoolBitness, serverType))
+            {
+                string backendProcessId_old = null;
+
+                DateTime startTime = DateTime.Now;
+
+                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                Assert.NotEqual(backendProcessId_old, backendProcessId);
+                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+
+                var httpClientHandler = new HttpClientHandler();
+                var httpClient = new HttpClient(httpClientHandler)
+                {
+                    BaseAddress = TestEnv.StandardTestApp.GetHttpUri(),
+                    Timeout = TimeSpan.FromSeconds(5),
+                };
+
+                // Invoke given test scenario function
+                await CheckChunkedAsync(httpClient, TestEnv.StandardTestApp);
+            }
+        }
+
         public static async Task DoRecycleApplicationAfterBeingKilled(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             using (var TestEnv = new TestEnvironment(appPoolBitness))
@@ -187,33 +213,7 @@ namespace AspNetCoreModule.Test
                 TestEnv.StandardTestApp.RestoreFile("web.config");
             }
         }
-
-        public static async Task DoVerifyANCM(IISConfigUtility.AppPoolBitness appPoolBitness, ServerType serverType)
-        {
-            using (var TestEnv = new TestEnvironment(appPoolBitness, serverType))
-            {
-                string backendProcessId_old = null;
-
-                DateTime startTime = DateTime.Now;
-
-                string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
-                Assert.NotEqual(backendProcessId_old, backendProcessId);
-                var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
-                Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), TestEnv.StandardTestApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
-
-                var httpClientHandler = new HttpClientHandler();
-                var httpClient = new HttpClient(httpClientHandler)
-                {
-                    BaseAddress = TestEnv.StandardTestApp.GetHttpUri(),
-                    Timeout = TimeSpan.FromSeconds(5),
-                };
-
-                // Invoke given test scenario function
-                await CheckChunkedAsync(httpClient, TestEnv.StandardTestApp);
-            }
-        }
-
+                
         public static async Task DoAppOfflineTestWithRenaming(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             using (var TestEnv = new TestEnvironment(appPoolBitness))

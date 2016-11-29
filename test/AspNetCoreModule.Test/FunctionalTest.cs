@@ -11,6 +11,27 @@ namespace AspNetCoreModule.Test
 {
     public class FunctionalTest : BaseTestClass
     {
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(ServerType.IISExpress, IISConfigUtility.AppPoolBitness.noChange)]
+        [InlineData(ServerType.IISExpress, IISConfigUtility.AppPoolBitness.enable32Bit)]
+        public Task BasicTestOnIISExpress(ServerType serverType, IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            return DoBasicTest(serverType, appPoolBitness);
+        }
+
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(ServerType.IIS, IISConfigUtility.AppPoolBitness.noChange)]
+        [InlineData(ServerType.IIS, IISConfigUtility.AppPoolBitness.enable32Bit)]
+        public Task BasicTestOnIIS(IISConfigUtility.AppPoolBitness appPoolBitness, ServerType serverType)
+        {
+            return DoBasicTest(serverType, appPoolBitness);
+        }
+
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
@@ -71,16 +92,6 @@ namespace AspNetCoreModule.Test
         public Task WebSocketTest(IISConfigUtility.AppPoolBitness appPoolBitness, string testData)
         {
             return DoWebSocketTest(appPoolBitness, testData);
-        }
-
-        [ConditionalTheory]
-        [OSSkipCondition(OperatingSystems.Linux)]
-        [OSSkipCondition(OperatingSystems.MacOSX)]
-        [InlineData(Framework.IISConfigUtility.AppPoolBitness.noChange, ServerType.IISExpress)]
-        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, ServerType.IISExpress)]
-        public Task VerifyANCMOnIISExpress(IISConfigUtility.AppPoolBitness appPoolBitness, ServerType serverType)
-        {
-            return DoVerifyANCM(appPoolBitness, serverType);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]

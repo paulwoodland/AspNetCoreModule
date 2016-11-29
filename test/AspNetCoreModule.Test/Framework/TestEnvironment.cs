@@ -108,7 +108,7 @@ namespace AspNetCoreModule.Test.Framework
             {
                 appPoolName = siteName;
             }
-            if (serverType == ServerType.IISExpress)
+            else if (serverType == ServerType.IISExpress)
             {
                 appPoolName = "Clr4IntegratedAppPool";
             }
