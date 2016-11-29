@@ -43,7 +43,7 @@ namespace AspNetCoreModule.Test.Framework
             if (serverType == ServerType.IIS)
             {
                 // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
             }
 
             //
@@ -59,20 +59,19 @@ namespace AspNetCoreModule.Test.Framework
             //
             string siteRootPath = string.Empty;
             string siteName = string.Empty;
+
+            // repeat three times until getting the valid temporary directory path
             for (int i = 0; i < 3; i++)
             {
-                string postfix = "ANCMTest" + Path.GetRandomFileName();
-                siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", postfix);
+                string postfix = Path.GetRandomFileName();
+                siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTest", postfix);
                 siteName = postfix;
                 if (!Directory.Exists(siteRootPath))
                 {
-                    if (serverType == ServerType.IIS)
-                    {
-                        GlobalTestEnvironment.CleanupQueue.Add(postfix);
-                    }
                     break;
                 }
             }
+
             TestUtility.DirectoryCopy(Path.Combine(solutionPath, "test", "WebRoot"), siteRootPath);
 
             string standardAppRootPath = Path.Combine(siteRootPath, "StandardTestApp");
@@ -172,7 +171,7 @@ namespace AspNetCoreModule.Test.Framework
                     cmdline = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles%"), "IIS Express", "iisexpress.exe");                    
                 }
                 _iisExpressPidBackup = TestUtility.RunCommand(cmdline, argument, false, false);
-            }            
+            }
         }
     }
 }

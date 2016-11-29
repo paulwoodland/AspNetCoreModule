@@ -40,11 +40,11 @@ namespace AspNetCoreModule.Test
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 25, 19)]
-        //[InlineData(IISConfigUtility.AppPoolBitness.noChange, 25, 19)]
-        //[InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 5, 4)]
-        //[InlineData(IISConfigUtility.AppPoolBitness.noChange, 5, 4)]
-        //[InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 0, 0)]
-        //[InlineData(IISConfigUtility.AppPoolBitness.noChange, 0, 0)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 25, 19)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 5, 4)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 5, 4)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 0, 0)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 0, 0)]
         public Task ShutdownTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfshutdownTimeLimit, int expectedClosingTime)
         {
             return TestHelper.DoShutdownTimeLimitTest(appPoolBitness, valueOfshutdownTimeLimit, expectedClosingTime);
@@ -54,11 +54,13 @@ namespace AspNetCoreModule.Test
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
-        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
-        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
-        public Task StartupTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness)
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 10)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 10)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 1)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 2)]
+        public Task StartupTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness, int starupTimeLimit)
         {
-            return TestHelper.DoStartupTimeLimitTest(appPoolBitness);
+            return TestHelper.DoStartupTimeLimitTest(appPoolBitness, starupTimeLimit);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
@@ -186,11 +188,13 @@ namespace AspNetCoreModule.Test
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
-        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
-        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
-        public Task RequestTimeoutTest(IISConfigUtility.AppPoolBitness appPoolBitness)
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, "00:02:00")]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, "00:02:00")]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, "00:01:00")]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, "00:01:00")]
+        public Task RequestTimeoutTest(IISConfigUtility.AppPoolBitness appPoolBitness, string requestTimeout)
         {
-            return TestHelper.DoRequestTimeoutTest(appPoolBitness);
+            return TestHelper.DoRequestTimeoutTest(appPoolBitness, requestTimeout);
         }
         
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]

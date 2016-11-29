@@ -20,13 +20,9 @@ namespace AspNetCoreModule.Test.Framework
         public static string Aspnetcore_X86_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "syswow64", "inetsrv", "aspnetcore_private.dll");
         public static string IISExpressAspnetcoreSchema_path = Path.Combine(Environment.ExpandEnvironmentVariables("%ProgramFiles%"), "IIS Express", "config", "schema", "aspnetcore_schema.xml");
         public static string IISAspnetcoreSchema_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "config", "schema", "aspnetcore_schema.xml");
-        public static bool UseSolutionOutputFiles = true;
-        public static bool ReplaceExistingFiles = false;
         public static int _referenceCount = 0;
-        public static List<string> CleanupQueue = null;
 
         private static bool _globalTestEnvironmentCompleted = false;
-
         private string _setupScriptPath = null;
 
         public GlobalTestEnvironment()
@@ -34,11 +30,6 @@ namespace AspNetCoreModule.Test.Framework
             TestUtility.LogWarning("GlobalTestEnvironment::GlobalTestEnvironment()");
 
             _referenceCount++;
-
-            if (CleanupQueue == null)
-            {
-                CleanupQueue = new List<string>();
-            }
 
             if (_referenceCount == 1)
             {
@@ -50,26 +41,59 @@ namespace AspNetCoreModule.Test.Framework
                     System.Diagnostics.Debugger.Launch();                    
                 }
 
-                TestUtility.RestartServices(RestartOption.KillIISExpress);
+                TestUtility.ResetHelper(ResetHelperMode.KillIISExpress);
 
                 TestUtility.LogWarning("Initializing global test environment");
+
+                // cleanup before starting
+                string siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTest");
                 try
                 {
-                    IISConfigUtility.RestoreAppHostConfig();
+                    if (IISConfigUtility.IsIISInstalled == true)
+                    {
+                        IISConfigUtility.RestoreAppHostConfig();
+                    }
                 }
                 catch
                 {
-                    // ignore
+                    TestUtility.LogWarning("Failed to restore applicationhost.config");
                 }
-
+                foreach (string directory in Directory.GetDirectories(siteRootPath))
+                {
+                    bool successDeleteChildDirectory = true;
+                    try
+                    {
+                        TestUtility.DeleteDirectory(directory);
+                    }
+                    catch
+                    {
+                        successDeleteChildDirectory = false;
+                        TestUtility.LogWarning("Failed to delete " + directory);
+                    }
+                    if (successDeleteChildDirectory)
+                    {
+                        try
+                        {
+                            TestUtility.DeleteDirectory(siteRootPath);
+                        }
+                        catch
+                        {
+                            TestUtility.LogWarning("Failed to delete " + siteRootPath);
+                        }
+                    }
+                }
+                
                 UpdateAspnetCoreBinaryFiles();
-                if (!ReplaceExistingFiles)
+
+                // update applicationhost.config for IIS server
+                if (IISConfigUtility.IsIISInstalled == true)
                 {
                     using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                     {
                         iisConfig.AddModule("AspNetCoreModule", Aspnetcore_path, null);
                     }
                 }
+                
                 TestUtility.LogWarning("GlobalTestEnvironment::End of global setup");
                 _globalTestEnvironmentCompleted = true;
             }
@@ -83,7 +107,7 @@ namespace AspNetCoreModule.Test.Framework
                 else
                 {
                     TestUtility.LogWarning("GlobalTestEnvironment:: Waiting global setup...");
-                                        Thread.Sleep(500);
+                    Thread.Sleep(500);
                 }                 
             }
             if (!_globalTestEnvironmentCompleted)
@@ -95,50 +119,26 @@ namespace AspNetCoreModule.Test.Framework
         public void Dispose()
         {
             TestUtility.LogWarning("GlobalTestEnvironment::Dispose()");
-
             _referenceCount--;
 
             if (_referenceCount == 0)
             {
-                TestUtility.RestartServices(RestartOption.KillIISExpress);
-
-                RollbackAspnetCoreBinaryFileChanges();
-
-                foreach (var postfix in CleanupQueue)
-                {
-                    string siteName = postfix;
-                    string siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", postfix);
-                    try
-                    {
-                        using (var iisConfig = new IISConfigUtility(ServerType.IIS))
-                        {
-                            iisConfig.DeleteSite(siteName);
-                            iisConfig.DeleteAppPool(siteName);
-                        }
-                    }
-                    catch
-                    {
-                        // ignore
-                    }
-
-                    try
-                    {
-                        TestUtility.DeleteDirectory(siteRootPath);
-                    }
-                    catch
-                    {
-                        // ignore
-                    }
-                }
-
-                if (!ReplaceExistingFiles)
+                TestUtility.ResetHelper(ResetHelperMode.KillIISExpress);
+                
+                if (IISConfigUtility.IsIISInstalled == true)
                 {
                     using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                     {
-                        iisConfig.AddModule("AspNetCoreModule", Aspnetcore_path_original, null);
+                        try
+                        {
+                            iisConfig.AddModule("AspNetCoreModule", Aspnetcore_path_original, null);
+                        }
+                        catch
+                        {
+                            TestUtility.LogWarning("Failed to restore aspnetcore.dll path!!!");
+                        }
                     }
-                }
-
+                }                
                 TestUtility.LogTrace("End of test!!!");
             }
         }
@@ -149,48 +149,31 @@ namespace AspNetCoreModule.Test.Framework
             string outputPath = string.Empty;
             _setupScriptPath = Path.Combine(solutionRoot, "tools");
 
-            if (!UseSolutionOutputFiles)
+            // First try with debug build
+            outputPath = Path.Combine(solutionRoot, "artifacts", "build", "AspNetCore", "bin", "Debug");
+
+            // If debug build does is not available, try with release build
+            if (!File.Exists(Path.Combine(outputPath, "Win32", "aspnetcore.dll"))
+                || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore.dll"))
+                || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore_schema.xml")))
             {
-                string aspnetCoreModulePackagePath = GetLatestAncmPackage();
-                _setupScriptPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                ZipFile.ExtractToDirectory(aspnetCoreModulePackagePath, _setupScriptPath);
-
-                outputPath = Path.Combine(_setupScriptPath);
-            }
-            else
-            {
-                // First try with debug build
-                outputPath = Path.Combine(solutionRoot, "artifacts", "build", "AspNetCore", "bin", "Debug");
-
-                // If debug build does is not available, try with release build
-                if (!File.Exists(Path.Combine(outputPath, "Win32", "aspnetcore.dll"))
-                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore.dll"))
-                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore_schema.xml")))
-                {
-                    outputPath = Path.Combine(solutionRoot, "artifacts", "build", "AspNetCore", "bin", "Release");
-                }
-
-                if (!File.Exists(Path.Combine(outputPath, "Win32", "aspnetcore.dll"))
-                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore.dll"))
-                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore_schema.xml")))
-                {
-                    outputPath = Path.Combine(solutionRoot, "src", "AspNetCore", "bin", "Debug");
-                }
-
-                if (!File.Exists(Path.Combine(outputPath, "Win32", "aspnetcore.dll"))
-                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore.dll"))
-                    || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore_schema.xml")))
-                {
-                    throw new ApplicationException("aspnetcore.dll is not available; build aspnetcore.dll for both x86 and x64 and then try again!!!");
-                }
+                outputPath = Path.Combine(solutionRoot, "artifacts", "build", "AspNetCore", "bin", "Release");
             }
 
-            if (ReplaceExistingFiles)
+            if (!File.Exists(Path.Combine(outputPath, "Win32", "aspnetcore.dll"))
+                || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore.dll"))
+                || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore_schema.xml")))
             {
-                // invoke installancm.ps1 to replace the existing files
-                TestUtility.RunCommand("powershell.exe", $"\"{_setupScriptPath}\\installancm.ps1\" \"" + outputPath + "\" -ForceToBackup");
+                outputPath = Path.Combine(solutionRoot, "src", "AspNetCore", "bin", "Debug");
             }
 
+            if (!File.Exists(Path.Combine(outputPath, "Win32", "aspnetcore.dll"))
+                || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore.dll"))
+                || !File.Exists(Path.Combine(outputPath, "x64", "aspnetcore_schema.xml")))
+            {
+                throw new ApplicationException("aspnetcore.dll is not available; build aspnetcore.dll for both x86 and x64 and then try again!!!");
+            }
+            
             // create an extra private copy of the private file on IISExpress directory
             bool updateSuccess = false;
             for (int i = 0; i < 3; i++)
@@ -198,8 +181,8 @@ namespace AspNetCoreModule.Test.Framework
                 updateSuccess = false;
                 try
                 {
-                    TestUtility.RestartServices(RestartOption.KillWorkerProcess);
-                    TestUtility.RestartServices(RestartOption.StopW3svcStartW3svc);
+                    TestUtility.ResetHelper(ResetHelperMode.KillWorkerProcess);
+                    TestUtility.ResetHelper(ResetHelperMode.StopW3svcStartW3svc);
                     Thread.Sleep(1000);
                     TestUtility.FileCopy(Path.Combine(outputPath, "x64", "aspnetcore.dll"), Aspnetcore_path);
                     if (TestUtility.IsOSAmd64)
@@ -223,26 +206,6 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        private void RollbackAspnetCoreBinaryFileChanges()
-        {
-            var solutionRoot = GetSolutionDirectory();
-            string outputPath = string.Empty;
-            string setupScriptPath = string.Empty;
-
-            if (ReplaceExistingFiles)
-            {
-                TestUtility.RunCommand("powershell.exe", $"\"{_setupScriptPath}\\installancm.ps1\" -Rollback");
-            }
-            try
-            {
-                Directory.Delete(_setupScriptPath);
-            }
-            catch
-            {
-                // ignore exception which happens while deleting the temporary directory which won'be used anymore
-            }
-        }
-
         public static string GetSolutionDirectory()
         {
             var applicationBasePath = PlatformServices.Default.Application.ApplicationBasePath;
@@ -261,19 +224,5 @@ namespace AspNetCoreModule.Test.Framework
 
             throw new Exception($"Solution root could not be located using application root {applicationBasePath}.");
         }
-
-        private static string GetLatestAncmPackage()
-        {
-            var solutionRoot = GetSolutionDirectory();
-            var buildDir = Path.Combine(solutionRoot, "artifacts", "build");
-            var nupkg = Directory.EnumerateFiles(buildDir, "*.nupkg").OrderByDescending(p => p).FirstOrDefault();
-
-            if (nupkg == null)
-            {
-                throw new Exception("Cannot find the ANCM nuget package, which is expected to be under artifacts\build");
-            }
-
-            return nupkg;
-        }        
     }
 }

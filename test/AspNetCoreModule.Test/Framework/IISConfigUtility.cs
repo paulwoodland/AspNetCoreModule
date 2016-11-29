@@ -277,18 +277,26 @@ namespace AspNetCoreModule.Test.Framework
             Thread.Sleep(500);
         }
 
-        public bool IsIISInstalled()
+        private static bool? _isIISInstalled = null;
+        public static bool? IsIISInstalled
         {
-            bool result = true;
-            if (!File.Exists(Path.Combine(Strings.IIS64BitPath, "iiscore.dll")))
+            get
             {
-                result = false;
+                if (_isIISInstalled == null)
+                {
+                    bool result = true;
+                    if (!File.Exists(Path.Combine(Strings.IIS64BitPath, "iiscore.dll")))
+                    {
+                        result = false;
+                    }
+                    if (!File.Exists(Path.Combine(Strings.IIS64BitPath, "config", "applicationhost.config")))
+                    {
+                        result = false;
+                    }
+                    _isIISInstalled = result;
+                }
+                return _isIISInstalled;
             }
-            if (!File.Exists(Path.Combine(Strings.IIS64BitPath, "config", "applicationhost.config")))
-            {
-                result = false;
-            }
-            return result;
         }
 
         public bool IsAncmInstalled(ServerType servertype)

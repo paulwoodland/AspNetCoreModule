@@ -17,7 +17,7 @@ using System.Security.AccessControl;
 
 namespace AspNetCoreModule.Test.Framework
 {
-    public enum RestartOption
+    public enum ResetHelperMode
     {
         CallIISReset,
         StopHttpStartW3svc,
@@ -424,33 +424,33 @@ namespace AspNetCoreModule.Test.Framework
         }
        
 
-        public static void RestartServices(RestartOption option)
+        public static void ResetHelper(ResetHelperMode mode)
         {
-            switch (option)
+            switch (mode)
             {
-                case RestartOption.CallIISReset:
+                case ResetHelperMode.CallIISReset:
                     CallIISReset();
                     break;
-                case RestartOption.StopHttpStartW3svc:
+                case ResetHelperMode.StopHttpStartW3svc:
                     StopHttp();
                     StartW3svc();
                     break;
-                case RestartOption.StopWasStartW3svc:
+                case ResetHelperMode.StopWasStartW3svc:
                     StopWas();
                     StartW3svc();
                     break;
-                case RestartOption.StopW3svcStartW3svc:
+                case ResetHelperMode.StopW3svcStartW3svc:
                     StopW3svc();
                     StartW3svc();
                     break;
-                case RestartOption.KillWorkerProcess:
+                case ResetHelperMode.KillWorkerProcess:
                     KillWorkerProcess();
                     KillIISWorkerProcess();
                     break;
-                case RestartOption.KillVSJitDebugger:
+                case ResetHelperMode.KillVSJitDebugger:
                     KillVSJitDebugger();
                     break;
-                case RestartOption.KillIISExpress:
+                case ResetHelperMode.KillIISExpress:
                     KillIISExpress();
                     break;
             };

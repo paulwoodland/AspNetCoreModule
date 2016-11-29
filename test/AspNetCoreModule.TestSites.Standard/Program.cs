@@ -22,6 +22,23 @@ namespace AspnetCoreModule.TestSites.Standard
                 .UseIISIntegration()
                 .UseStartup<StartupResponse>();
 
+            string startupDelay = Environment.GetEnvironmentVariable("ANCMTestStartUpDelay");
+            if (!string.IsNullOrEmpty(startupDelay))
+            {
+                StartupResponse.SleeptimeWhileStarting = Convert.ToInt32(startupDelay);
+            }
+
+            if (StartupResponse.SleeptimeWhileStarting != 0)
+            {
+                Thread.Sleep(StartupResponse.SleeptimeWhileStarting);
+            }
+
+            string shutdownDelay = Environment.GetEnvironmentVariable("ANCMTestShutdownDelay");
+            if (!string.IsNullOrEmpty(shutdownDelay))
+            {
+                StartupResponse.SleeptimeWhileClosing = Convert.ToInt32(shutdownDelay);
+            }
+            
             // Switch between Kestrel and WebListener for different tests. Default to Kestrel for normal app execution.
             if (string.Equals(builder.GetSetting("server"), "Microsoft.AspNetCore.Server.WebListener", System.StringComparison.Ordinal))
             {

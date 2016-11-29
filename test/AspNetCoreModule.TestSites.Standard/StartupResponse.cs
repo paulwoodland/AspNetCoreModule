@@ -17,6 +17,8 @@ namespace AspnetCoreModule.TestSites.Standard
     public class StartupResponse
     {
         public static int SleeptimeWhileClosing = 0;
+        public static int SleeptimeWhileStarting = 0;
+
         private async Task Echo(WebSocket webSocket)
         {
             var buffer = new byte[1024 * 4];

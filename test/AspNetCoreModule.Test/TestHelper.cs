@@ -41,7 +41,7 @@ namespace AspNetCoreModule.Test
                 for (int i = 0; i < repeatCount; i++)
                 {
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
                     Thread.Sleep(500);
@@ -67,7 +67,7 @@ namespace AspNetCoreModule.Test
                 for (int i = 0; i < repeatCount; i++)
                 {
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
                     Thread.Sleep(500);
@@ -98,7 +98,7 @@ namespace AspNetCoreModule.Test
                 for (int i = 0; i < repeatCount; i++)
                 {
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
                     Thread.Sleep(500);
@@ -131,7 +131,7 @@ namespace AspNetCoreModule.Test
                 for (int i = 0; i < repeatCount; i++)
                 {
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
                     Thread.Sleep(500);
@@ -169,7 +169,7 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
 
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     int expectedValue = Convert.ToInt32(totalNumber) + 1;
                     Assert.True(expectedValue.ToString() == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetEnvironmentVariables"), HttpStatusCode.OK)));
@@ -177,7 +177,7 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
 
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     expectedValue++;
                     Assert.True("foo" == (await GetResponse(TestEnv.StandardTestApp.GetHttpUri("ExpandEnvironmentVariablesANCMTestFoo"), HttpStatusCode.OK)));
@@ -225,7 +225,7 @@ namespace AspNetCoreModule.Test
                 for (int i = 0; i < _repeatCount; i++)
                 {
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
                     Thread.Sleep(1100);
@@ -259,7 +259,7 @@ namespace AspNetCoreModule.Test
                 for (int i = 0; i < _repeatCount; i++)
                 {
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
                     Thread.Sleep(500);
@@ -335,7 +335,7 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
 
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     responseBody = await GetResponse(TestEnv.StandardTestApp.GetHttpUri(), HttpStatusCode.BadGateway);
                     Assert.True(responseBody.Contains("808681"));
@@ -365,7 +365,7 @@ namespace AspNetCoreModule.Test
                     for (int i = 0; i < repeatCount; i++)
                     {
                         // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                        TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                        TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                         DateTime startTimeInsideLooping = DateTime.Now;
                         Thread.Sleep(500);
@@ -440,7 +440,7 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(3000);
 
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
                     Thread.Sleep(500);
 
                     for (int i = 0; i < 20; i++)
@@ -459,53 +459,54 @@ namespace AspNetCoreModule.Test
             }
         }
 
-        public static async Task DoStartupTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness)
+        public static async Task DoStartupTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness, int startupTimeLimit)
         {
             using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {
-                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:01:00"); // 1 minute
-                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep3000"), "Running", HttpStatusCode.OK);
-                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "startupTimeLimit", 1);  // 1 second
-                    await VerifyResponseStatus(TestEnv.StandardTestApp.GetHttpUri("DoSleep3000"), HttpStatusCode.BadGateway);
-                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "startupTimeLimit", 10); // 10 seconds
-                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep3000"), "Running", HttpStatusCode.OK);
-                }
+                    int startupDelay = 3; //3 seconds
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "environmentVariable", new string[] { "ANCMTestStartUpDelay", (startupDelay * 1000).ToString() });
 
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", TimeSpan.Parse("00:01:00")); // 1 minute
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "startupTimeLimit", startupTimeLimit);
+
+                    Thread.Sleep(500);
+                    if (startupTimeLimit < startupDelay)
+                    {
+                        await VerifyResponseStatus(TestEnv.StandardTestApp.GetHttpUri("DoSleep3000"), HttpStatusCode.BadGateway);
+                    }
+                    else 
+                    {
+                        await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep3000"), "Running", HttpStatusCode.OK);
+                    }
+                }
                 TestEnv.StandardTestApp.RestoreFile("web.config");
             }
         }
 
-        public static async Task DoRequestTimeoutTest(IISConfigUtility.AppPoolBitness appPoolBitness)
+        public static async Task DoRequestTimeoutTest(IISConfigUtility.AppPoolBitness appPoolBitness, string requestTimeout)
         {
             using (var TestEnv = new TestEnvironment(appPoolBitness))
             {
                 using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {
-                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:02:00"); // 2 minute
-
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", TimeSpan.Parse(requestTimeout)); 
                     Thread.Sleep(500);
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
 
-                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK);
-                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:01:00"); // 1 minute
-
-                    Thread.Sleep(500);
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
-
-                    await VerifyResponseStatus(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), HttpStatusCode.BadGateway);
-                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "requestTimeout", "00:02:00"); // 2 minute
-
-                    Thread.Sleep(500);
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
-
-                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK);
+                    if (requestTimeout.ToString() == "00:02:00")
+                    {
+                        await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), "Running", HttpStatusCode.OK, timeout:70);                        
+                    }
+                    else if (requestTimeout.ToString() == "00:01:00")
+                    {
+                        await VerifyResponseStatus(TestEnv.StandardTestApp.GetHttpUri("DoSleep65000"), HttpStatusCode.BadGateway, 70);
+                    }
+                    else
+                    {
+                        throw new System.ApplicationException("wrong data");
+                    }
                 }
-
                 TestEnv.StandardTestApp.RestoreFile("web.config");
             }
         }
@@ -518,7 +519,8 @@ namespace AspNetCoreModule.Test
                 {
                     // Set new value (10 second) to make the backend process get the Ctrl-C signal and measure when the recycle happens
                     iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "shutdownTimeLimit", valueOfshutdownTimeLimit);
-                    await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri("DoClosingTimeSleep20000"), "Running", HttpStatusCode.OK);  // set 20 seconds for closing time sleep
+                    iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "environmentVariable", new string[] { "ANCMTestShutdownDelay", "20000" });
+
                     await VerifyResponseBody(TestEnv.StandardTestApp.GetHttpUri(), "Running", HttpStatusCode.OK);
                     string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
                     var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
@@ -572,7 +574,7 @@ namespace AspNetCoreModule.Test
                     iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", false);
 
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     iisConfig.SetANCMConfig(TestEnv.TestsiteContext.SiteName, TestEnv.StandardTestApp.Name, "stdoutLogEnabled", true);
 
@@ -612,7 +614,7 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
 
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
-                    TestUtility.RestartServices(RestartOption.KillVSJitDebugger);
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
                     Thread.Sleep(500);
 
                     string backendProcessId = await GetResponse(TestEnv.StandardTestApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
@@ -648,7 +650,6 @@ namespace AspNetCoreModule.Test
                 {
                     var frameReturned = websocketClient.Connect(TestEnv.StandardTestApp.GetHttpUri("websocket"), true, true);
                     Assert.True(frameReturned.Content.Contains("Connection: Upgrade"));
-                    Assert.True(frameReturned.Content.Contains("Upgrade: Websocket"));
                     Assert.True(frameReturned.Content.Contains("HTTP/1.1 101 Switching Protocols"));
 
                     VerifySendingWebSocketData(websocketClient, testData);
@@ -824,38 +825,37 @@ namespace AspNetCoreModule.Test
             return findEvent;
         }
 
-        private static async Task VerifyResponseStatus(Uri uri, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
+        private static async Task VerifyResponseStatus(Uri uri, HttpStatusCode expectedResponseStatus, int timeout = 5, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
-            await SendReceive(uri, null, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, null);
+            await SendReceive(uri, null, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, postData: null, timeout: timeout);
         }
 
-        private static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
+        private static async Task VerifyResponseBody(Uri uri, string expectedResponseBody, HttpStatusCode expectedResponseStatus, int timeout = 5, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
-            await SendReceive(uri, expectedResponseBody, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, null);
-
+            await SendReceive(uri, expectedResponseBody, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, postData:null, timeout:timeout);
         }
 
-        private static async Task VerifyPostResponseBody(Uri uri, KeyValuePair<string, string>[] postData, string expectedResponseBody, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
+        private static async Task VerifyPostResponseBody(Uri uri, KeyValuePair<string, string>[] postData, string expectedResponseBody, HttpStatusCode expectedResponseStatus, int timeout = 5, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
-            await SendReceive(uri, expectedResponseBody, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, postData);
+            await SendReceive(uri, expectedResponseBody, null, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, postData, timeout);
         }
 
-        private static async Task VerifyResponseBodyContain(Uri uri, string[] expectedStrings, HttpStatusCode expectedResponseStatus, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
+        private static async Task VerifyResponseBodyContain(Uri uri, string[] expectedStrings, HttpStatusCode expectedResponseStatus, int timeout = 5, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
         {
-            await SendReceive(uri, null, expectedStrings, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, null);
+            await SendReceive(uri, null, expectedStrings, expectedResponseStatus, ReturnValueType.None, numberOfRetryCount, verifyResponseFlag, postData: null, timeout: timeout);
         }
 
-        private static async Task<string> GetResponse(Uri uri, HttpStatusCode expectedResponseStatus, ReturnValueType returnValueType = ReturnValueType.ResponseBody, int numberOfRetryCount = 2, bool verifyResponseFlag = true)
+        private static async Task<string> GetResponse(Uri uri, HttpStatusCode expectedResponseStatus, ReturnValueType returnValueType = ReturnValueType.ResponseBody, int timeout = 5, int numberOfRetryCount = 1, bool verifyResponseFlag = true)
         {
-            return await SendReceive(uri, null, null, expectedResponseStatus, returnValueType, numberOfRetryCount, verifyResponseFlag, null);
+            return await SendReceive(uri, null, null, expectedResponseStatus, returnValueType, numberOfRetryCount, verifyResponseFlag, postData:null, timeout:timeout);
         }
 
-        private static async Task<string> GetResponseStatusCode(Uri uri, int numberOfRetryCount = 2)
+        private static async Task<string> GetResponseStatusCode(Uri uri)
         {
-            return await SendReceive(uri, null, null, HttpStatusCode.OK, ReturnValueType.ResponseStatus, numberOfRetryCount, false, null);
+            return await SendReceive(uri, null, null, HttpStatusCode.OK, ReturnValueType.ResponseStatus, numberOfRetryCount:1, verifyResponseFlag:false, postData:null, timeout:5);
         }
         
-        private static async Task<string> SendReceive(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus, ReturnValueType returnValueType, int numberOfRetryCount, bool verifyResponseFlag, KeyValuePair<string, string>[] postData)
+        private static async Task<string> SendReceive(Uri uri, string expectedResponseBody, string[] expectedStringsInResponseBody, HttpStatusCode expectedResponseStatus, ReturnValueType returnValueType, int numberOfRetryCount, bool verifyResponseFlag, KeyValuePair<string, string>[] postData, int timeout)
         {
             string result = null;
             string responseText = "NotInitialized";
@@ -865,7 +865,7 @@ namespace AspNetCoreModule.Test
             var httpClient = new HttpClient(httpClientHandler)
             {
                 BaseAddress = uri,
-                Timeout = TimeSpan.FromSeconds(5),
+                Timeout = TimeSpan.FromSeconds(timeout),
             };
 
             HttpResponseMessage response = null;
@@ -876,9 +876,8 @@ namespace AspNetCoreModule.Test
                 {
                     postHttpContent = new FormUrlEncodedContent(postData);
                 }
-
-                // RetryRequest does not support for 503/500 server error
-                if (returnValueType != ReturnValueType.ResponseStatus && expectedResponseStatus == HttpStatusCode.OK)
+                                
+                if (numberOfRetryCount > 1 && expectedResponseStatus == HttpStatusCode.OK)
                 {
                     if (postData == null)
                     {
