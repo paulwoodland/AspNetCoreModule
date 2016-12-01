@@ -36,17 +36,6 @@ namespace AspNetCoreModule.Test
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
-        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
-        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
-        public Task AppOfflineTestWithRenaming(IISConfigUtility.AppPoolBitness appPoolBitness)
-        {
-            return DoAppOfflineTestWithRenaming(appPoolBitness);
-        }
-
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
-        [ConditionalTheory]
-        [OSSkipCondition(OperatingSystems.Linux)]
-        [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 5)]
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, 2)]
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 0)]
@@ -147,6 +136,17 @@ namespace AspNetCoreModule.Test
         public Task EnvironmentVariablesTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
             return DoEnvironmentVariablesTest(appPoolBitness);
+        }
+
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
+        public Task AppOfflineTestWithRenaming(IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            return DoAppOfflineTestWithRenaming(appPoolBitness);
         }
 
         [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]

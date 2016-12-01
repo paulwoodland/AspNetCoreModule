@@ -126,6 +126,8 @@ namespace AspNetCoreModule.Test.Framework
                 TestUtility.LogInformation("TestWebSite::TestWebSite() StandardTestApp is not published, trying to publish on the fly: dotnet.exe " + argumentForDotNet);
                 TestUtility.RunCommand("dotnet", argumentForDotNet);
             }
+
+            // check published files
             bool checkPublishedFiles = false;
             string[] publishedFiles = Directory.GetFiles(publishPath);
             foreach (var item in publishedFiles)
@@ -138,8 +140,10 @@ namespace AspNetCoreModule.Test.Framework
 
             if (!checkPublishedFiles)
             {
-                throw new System.ApplicationException("check published files at " + publishPath);
+                throw new System.ApplicationException("web.config is not available in " + publishPath);
             }
+
+            // Copy the pubishpath to standardAppRootPath
             TestUtility.DirectoryCopy(publishPath, standardAppRootPath);
 
             int tcpPort = InitializeTestMachine.SiteId++;
