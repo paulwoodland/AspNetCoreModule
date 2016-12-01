@@ -6,13 +6,10 @@ using System.IO;
 using Microsoft.AspNetCore.Server.IntegrationTesting;
 using System.Threading;
 using Microsoft.Extensions.PlatformAbstractions;
-using System.Linq;
-using System.IO.Compression;
-using System.Collections.Generic;
 
 namespace AspNetCoreModule.Test.Framework
 {
-    public class GlobalTestEnvironment : IDisposable
+    public class InitializeTestMachine : IDisposable
     {
         public static int SiteId = 81;
         public static string Aspnetcore_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "aspnetcore_private.dll");
@@ -22,29 +19,27 @@ namespace AspNetCoreModule.Test.Framework
         public static string IISAspnetcoreSchema_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "config", "schema", "aspnetcore_schema.xml");
         public static int _referenceCount = 0;
 
-        private static bool _globalTestEnvironmentCompleted = false;
+        private static bool _InitializeTestMachineCompleted = false;
         private string _setupScriptPath = null;
 
-        public GlobalTestEnvironment()
+        public InitializeTestMachine()
         {
-            TestUtility.LogWarning("GlobalTestEnvironment::GlobalTestEnvironment()");
 
             _referenceCount++;
 
             if (_referenceCount == 1)
             {
-                _globalTestEnvironmentCompleted = false;
+                TestUtility.LogInformation("InitializeTestMachine::InitializeTestMachine() Start");
 
-                TestUtility.LogWarning("GlobalTestEnvironment::Start of global setup");
+                _InitializeTestMachineCompleted = false;
+
+                TestUtility.LogInformation("InitializeTestMachine::Start");
                 if (Environment.ExpandEnvironmentVariables("%ANCMDebug%").ToLower() == "true")
                 {
                     System.Diagnostics.Debugger.Launch();                    
                 }
 
                 TestUtility.ResetHelper(ResetHelperMode.KillIISExpress);
-
-                TestUtility.LogWarning("Initializing global test environment");
-
                 // cleanup before starting
                 string siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTest");
                 try
@@ -56,7 +51,7 @@ namespace AspNetCoreModule.Test.Framework
                 }
                 catch
                 {
-                    TestUtility.LogWarning("Failed to restore applicationhost.config");
+                    TestUtility.LogInformation("Failed to restore applicationhost.config");
                 }
                 foreach (string directory in Directory.GetDirectories(siteRootPath))
                 {
@@ -68,7 +63,7 @@ namespace AspNetCoreModule.Test.Framework
                     catch
                     {
                         successDeleteChildDirectory = false;
-                        TestUtility.LogWarning("Failed to delete " + directory);
+                        TestUtility.LogInformation("Failed to delete " + directory);
                     }
                     if (successDeleteChildDirectory)
                     {
@@ -78,12 +73,12 @@ namespace AspNetCoreModule.Test.Framework
                         }
                         catch
                         {
-                            TestUtility.LogWarning("Failed to delete " + siteRootPath);
+                            TestUtility.LogInformation("Failed to delete " + siteRootPath);
                         }
                     }
                 }
                 
-                UpdateAspnetCoreBinaryFiles();
+                PreparePrivateANCMFiles();
 
                 // update applicationhost.config for IIS server
                 if (IISConfigUtility.IsIISInstalled == true)
@@ -94,35 +89,36 @@ namespace AspNetCoreModule.Test.Framework
                     }
                 }
                 
-                TestUtility.LogWarning("GlobalTestEnvironment::End of global setup");
-                _globalTestEnvironmentCompleted = true;
+                _InitializeTestMachineCompleted = true;
+
+                TestUtility.LogInformation("InitializeTestMachine::InitializeTestMachine() End");
             }
 
             for (int i=0; i<120; i++)                    
             {
-                if (_globalTestEnvironmentCompleted)
+                if (_InitializeTestMachineCompleted)
                 {
                     break;
                 }   
                 else
                 {
-                    TestUtility.LogWarning("GlobalTestEnvironment:: Waiting global setup...");
+                    TestUtility.LogInformation("InitializeTestMachine::InitializeTestMachine() Waiting...");
                     Thread.Sleep(500);
                 }                 
             }
-            if (!_globalTestEnvironmentCompleted)
+            if (!_InitializeTestMachineCompleted)
             {
-                throw new System.ApplicationException("GlobalTestEnvironment is not completed...");
+                throw new System.ApplicationException("InitializeTestMachine failed");
             }
         }
 
         public void Dispose()
         {
-            TestUtility.LogWarning("GlobalTestEnvironment::Dispose()");
             _referenceCount--;
 
             if (_referenceCount == 0)
             {
+                TestUtility.LogInformation("InitializeTestMachine::Dispose() Start");
                 TestUtility.ResetHelper(ResetHelperMode.KillIISExpress);
                 
                 if (IISConfigUtility.IsIISInstalled == true)
@@ -135,15 +131,15 @@ namespace AspNetCoreModule.Test.Framework
                         }
                         catch
                         {
-                            TestUtility.LogWarning("Failed to restore aspnetcore.dll path!!!");
+                            TestUtility.LogInformation("Failed to restore aspnetcore.dll path!!!");
                         }
                     }
-                }                
-                TestUtility.LogTrace("End of test!!!");
+                }
+                TestUtility.LogInformation("InitializeTestMachine::Dispose() End");
             }
         }
         
-        private void UpdateAspnetCoreBinaryFiles()
+        private void PreparePrivateANCMFiles()
         {
             var solutionRoot = GetSolutionDirectory();
             string outputPath = string.Empty;

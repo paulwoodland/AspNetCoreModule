@@ -6,29 +6,29 @@ using System.IO;
 
 namespace AspNetCoreModule.Test.Framework
 {
-    public class WebAppContext : IDisposable
+    public class TestWebApplication : IDisposable
     {
-        private WebSiteContext _siteContext;
-        public WebSiteContext SiteContext
+        private TestWebSite _testSite;
+        public TestWebSite TestSite
         {
             get
             {
-                return _siteContext;
+                return _testSite;
             }
             set
             {
-                _siteContext = value;
+                _testSite = value;
             }
         }
 
-        public WebAppContext(string name, string physicalPath, string url = null)
+        public TestWebApplication(string name, string physicalPath, string url = null)
             : this(name, physicalPath, null, url)
         {
         }
                 
-        public WebAppContext(string name, string physicalPath, WebSiteContext siteContext, string url = null)
+        public TestWebApplication(string name, string physicalPath, TestWebSite siteContext, string url = null)
         {
-            _siteContext = siteContext;
+            _testSite = siteContext;
             _name = name;
             string temp = physicalPath;
             if (physicalPath.Contains("%"))
@@ -103,7 +103,7 @@ namespace AspNetCoreModule.Test.Framework
 
         public Uri GetHttpUri()
         {
-            return new Uri("http://" + SiteContext.HostName + ":" + _siteContext.TcpPort.ToString() + URL);
+            return new Uri("http://" + _testSite.HostName + ":" + _testSite.TcpPort.ToString() + URL);
         }
 
         public Uri GetHttpUri(string subPath)
@@ -113,7 +113,7 @@ namespace AspNetCoreModule.Test.Framework
             {
                 tempSubPath = "/" + tempSubPath;
             }
-            return new Uri("http://" + SiteContext.HostName + ":" +  _siteContext.TcpPort.ToString()  + URL + tempSubPath);
+            return new Uri("http://" + _testSite.HostName + ":" +  _testSite.TcpPort.ToString()  + URL + tempSubPath);
         }
 
         public string _appPoolName = null;

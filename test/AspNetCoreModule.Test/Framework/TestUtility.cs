@@ -164,11 +164,11 @@ namespace AspNetCoreModule.Test.Framework
                 Logger.LogError(format);
             }
         }
-        public static void LogWarning(string format, params object[] parameters)
+        public static void LogInformation(string format, params object[] parameters)
         {
             if (format != null)
             {
-                Logger.LogWarning(format);
+                Logger.LogInformation(format);                
             }
         }
 
@@ -290,7 +290,7 @@ namespace AspNetCoreModule.Test.Framework
             }
             else
             {
-                TestUtility.LogWarning("Directory not found " + from);
+                TestUtility.LogInformation("Directory not found " + from);
             }
         }
 
@@ -335,7 +335,7 @@ namespace AspNetCoreModule.Test.Framework
             processList = searcher.Get();
             if (processList.Count > 0)
             {
-                TestUtility.LogWarning("Failed to kill process " + processFileName);
+                TestUtility.LogInformation("Failed to kill process " + processFileName);
             }            
         }
 
@@ -359,7 +359,7 @@ namespace AspNetCoreModule.Test.Framework
             return result;
         }
 
-        public static string GetHttpUri(string Url, WebSiteContext siteContext)
+        public static string GetHttpUri(string Url, TestWebSite siteContext)
         {
             string tempUrl = Url.TrimStart(new char[] { '/' });
             return "http://" + siteContext.HostName + ":" + siteContext.TcpPort + "/" + tempUrl;
@@ -624,7 +624,7 @@ namespace AspNetCoreModule.Test.Framework
         public static string GetApplicationPath(ApplicationType applicationType)
         {
             var applicationBasePath = PlatformServices.Default.Application.ApplicationBasePath;
-            string solutionPath = GlobalTestEnvironment.GetSolutionDirectory();
+            string solutionPath = InitializeTestMachine.GetSolutionDirectory();
             string applicationPath = string.Empty;
             applicationPath = Path.Combine(solutionPath, "test", "AspNetCoreModule.TestSites.Standard");
             if (applicationType == ApplicationType.Standalone)
@@ -652,7 +652,7 @@ namespace AspNetCoreModule.Test.Framework
             }
             for (int i = 0; i < 5; i++)
             {
-                TestUtility.LogWarning("Waiting 1 seconds for eventlog to clear...");
+                TestUtility.LogInformation("Waiting 1 seconds for eventlog to clear...");
                 Thread.Sleep(1000);
                 EventLog systemLog = new EventLog("Application");
                 if (systemLog.Entries.Count == 0)
@@ -665,7 +665,7 @@ namespace AspNetCoreModule.Test.Framework
         public static List<String> GetApplicationEvent(int id, DateTime startFrom)
         {
             var result = new List<String>();
-            TestUtility.LogWarning("Waiting 1 seconds for eventlog to update...");
+            TestUtility.LogInformation("Waiting 1 seconds for eventlog to update...");
             Thread.Sleep(1000);
             EventLog systemLog = new EventLog("Application");
             foreach (EventLogEntry entry in systemLog.Entries)

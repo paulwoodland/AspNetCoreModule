@@ -14,8 +14,8 @@ namespace AspNetCoreModule.Test.Framework
         {
         }
         
-        private WebAppContext _websocketecho = null;
-        public WebAppContext Websocketecho
+        private TestWebApplication _websocketecho = null;
+        public TestWebApplication Websocketecho
         {
             get
             {
@@ -28,27 +28,27 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        private WebAppContext _websocketechoChild = null;
-        public WebAppContext WebsocketechoChild
+        private TestWebApplication _websocketechoChild = null;
+        public TestWebApplication WebsocketechoChild
         {
             get
             {
                 if (_websocketechoChild == null)
                 {
-                    _websocketechoChild = new WebAppContext("websocketechoChild", @"%AspNetCoreModuleTest%\AspnetCoreApp_WebSocketEcho", "/parent/websocketechoChild");
+                    _websocketechoChild = new TestWebApplication("websocketechoChild", @"%AspNetCoreModuleTest%\AspnetCoreApp_WebSocketEcho", "/parent/websocketechoChild");
                 }
                 return _websocketechoChild;
             }
         }
 
-        private WebAppContext _parent = null;
-        public WebAppContext Parent
+        private TestWebApplication _parent = null;
+        public TestWebApplication Parent
         {
             get
             {
                 if (_parent == null)
                 {
-                    _parent = new WebAppContext("parent", @"%AspNetCoreModuleTest%\parent", "/parent");
+                    _parent = new TestWebApplication("parent", @"%AspNetCoreModuleTest%\parent", "/parent");
                 }
                 return _parent;
             }

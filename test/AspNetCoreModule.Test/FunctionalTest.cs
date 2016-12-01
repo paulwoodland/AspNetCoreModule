@@ -9,7 +9,7 @@ using Xunit;
 
 namespace AspNetCoreModule.Test
 {
-    public class FunctionalTest : BaseTestClass
+    public class FunctionalTest : FunctionalTestHelper, IClassFixture<InitializeTestMachine>
     {
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
