@@ -85,7 +85,7 @@ namespace AspnetCoreModule.TestSites.Standard
                     }
                 }
 
-                return context.Response.WriteAsync("Hello World");
+                return context.Response.WriteAsync("Running NTLM");
             });
         }
     }

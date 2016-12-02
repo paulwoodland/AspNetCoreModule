@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Threading;
@@ -14,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace AspnetCoreModule.TestSites.Standard
 {
-    public class StartupResponse
+    public class Startup
     {
         public static int SleeptimeWhileClosing = 0;
         public static int SleeptimeWhileStarting = 0;
@@ -169,7 +170,7 @@ namespace AspnetCoreModule.TestSites.Standard
                     context.Response.Headers[HeaderNames.TransferEncoding] = "chunked";
                     return context.Response.WriteAsync("1A\r\nManually Chunked and Close\r\n0\r\n\r\n");
                 });
-            });
+            });            
 
             app.Run(context =>
             {
@@ -231,10 +232,50 @@ namespace AspnetCoreModule.TestSites.Standard
                     {
                         /* 
                           Process "GetEnvironmentVariables" command here.
-                          For example, if path contains "DoSleep" such as /GetEnvironmentVariables, retrun the total number of available envrionment variables
                         */
                         parameter = item.Substring(action.Length);
                         response = Environment.GetEnvironmentVariables().Count.ToString();
+                    }
+
+                    action = "DumpEnvironmentVariables";
+                    if (item.StartsWith(action))
+                    {
+                        /* 
+                          Process "DumpEnvironmentVariables" command here.
+                        */
+                        response = String.Empty;
+                        foreach (DictionaryEntry de in Environment.GetEnvironmentVariables())
+                        { 
+                            response += de.Key + ":" + de.Value + "<br/>";
+                        }                        
+                    }
+
+                    action = "DumpRequestHeaders";
+                    if (item.StartsWith(action))
+                    {
+                        /* 
+                          Process "DumpRequestHeaders" command here.
+                        */
+                        response = String.Empty;
+                        
+                        foreach (var de in context.Request.Headers)
+                        {
+                            response += de.Key + ":" + de.Value + "<br/>";
+                        }
+                    }
+
+                    action = "DumpResponseHeaders";
+                    if (item.StartsWith(action))
+                    {
+                        /* 
+                          Process "DumpRequestHeaders" command here.
+                        */
+                        response = String.Empty;
+
+                        foreach (var de in context.Response.Headers)
+                        {
+                            response += de.Key + ":" + de.Value + "<br/>";
+                        }
                     }
                 }
                 return context.Response.WriteAsync(response);

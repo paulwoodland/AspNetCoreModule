@@ -17,26 +17,52 @@ namespace AspnetCoreModule.TestSites.Standard
                 .AddCommandLine(args)
                 .Build();
 
-            var builder = new WebHostBuilder()
-                .UseConfiguration(config)
-                .UseIISIntegration()
-                .UseStartup<StartupResponse>();
+            string startUpClassString = Environment.GetEnvironmentVariable("ANCMTestStartupClassName");
+            IWebHostBuilder builder = null;
+            if (!string.IsNullOrEmpty(startUpClassString))
+            {
+                if (startUpClassString == "StartupHelloWorld")
+                {
+                    builder = new WebHostBuilder()
+                        .UseConfiguration(config)
+                        .UseIISIntegration()
+                        .UseStartup<StartupHelloWorld>();
+                }
+                else if (startUpClassString == "StartupNtlmAuthentication")
+                {
+                    builder = new WebHostBuilder()
+                        .UseConfiguration(config)
+                        .UseIISIntegration()
+                        .UseStartup<StartupNtlmAuthentication>();
+                }
+                else
+                {
+                    throw new System.Exception("Invalid startup class name : " + startUpClassString);
+                }
+            }
+            else
+            {
+                builder = new WebHostBuilder()
+                    .UseConfiguration(config)
+                    .UseIISIntegration()
+                    .UseStartup<Startup>();
+            }
 
             string startupDelay = Environment.GetEnvironmentVariable("ANCMTestStartUpDelay");
             if (!string.IsNullOrEmpty(startupDelay))
             {
-                StartupResponse.SleeptimeWhileStarting = Convert.ToInt32(startupDelay);
+                Startup.SleeptimeWhileStarting = Convert.ToInt32(startupDelay);
             }
 
-            if (StartupResponse.SleeptimeWhileStarting != 0)
+            if (Startup.SleeptimeWhileStarting != 0)
             {
-                Thread.Sleep(StartupResponse.SleeptimeWhileStarting);
+                Thread.Sleep(Startup.SleeptimeWhileStarting);
             }
 
             string shutdownDelay = Environment.GetEnvironmentVariable("ANCMTestShutdownDelay");
             if (!string.IsNullOrEmpty(shutdownDelay))
             {
-                StartupResponse.SleeptimeWhileClosing = Convert.ToInt32(shutdownDelay);
+                Startup.SleeptimeWhileClosing = Convert.ToInt32(shutdownDelay);
             }
             
             // Switch between Kestrel and WebListener for different tests. Default to Kestrel for normal app execution.
@@ -69,9 +95,9 @@ namespace AspnetCoreModule.TestSites.Standard
             var host = builder.Build();
 
             host.Run();
-            if (StartupResponse.SleeptimeWhileClosing != 0)
+            if (Startup.SleeptimeWhileClosing != 0)
             {
-                Thread.Sleep(StartupResponse.SleeptimeWhileClosing);
+                Thread.Sleep(Startup.SleeptimeWhileClosing);
             }
         }
     }

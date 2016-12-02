@@ -624,6 +624,39 @@ namespace AspNetCoreModule.Test
                 testSite.AspNetCoreApp.RestoreFile("web.config");
             }
         }
+        
+        public static async Task DoForwardWindowsAuthTokenTest(IISConfigUtility.AppPoolBitness appPoolBitness, bool value)
+        {
+            using (var testSite = new TestWebSite(appPoolBitness, "DoProcessPathAndArgumentsTest"))
+            {
+                using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                {
+                    iisConfig.SetANCMConfig(testSite.SiteName, testSite.AspNetCoreApp.Name, "forwardWindowsAuthToken", value);
+                    string requestHeaders = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("DumpRequestHeaders"), HttpStatusCode.OK);
+                    Assert.False(requestHeaders.ToUpper().Contains("MS-ASPNETCORE-WINAUTHTOKEN"));
+                    
+                    iisConfig.EnableWindowsAuthentication(testSite.SiteName);
+
+                    Thread.Sleep(500);
+
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
+                    Thread.Sleep(500);
+
+                    requestHeaders = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("DumpRequestHeaders"), HttpStatusCode.OK);
+                    if (value)
+                    {
+                        Assert.True(requestHeaders.ToUpper().Contains("MS-ASPNETCORE-WINAUTHTOKEN"));
+                    }
+                    else
+                    {
+                        Assert.False(requestHeaders.ToUpper().Contains("MS-ASPNETCORE-WINAUTHTOKEN"));
+                    }
+                }
+
+                testSite.AspNetCoreApp.RestoreFile("web.config");
+            }
+        }
 
         public static async Task DoWebSocketTest(IISConfigUtility.AppPoolBitness appPoolBitness, string testData)
         {
@@ -862,12 +895,14 @@ namespace AspNetCoreModule.Test
             string responseStatus = "NotInitialized";
 
             var httpClientHandler = new HttpClientHandler();
+            httpClientHandler.UseDefaultCredentials = true;
+
             var httpClient = new HttpClient(httpClientHandler)
             {
                 BaseAddress = uri,
-                Timeout = TimeSpan.FromSeconds(timeout),
+                Timeout = TimeSpan.FromSeconds(timeout),                
             };
-
+            
             HttpResponseMessage response = null;
             try
             {
@@ -931,7 +966,7 @@ namespace AspNetCoreModule.Test
                                 Assert.True(responseText.Contains(item));
                             }
                         }
-                        Assert.Equal(response.StatusCode, expectedResponseStatus);
+                        Assert.Equal(expectedResponseStatus, response.StatusCode);
                     }
 
                     switch (returnValueType)

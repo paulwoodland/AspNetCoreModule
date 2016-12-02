@@ -95,7 +95,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void SetAppPoolSetting(string appPoolName, string attribute, object value, bool commitDelay = false)
+        public void SetAppPoolSetting(string appPoolName, string attribute, object value)
         {
             TestUtility.LogInformation("Setting Apppool : " + appPoolName + "::" + attribute.ToString() + " <== " + value.ToString());
             using (ServerManager serverManager = GetServerManager())
@@ -108,9 +108,7 @@ namespace AspNetCoreModule.Test.Framework
                 var attributeName = attribute.ToString();
                 addElement[attributeName] = value;
 
-                if (!commitDelay) {
-                    serverManager.CommitChanges();
-                } 
+                serverManager.CommitChanges();                 
             }
         }
 
@@ -138,7 +136,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void CreateSite(string siteName, string physicalPath, int siteId, int tcpPort, string appPoolName = "DefaultAppPool", bool commitDelay = false)
+        public void CreateSite(string siteName, string physicalPath, int siteId, int tcpPort, string appPoolName = "DefaultAppPool")
         {
             TestUtility.LogInformation("Creating web site : " + siteName);
 
@@ -174,14 +172,12 @@ namespace AspNetCoreModule.Test.Framework
                 applicationCollection.Add(virtualDirectoryElement);
                 siteCollection.Add(applicationElement);
                 sitesCollection.Add(siteElement);
-
-                if (!commitDelay) {
-                    serverManager.CommitChanges();
-                }
+                
+                serverManager.CommitChanges();
             }
         }
 
-        public void CreateApp(string siteName, string appName, string physicalPath, string appPoolName = "DefaultAppPool", bool commitDelay = false)
+        public void CreateApp(string siteName, string appName, string physicalPath, string appPoolName = "DefaultAppPool")
         {
             TestUtility.LogInformation("Creating web app : " + siteName + "/" + appName);
             using (ServerManager serverManager = GetServerManager())
@@ -211,13 +207,43 @@ namespace AspNetCoreModule.Test.Framework
                 applicationCollection.Add(virtualDirectoryElement);
                 siteCollection.Add(applicationElement);
 
-                if (!commitDelay) {
-                    serverManager.CommitChanges();
-                }
+                serverManager.CommitChanges();
             }
         }
 
-        public void SetANCMConfig(string siteName, string appName, string attributeName, object attributeValue, bool commitDelay = false)
+        public void EnableWindowsAuthentication(string siteName)
+        {
+            TestUtility.LogInformation("Enable Windows authentication : " + siteName);
+            using (ServerManager serverManager = GetServerManager())
+            {
+                Configuration config = serverManager.GetApplicationHostConfiguration();
+
+                ConfigurationSection anonymousAuthenticationSection = config.GetSection("system.webServer/security/authentication/anonymousAuthentication", siteName);
+                anonymousAuthenticationSection["enabled"] = false;
+                ConfigurationSection windowsAuthenticationSection = config.GetSection("system.webServer/security/authentication/windowsAuthentication", siteName);
+                windowsAuthenticationSection["enabled"] = true;
+
+                serverManager.CommitChanges();
+            }
+        }
+
+        public void DisableWindowsAuthentication(string siteName)
+        {
+            TestUtility.LogInformation("Enable Windows authentication : " + siteName);
+            using (ServerManager serverManager = GetServerManager())
+            {
+                Configuration config = serverManager.GetApplicationHostConfiguration();
+
+                ConfigurationSection anonymousAuthenticationSection = config.GetSection("system.webServer/security/authentication/anonymousAuthentication", siteName);
+                anonymousAuthenticationSection["enabled"] = true;
+                ConfigurationSection windowsAuthenticationSection = config.GetSection("system.webServer/security/authentication/windowsAuthentication", siteName);
+                windowsAuthenticationSection["enabled"] = false;
+
+                serverManager.CommitChanges();
+            }
+        }
+
+        public void SetANCMConfig(string siteName, string appName, string attributeName, object attributeValue)
         {
             using (ServerManager serverManager = GetServerManager())
             {
@@ -243,13 +269,11 @@ namespace AspNetCoreModule.Test.Framework
                     aspNetCoreSection[attributeName] = attributeValue;
                 }
 
-                if (!commitDelay) {
-                    serverManager.CommitChanges();
-                }
+                serverManager.CommitChanges();
             }            
         }
 
-        public void ConfigureCustomLogging(string siteName, string appName, int statusCode, int subStatusCode, string path, bool commitDelay = false)
+        public void ConfigureCustomLogging(string siteName, string appName, int statusCode, int subStatusCode, string path)
         {
             using (ServerManager serverManager = GetServerManager())
             {
@@ -270,9 +294,7 @@ namespace AspNetCoreModule.Test.Framework
                 errorElement2["path"] = path;
                 httpErrorsCollection.Add(errorElement2);
                 
-                if (!commitDelay) {
-                    serverManager.CommitChanges();
-                }
+                serverManager.CommitChanges();
             }
             Thread.Sleep(500);
         }
@@ -379,7 +401,7 @@ namespace AspNetCoreModule.Test.Framework
             return result;
         }
 
-        public bool RemoveModule(string moduleName, bool commitDelay = false)
+        public bool RemoveModule(string moduleName)
         {
             bool result = true;
             using (ServerManager serverManager = GetServerManager())
@@ -400,14 +422,13 @@ namespace AspNetCoreModule.Test.Framework
                 {
                     modulesCollection.Remove(module);
                 }
-                if (!commitDelay) {
-                    serverManager.CommitChanges();
-                }
+                
+                serverManager.CommitChanges();
             }
             return result;
         }
 
-        public bool AddModule(string moduleName, string image, string preCondition, bool commitDelay = false)
+        public bool AddModule(string moduleName, string image, string preCondition)
         {
             RemoveModule(moduleName);
 
@@ -433,9 +454,7 @@ namespace AspNetCoreModule.Test.Framework
                 module["name"] = moduleName;
                 modulesCollection.Add(module);
 
-                if (!commitDelay) {
-                    serverManager.CommitChanges();
-                }
+                serverManager.CommitChanges();
             }
             return result;
         }
@@ -472,7 +491,7 @@ namespace AspNetCoreModule.Test.Framework
             return null;
         }
 
-        public void CreateAppPool(string poolName, bool alwaysRunning = false, bool commitDelay = false)
+        public void CreateAppPool(string poolName, bool alwaysRunning = false)
         {
             try
             {
@@ -486,9 +505,8 @@ namespace AspNetCoreModule.Test.Framework
                     {
                         apppool.SetAttributeValue("startMode", "AlwaysRunning");
                     }
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -497,7 +515,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void SetIdleTimeoutForAppPool(string appPoolName, int idleTimeoutMinutes, bool commitDelay = false)
+        public void SetIdleTimeoutForAppPool(string appPoolName, int idleTimeoutMinutes)
         {
             TestUtility.LogTrace(String.Format("#################### Setting idleTimeout to {0} minutes for AppPool {1} ####################", idleTimeoutMinutes, appPoolName));
             try
@@ -506,9 +524,8 @@ namespace AspNetCoreModule.Test.Framework
                 {
                     ApplicationPoolCollection appPools = serverManager.ApplicationPools;
                     appPools[appPoolName].ProcessModel.IdleTimeout = TimeSpan.FromMinutes(idleTimeoutMinutes);
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -517,7 +534,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void SetMaxProcessesForAppPool(string appPoolName, int maxProcesses, bool commitDelay = false)
+        public void SetMaxProcessesForAppPool(string appPoolName, int maxProcesses)
         {
             TestUtility.LogTrace(String.Format("#################### Setting maxProcesses to {0} for AppPool {1} ####################", maxProcesses, appPoolName));
             try
@@ -526,9 +543,8 @@ namespace AspNetCoreModule.Test.Framework
                 {
                     ApplicationPoolCollection appPools = serverManager.ApplicationPools;
                     appPools[appPoolName].ProcessModel.MaxProcesses = maxProcesses;
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -537,7 +553,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void SetIdentityForAppPool(string appPoolName, string userName, string password, bool commitDelay = false)
+        public void SetIdentityForAppPool(string appPoolName, string userName, string password)
         {
             TestUtility.LogTrace(String.Format("#################### Setting userName {0} and password {1} for AppPool {2} ####################", userName, password, appPoolName));
             try
@@ -548,9 +564,8 @@ namespace AspNetCoreModule.Test.Framework
                     appPools[appPoolName].ProcessModel.IdentityType = ProcessModelIdentityType.SpecificUser;
                     appPools[appPoolName].ProcessModel.UserName = userName;
                     appPools[appPoolName].ProcessModel.Password = password;
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -559,7 +574,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void SetStartModeAlwaysRunningForAppPool(string appPoolName, bool alwaysRunning, bool commitDelay = false)
+        public void SetStartModeAlwaysRunningForAppPool(string appPoolName, bool alwaysRunning)
         {
             string startMode = alwaysRunning ? "AlwaysRunning" : "OnDemand";
 
@@ -571,9 +586,8 @@ namespace AspNetCoreModule.Test.Framework
                 {
                     ApplicationPoolCollection appPools = serverManager.ApplicationPools;
                     appPools[appPoolName]["startMode"] = startMode;
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -592,7 +606,7 @@ namespace AspNetCoreModule.Test.Framework
             StartOrStopAppPool(appPoolName, false);
         }
 
-        private void StartOrStopAppPool(string appPoolName, bool start, bool commitDelay = false)
+        private void StartOrStopAppPool(string appPoolName, bool start)
         {
             string action = start ? "Starting" : "Stopping";
             TestUtility.LogTrace(String.Format("#################### {0} app pool {1} ####################", action, appPoolName));
@@ -606,9 +620,8 @@ namespace AspNetCoreModule.Test.Framework
                         appPools[appPoolName].Start();
                     else
                         appPools[appPoolName].Stop();
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -637,7 +650,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void DeleteAppPool(string poolName, bool commitDelay = false)
+        public void DeleteAppPool(string poolName)
         {
             try
             {
@@ -647,9 +660,8 @@ namespace AspNetCoreModule.Test.Framework
 
                     ApplicationPoolCollection appPools = serverManager.ApplicationPools;
                     appPools.Remove(appPools[poolName]);
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -667,13 +679,12 @@ namespace AspNetCoreModule.Test.Framework
                 ApplicationPoolCollection appPools = serverManager.ApplicationPools;
                 while (appPools.Count > 0)
                     appPools.RemoveAt(0);
-                if (!commitDelay) {
-                    serverManager.CommitChanges();
-                }
+                
+                serverManager.CommitChanges();
             }
         }
 
-        public void CreateSiteEx(int siteId, string siteName, string poolName, string dirRoot, string Ip, int Port, string host, bool commitDelay = false)
+        public void CreateSiteEx(int siteId, string siteName, string poolName, string dirRoot, string Ip, int Port, string host)
         {
             try
             {
@@ -714,9 +725,7 @@ namespace AspNetCoreModule.Test.Framework
 
                     site.Bindings.Add(b);
 
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -735,7 +744,7 @@ namespace AspNetCoreModule.Test.Framework
             StartOrStopSite(siteName, false);
         }
 
-        private void StartOrStopSite(string siteName, bool start, bool commitDelay = false)
+        private void StartOrStopSite(string siteName, bool start)
         {
             string action = start ? "Starting" : "Stopping";
             TestUtility.LogTrace(String.Format("#################### {0} site {1} ####################", action, siteName));
@@ -755,9 +764,8 @@ namespace AspNetCoreModule.Test.Framework
                         sites[siteName].Stop();
                         sites[siteName].SetAttributeValue("serverAutoStart", false);
                     }
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -782,7 +790,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void AddApplicationToSite(string siteName, string appPath, string physicalPath, string poolName, bool commitDelay = false)
+        public void AddApplicationToSite(string siteName, string appPath, string physicalPath, string poolName)
         {
             try
             {
@@ -801,10 +809,8 @@ namespace AspNetCoreModule.Test.Framework
                     vdir.SetAttributeValue("physicalPath", physicalPath);
 
                     app.VirtualDirectories.Add(vdir);
-
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -813,7 +819,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void ChangeApplicationPool(string siteName, int appIndex, string poolName, bool commitDelay = false)
+        public void ChangeApplicationPool(string siteName, int appIndex, string poolName)
         {
             try
             {
@@ -822,10 +828,8 @@ namespace AspNetCoreModule.Test.Framework
                     TestUtility.LogTrace(String.Format("#################### Changing Application Pool for App {0} of Site {1} to {2} ####################", appIndex, siteName, poolName));
 
                     serverManager.Sites[siteName].Applications[appIndex].SetAttributeValue("applicationPool", poolName);
-
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -834,7 +838,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void ChangeApplicationPath(string siteName, int appIndex, string path, bool commitDelay = false)
+        public void ChangeApplicationPath(string siteName, int appIndex, string path)
         {
             try
             {
@@ -844,9 +848,7 @@ namespace AspNetCoreModule.Test.Framework
 
                     serverManager.Sites[siteName].Applications[appIndex].SetAttributeValue("path", path);
 
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -855,7 +857,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void RemoveApplication(string siteName, int appIndex, bool commitDelay = false)
+        public void RemoveApplication(string siteName, int appIndex)
         {
             try
             {
@@ -865,9 +867,7 @@ namespace AspNetCoreModule.Test.Framework
 
                     serverManager.Sites[siteName].Applications.RemoveAt(appIndex);
 
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -876,7 +876,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void AddBindingToSite(string siteName, string Ip, int Port, string host, bool commitDelay = false)
+        public void AddBindingToSite(string siteName, string Ip, int Port, string host)
         {
             string bindingInfo = "";
             if (Ip == null)
@@ -901,9 +901,7 @@ namespace AspNetCoreModule.Test.Framework
 
                     sites[siteName].Bindings.Add(b);
 
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -912,7 +910,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void RemoveBindingFromSite(string siteName, BindingInfo bindingInfo, bool commitDelay = false)
+        public void RemoveBindingFromSite(string siteName, BindingInfo bindingInfo)
         {
             try
             {
@@ -925,9 +923,8 @@ namespace AspNetCoreModule.Test.Framework
                         if (serverManager.Sites[siteName].Bindings[i].BindingInformation.ToString() == bindingInfo.ToBindingString())
                         {
                             serverManager.Sites[siteName].Bindings.RemoveAt(i);
-                            if (!commitDelay) {
-                                serverManager.CommitChanges();
-                            }
+                            
+                            serverManager.CommitChanges();
                             return;
                         }
                     }
@@ -941,7 +938,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void ModifyBindingForSite(string siteName, BindingInfo bindingInfoOld, BindingInfo bindingInfoNew, bool commitDelay = false)
+        public void ModifyBindingForSite(string siteName, BindingInfo bindingInfoOld, BindingInfo bindingInfoNew)
         {
             try
             {
@@ -954,9 +951,8 @@ namespace AspNetCoreModule.Test.Framework
                         if (serverManager.Sites[siteName].Bindings[i].BindingInformation.ToString() == bindingInfoOld.ToBindingString())
                         {
                             serverManager.Sites[siteName].Bindings[i].SetAttributeValue("bindingInformation", bindingInfoNew.ToBindingString());
-                            if (!commitDelay) {
-                                serverManager.CommitChanges();
-                            }
+                            
+                            serverManager.CommitChanges();
                             return;
                         }
                     }
@@ -970,7 +966,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public void DeleteSite(string siteName, bool commitDelay = false)
+        public void DeleteSite(string siteName)
         {
             try
             {
@@ -980,9 +976,8 @@ namespace AspNetCoreModule.Test.Framework
 
                     SiteCollection sites = serverManager.Sites;
                     sites.Remove(sites[siteName]);
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)
@@ -1000,13 +995,12 @@ namespace AspNetCoreModule.Test.Framework
                 SiteCollection sites = serverManager.Sites;
                 while (sites.Count > 0)
                     sites.RemoveAt(0);
-                if (!commitDelay) {
-                    serverManager.CommitChanges();
-                }
+                
+                serverManager.CommitChanges();
             }
         }
 
-        public void SetDynamicSiteRegistrationThreshold(int threshold, bool commitDelay = false)
+        public void SetDynamicSiteRegistrationThreshold(int threshold)
         {
             try
             {
@@ -1019,9 +1013,8 @@ namespace AspNetCoreModule.Test.Framework
                     ConfigurationSection webLimitsSection = config.GetSection("system.applicationHost/webLimits");
                     webLimitsSection["dynamicRegistrationThreshold"] = threshold;
 
-                    if (!commitDelay) {
-                        serverManager.CommitChanges();
-                    }
+                    
+                    serverManager.CommitChanges();
                 }
             }
             catch (Exception ex)

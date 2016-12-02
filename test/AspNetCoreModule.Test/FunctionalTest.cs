@@ -229,5 +229,18 @@ namespace AspNetCoreModule.Test
         {
             return DoProcessPathAndArgumentsTest(appPoolBitness, processPath, argumentsPrefix);
         }
+
+        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, true)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, false)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, true)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, false)]
+        public Task ForwardWindowsAuthTokenTest(IISConfigUtility.AppPoolBitness appPoolBitness, bool value)
+        {
+            return DoForwardWindowsAuthTokenTest(appPoolBitness, value);
+        }
     }
 }
