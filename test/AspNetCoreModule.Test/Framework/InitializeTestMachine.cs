@@ -3,7 +3,6 @@
 
 using System;
 using System.IO;
-using Microsoft.AspNetCore.Server.IntegrationTesting;
 using System.Threading;
 using Microsoft.Extensions.PlatformAbstractions;
 

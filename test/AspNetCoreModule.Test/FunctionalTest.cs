@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using AspNetCoreModule.Test.Framework;
-using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.AspNetCore.Testing.xunit;
 using System.Threading.Tasks;
 using Xunit;
@@ -21,7 +20,7 @@ namespace AspNetCoreModule.Test
             return DoBasicTest(serverType, appPoolBitness);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -32,7 +31,7 @@ namespace AspNetCoreModule.Test
             return DoBasicTest(serverType, appPoolBitness);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -44,7 +43,7 @@ namespace AspNetCoreModule.Test
             return DoRapidFailsPerMinuteTest(appPoolBitness, valueOfRapidFailsPerMinute);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -59,7 +58,7 @@ namespace AspNetCoreModule.Test
             return DoShutdownTimeLimitTest(appPoolBitness, valueOfshutdownTimeLimit, expectedClosingTime);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -72,7 +71,7 @@ namespace AspNetCoreModule.Test
             return DoStartupTimeLimitTest(appPoolBitness, starupTimeLimit);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -83,7 +82,7 @@ namespace AspNetCoreModule.Test
             return DoWebSocketTest(appPoolBitness, testData);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -94,7 +93,7 @@ namespace AspNetCoreModule.Test
             return DoRecycleApplicationAfterBeingKilled(appPoolBitness);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -105,7 +104,7 @@ namespace AspNetCoreModule.Test
             return DoRecycleApplicationAfterWebConfigUpdated(appPoolBitness);
         }
         
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -116,7 +115,7 @@ namespace AspNetCoreModule.Test
             return DoRecycleApplicationWithURLRewrite(appPoolBitness);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -127,7 +126,7 @@ namespace AspNetCoreModule.Test
             return DoRecycleParentApplicationWithURLRewrite(appPoolBitness);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -138,7 +137,7 @@ namespace AspNetCoreModule.Test
             return DoEnvironmentVariablesTest(appPoolBitness);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -149,7 +148,7 @@ namespace AspNetCoreModule.Test
             return DoAppOfflineTestWithRenaming(appPoolBitness);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -160,7 +159,7 @@ namespace AspNetCoreModule.Test
             return DoAppOfflineTestWithUrlRewriteAndDeleting(appPoolBitness);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -171,7 +170,7 @@ namespace AspNetCoreModule.Test
             return DoPostMethodTest(appPoolBitness, testData);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -182,7 +181,7 @@ namespace AspNetCoreModule.Test
             return DoDisableStartUpErrorPageTest(appPoolBitness);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -193,7 +192,7 @@ namespace AspNetCoreModule.Test
             return DoProcessesPerApplicationTest(appPoolBitness, valueOfProcessesPerApplication);
         }
         
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -206,7 +205,7 @@ namespace AspNetCoreModule.Test
             return DoRequestTimeoutTest(appPoolBitness, requestTimeout);
         }
         
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -217,7 +216,7 @@ namespace AspNetCoreModule.Test
             return DoStdoutLogEnabledTest(appPoolBitness);
         }
         
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
@@ -230,7 +229,7 @@ namespace AspNetCoreModule.Test
             return DoProcessPathAndArgumentsTest(appPoolBitness, processPath, argumentsPrefix);
         }
 
-        [SkipIfEnvironmentVariableNotEnabled("IIS_VARIATIONS_ENABLED")]
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]

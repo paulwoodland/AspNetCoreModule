@@ -8,12 +8,15 @@ using System.Xml;
 using System.Management;
 using System.Threading;
 using System.Diagnostics;
-using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Security.Principal;
 using System.Security.AccessControl;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Net;
+using Microsoft.AspNetCore.Testing.xunit;
 
 namespace AspNetCoreModule.Test.Framework
 {
@@ -28,6 +31,12 @@ namespace AspNetCoreModule.Test.Framework
         KillIISExpress
     }
 
+    public enum ServerType
+    {
+        IISExpress = 0,
+        IIS = 1,
+    }
+    
     public class TestUtility
     {
         public static ILogger _logger = null;
@@ -50,7 +59,90 @@ namespace AspNetCoreModule.Test.Framework
         {
             _logger = logger;
         }
-        
+
+        /// <summary>
+        /// Retries every 1 sec for 60 times by default.
+        /// </summary>
+        /// <param name="retryBlock"></param>
+        /// <param name="logger"></param>
+        /// <param name="cancellationToken"></param>
+        /// <param name="retryCount"></param>
+        public static async Task<HttpResponseMessage> RetryRequest(
+            Func<Task<HttpResponseMessage>> retryBlock,
+            ILogger logger,
+            CancellationToken cancellationToken = default(CancellationToken),
+            int retryCount = 60)
+        {
+            for (var retry = 0; retry < retryCount; retry++)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    logger.LogInformation("Failed to connect, retry canceled.");
+                    throw new OperationCanceledException("Failed to connect, retry canceled.", cancellationToken);
+                }
+
+                try
+                {
+                    logger.LogWarning("Retry count {retryCount}..", retry + 1);
+                    var response = await retryBlock().ConfigureAwait(false);
+
+                    if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+                    {
+                        // Automatically retry on 503. May be application is still booting.
+                        logger.LogWarning("Retrying a service unavailable error.");
+                        continue;
+                    }
+
+                    return response; // Went through successfully
+                }
+                catch (Exception exception)
+                {
+                    if (retry == retryCount - 1)
+                    {
+                        logger.LogError(0, exception, "Failed to connect, retry limit exceeded.");
+                        throw;
+                    }
+                    else
+                    {
+                        if (exception is HttpRequestException
+#if NET451
+                        || exception is System.Net.WebException
+#endif
+                        )
+                        {
+                            logger.LogWarning("Failed to complete the request : {0}.", exception.Message);
+                            await Task.Delay(1 * 1000); //Wait for a while before retry.
+                        }
+                    }
+                }
+            }
+
+            logger.LogInformation("Failed to connect, retry limit exceeded.");
+            throw new OperationCanceledException("Failed to connect, retry limit exceeded.");
+        }
+
+        public static void RetryOperation(
+            Action retryBlock,
+            Action<Exception> exceptionBlock,
+            int retryCount = 3,
+            int retryDelayMilliseconds = 0)
+        {
+            for (var retry = 0; retry < retryCount; ++retry)
+            {
+                try
+                {
+                    retryBlock();
+                    break;
+                }
+                catch (Exception exception)
+                {
+                    exceptionBlock(exception);
+                }
+
+                Thread.Sleep(retryDelayMilliseconds);
+            }
+        }
+
         public static bool RetryHelper<T> (
                    Func<T, bool> verifier,
                    T arg,
@@ -621,16 +713,12 @@ namespace AspNetCoreModule.Test.Framework
             RunCommand("net", "start w3svc", false);            
         }
 
-        public static string GetApplicationPath(ApplicationType applicationType)
+        public static string GetApplicationPath()
         {
             var applicationBasePath = PlatformServices.Default.Application.ApplicationBasePath;
             string solutionPath = InitializeTestMachine.GetSolutionDirectory();
             string applicationPath = string.Empty;
             applicationPath = Path.Combine(solutionPath, "test", "AspNetCoreModule.TestSites.Standard");
-            if (applicationType == ApplicationType.Standalone)
-            {
-                // NA
-            }
             return applicationPath;
         }
 

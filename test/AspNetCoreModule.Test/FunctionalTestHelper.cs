@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Net.Http.Headers;
 using Xunit;
 using Xunit.Sdk;
@@ -916,14 +915,14 @@ namespace AspNetCoreModule.Test
                 {
                     if (postData == null)
                     {
-                        response = await RetryHelper.RetryRequest(() =>
+                        response = await TestUtility.RetryRequest(() =>
                         {
                             return httpClient.GetAsync(string.Empty);
                         }, TestUtility.Logger, retryCount: numberOfRetryCount);
                     }
                     else
                     {
-                        response = await RetryHelper.RetryRequest(() =>
+                        response = await TestUtility.RetryRequest(() =>
                         {
                             return httpClient.PostAsync(string.Empty, postHttpContent);
                         }, TestUtility.Logger, retryCount: numberOfRetryCount);

@@ -3,7 +3,6 @@
 
 using System;
 using System.IO;
-using Microsoft.AspNetCore.Server.IntegrationTesting;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
@@ -117,7 +116,7 @@ namespace AspNetCoreModule.Test.Framework
 
             TestUtility.DirectoryCopy(Path.Combine(solutionPath, "test", "WebRoot"), siteRootPath);
             string standardAppRootPath = Path.Combine(siteRootPath, "StandardTestApp");
-            string appPath = TestUtility.GetApplicationPath(ApplicationType.Portable);
+            string appPath = TestUtility.GetApplicationPath();
 
             string publishPath = Path.Combine(appPath, "bin", "Debug", "netcoreapp1.1", "publish");
             if (!Directory.Exists(publishPath))
