@@ -106,8 +106,8 @@ namespace AspNetCoreModule.Test.Framework
             for (int i = 0; i < 3; i++)
             {
                 string postfix = Path.GetRandomFileName();
-                siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTest", postfix);
-                siteName = loggerPrefix + "_" + postfix;
+                siteName = loggerPrefix.Replace(" ", "") + "_" + postfix;
+                siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTest", siteName);
                 if (!Directory.Exists(siteRootPath))
                 {
                     break;
