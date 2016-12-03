@@ -90,7 +90,27 @@ namespace AspNetCoreModule.Test.Framework
             // try again after the ininial clean up 
             if (File.Exists(fromfile))
             {
-                TestUtility.FileCopy(fromfile, tofile, true, true);
+                try
+                {
+                    TestUtility.FileCopy(fromfile, tofile, true, true);
+                }
+                catch
+                {
+                    // ignore
+                }
+
+                // try again 
+                if (!File.Exists(tofile) || File.ReadAllBytes(fromfile).Length != File.ReadAllBytes(tofile).Length)
+                {
+                    // try again
+                    TestUtility.ResetHelper(ResetHelperMode.KillWorkerProcess);
+                    TestUtility.FileCopy(fromfile, tofile, true, true);
+                }
+
+                if (File.ReadAllBytes(fromfile).Length != File.ReadAllBytes(tofile).Length)
+                {
+                    throw new System.ApplicationException("Failed to restore applicationhost.config");
+                }
             }
         }
 

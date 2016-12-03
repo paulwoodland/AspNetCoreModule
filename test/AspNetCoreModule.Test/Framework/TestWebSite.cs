@@ -115,7 +115,7 @@ namespace AspNetCoreModule.Test.Framework
             }
 
             TestUtility.DirectoryCopy(Path.Combine(solutionPath, "test", "WebRoot"), siteRootPath);
-            string standardAppRootPath = Path.Combine(siteRootPath, "StandardTestApp");
+            string aspnetCoreAppRootPath = Path.Combine(siteRootPath, "AspNetCoreApp");
             string appPath = TestUtility.GetApplicationPath();
 
             string publishPath = Path.Combine(appPath, "bin", "Debug", "netcoreapp1.1", "publish");
@@ -143,7 +143,7 @@ namespace AspNetCoreModule.Test.Framework
             }
 
             // Copy the pubishpath to standardAppRootPath
-            TestUtility.DirectoryCopy(publishPath, standardAppRootPath);
+            TestUtility.DirectoryCopy(publishPath, aspnetCoreAppRootPath);
 
             int tcpPort = InitializeTestMachine.SiteId++;
             int siteId = tcpPort;
@@ -170,7 +170,7 @@ namespace AspNetCoreModule.Test.Framework
             RootAppContext.DeleteFile("app_offline.htm");
             RootAppContext.AppPoolName = appPoolName;
 
-            AspNetCoreApp = new TestWebApplication("/AspNetCoreApp", standardAppRootPath, this);
+            AspNetCoreApp = new TestWebApplication("/AspNetCoreApp", aspnetCoreAppRootPath, this);
             AspNetCoreApp.AppPoolName = appPoolName;
             AspNetCoreApp.RestoreFile("web.config");
             AspNetCoreApp.DeleteFile("app_offline.htm");

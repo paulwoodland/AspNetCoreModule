@@ -17,7 +17,6 @@ using AspNetCoreModule.Test.WebSocketClient;
 using System.Text;
 using System.IO;
 using System.Security.Principal;
-using System.Globalization;
 
 namespace AspNetCoreModule.Test
 {

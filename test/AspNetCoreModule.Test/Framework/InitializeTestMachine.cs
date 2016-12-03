@@ -45,7 +45,7 @@ namespace AspNetCoreModule.Test.Framework
                 {
                     if (IISConfigUtility.IsIISInstalled == true)
                     {
-                        IISConfigUtility.RestoreAppHostConfig();
+                        IISConfigUtility.RestoreAppHostConfig();                        
                     }
                 }
                 catch
