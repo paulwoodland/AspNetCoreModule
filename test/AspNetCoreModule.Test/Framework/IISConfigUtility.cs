@@ -48,9 +48,9 @@ namespace AspNetCoreModule.Test.Framework
             else
             {
                 return new ServerManager(
-                        false,                         // readOnly 
-                        Strings.AppHostConfigPath      // applicationhost.config path for IIS
-                    );
+                    false,                         // readOnly 
+                    Strings.AppHostConfigPath      // applicationhost.config path for IIS
+                );
             }
         }
 
