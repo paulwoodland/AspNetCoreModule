@@ -107,7 +107,7 @@ namespace AspNetCoreModule.Test.Framework
             {
                 string postfix = Path.GetRandomFileName();
                 siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTest", postfix);
-                siteName = postfix;
+                siteName = loggerPrefix + "_" + postfix;
                 if (!Directory.Exists(siteRootPath))
                 {
                     break;
