@@ -237,9 +237,9 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, false)]
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, true)]
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, false)]
-        public Task ForwardWindowsAuthTokenTest(IISConfigUtility.AppPoolBitness appPoolBitness, bool value)
+        public Task ForwardWindowsAuthTokenTest(IISConfigUtility.AppPoolBitness appPoolBitness, bool enabledForwardWindowsAuthToken)
         {
-            return DoForwardWindowsAuthTokenTest(appPoolBitness, value);
+            return DoForwardWindowsAuthTokenTest(appPoolBitness, enabledForwardWindowsAuthToken);
         }
     }
 }

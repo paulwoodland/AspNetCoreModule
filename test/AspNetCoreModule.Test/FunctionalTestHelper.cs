@@ -17,6 +17,7 @@ using AspNetCoreModule.Test.WebSocketClient;
 using System.Text;
 using System.IO;
 using System.Security.Principal;
+using System.Globalization;
 
 namespace AspNetCoreModule.Test
 {
@@ -624,13 +625,13 @@ namespace AspNetCoreModule.Test
             }
         }
         
-        public static async Task DoForwardWindowsAuthTokenTest(IISConfigUtility.AppPoolBitness appPoolBitness, bool value)
+        public static async Task DoForwardWindowsAuthTokenTest(IISConfigUtility.AppPoolBitness appPoolBitness, bool enabledForwardWindowsAuthToken)
         {
             using (var testSite = new TestWebSite(appPoolBitness, "DoProcessPathAndArgumentsTest"))
             {
                 using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {
-                    iisConfig.SetANCMConfig(testSite.SiteName, testSite.AspNetCoreApp.Name, "forwardWindowsAuthToken", value);
+                    iisConfig.SetANCMConfig(testSite.SiteName, testSite.AspNetCoreApp.Name, "forwardWindowsAuthToken", enabledForwardWindowsAuthToken);
                     string requestHeaders = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("DumpRequestHeaders"), HttpStatusCode.OK);
                     Assert.False(requestHeaders.ToUpper().Contains("MS-ASPNETCORE-WINAUTHTOKEN"));
                     
@@ -643,9 +644,10 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
 
                     requestHeaders = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("DumpRequestHeaders"), HttpStatusCode.OK);
-                    if (value)
+                    if (enabledForwardWindowsAuthToken)
                     {
-                        Assert.True(requestHeaders.ToUpper().Contains("MS-ASPNETCORE-WINAUTHTOKEN"));
+                        string expectedHeaderName = "MS-ASPNETCORE-WINAUTHTOKEN";
+                        Assert.True(requestHeaders.ToUpper().Contains(expectedHeaderName));
                     }
                     else
                     {

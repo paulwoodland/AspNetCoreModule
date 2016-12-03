@@ -9,7 +9,10 @@ using Microsoft.Net.Http.Headers;
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.WebSockets;
+using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,7 +22,7 @@ namespace AspnetCoreModule.TestSites.Standard
     {
         public static int SleeptimeWhileClosing = 0;
         public static int SleeptimeWhileStarting = 0;
-
+        
         private async Task Echo(WebSocket webSocket)
         {
             var buffer = new byte[1024 * 4];
@@ -197,32 +200,13 @@ namespace AspnetCoreModule.TestSites.Standard
                         Thread.Sleep(sleepTime);
                     }
 
-                    action = "DoClosingTimeSleep";
-                    if (item.StartsWith(action))
-                    {
-                        /* 
-                          "DoClosingTimeSleep" command here.
-                          For example, if path contains "DoSleepWhileClosing" such as /DoClosingTimeSleep1000, there will be 1 second sleep time while closing
-                        */
-                        int sleepTime = 1000;
-                        if (item.Length > action.Length)
-                        {
-                            parameter = item.Substring(action.Length);
-                            sleepTime = Convert.ToInt32(parameter);
-                        }
-                        SleeptimeWhileClosing = sleepTime;                        
-                    }
-
                     action = "ExpandEnvironmentVariables";
                     if (item.StartsWith(action))
                     {
-                        /* 
-                          "ExpandEnvironmentVariables" command here.
-                          For example, if path contains "ExpandEnvironmentVariables" such as /ExpandEnvironmentVariablesFoo, return the expanded value for the %foo% environment variable
-                        */
                         if (item.Length > action.Length)
                         {
                             parameter = item.Substring(action.Length);
+
                             response = Environment.ExpandEnvironmentVariables("%" + parameter + "%");
                         }                        
                     }
@@ -230,9 +214,6 @@ namespace AspnetCoreModule.TestSites.Standard
                     action = "GetEnvironmentVariables";
                     if (item.StartsWith(action))
                     {
-                        /* 
-                          Process "GetEnvironmentVariables" command here.
-                        */
                         parameter = item.Substring(action.Length);
                         response = Environment.GetEnvironmentVariables().Count.ToString();
                     }
@@ -240,22 +221,35 @@ namespace AspnetCoreModule.TestSites.Standard
                     action = "DumpEnvironmentVariables";
                     if (item.StartsWith(action))
                     {
-                        /* 
-                          Process "DumpEnvironmentVariables" command here.
-                        */
                         response = String.Empty;
+
                         foreach (DictionaryEntry de in Environment.GetEnvironmentVariables())
                         { 
                             response += de.Key + ":" + de.Value + "<br/>";
                         }                        
                     }
 
+                    action = "GetRequestHeaderValue";
+                    if (item.StartsWith(action))
+                    {
+                        if (item.Length > action.Length)
+                        {
+                            parameter = item.Substring(action.Length);
+
+                            if (context.Request.Headers.ContainsKey(parameter))
+                            {
+                                response = context.Request.Headers[parameter];
+                            }
+                            else
+                            {
+                                response = "";
+                            }
+                        }
+                    }
+
                     action = "DumpRequestHeaders";
                     if (item.StartsWith(action))
                     {
-                        /* 
-                          Process "DumpRequestHeaders" command here.
-                        */
                         response = String.Empty;
                         
                         foreach (var de in context.Request.Headers)
@@ -264,12 +258,26 @@ namespace AspnetCoreModule.TestSites.Standard
                         }
                     }
 
+                    action = "GetResponseHeaderValue";
+                    if (item.StartsWith(action))
+                    {
+                        if (item.Length > action.Length)
+                        {
+                            parameter = item.Substring(action.Length);
+                            if (context.Response.Headers.ContainsKey(parameter))
+                            {
+                                response = context.Response.Headers[parameter];
+                            }
+                            else
+                            {
+                                response = "";
+                            }
+                        }
+                    }
+
                     action = "DumpResponseHeaders";
                     if (item.StartsWith(action))
                     {
-                        /* 
-                          Process "DumpRequestHeaders" command here.
-                        */
                         response = String.Empty;
 
                         foreach (var de in context.Response.Headers)
