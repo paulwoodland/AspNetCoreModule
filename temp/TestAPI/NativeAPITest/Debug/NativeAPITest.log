@@ -1,0 +1,28 @@
+﻿  stdafx.cpp
+  ProcessStarter.cpp
+c:\git\backup\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+c:\git\backup\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 2 has type 'WCHAR *'
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+  ProcessInformation.cpp
+c:\git\backup\testapi\nativeapitest\processinformation.cpp(78): warning C4477: 'wprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'HANDLE'
+  main.cpp
+c:\git\backup\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+c:\git\backup\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 2 has type 'WCHAR *'
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+  Generating Code...
+  NativeAPITest.vcxproj -> C:\git\Backup\TestAPI\Debug\NativeAPITest.exe
+  NativeAPITest.vcxproj -> C:\git\Backup\TestAPI\Debug\NativeAPITest.pdb (Full PDB)
