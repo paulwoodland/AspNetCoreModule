@@ -7,9 +7,14 @@
 using namespace std;
 
 int ProcessInformation();
+int JobObject();
+
 int main()
 {
-    ProcessInformation();
+	JobObject();
+	ProcessInformation();
+
+	/*
     wstring processPath = L"c:\\windows\\system32\\notepad.exe";
     ProcessStarter starter(processPath, L"");
     _bstr_t strUser;
@@ -17,7 +22,7 @@ int main()
     auto pid = GetCurrentProcessId();
     starter.GetUserFromProcess(pid, strUser, strdomain);
 
-    starter.Run();
+    starter.Run(); */
     return 0;
 }
 

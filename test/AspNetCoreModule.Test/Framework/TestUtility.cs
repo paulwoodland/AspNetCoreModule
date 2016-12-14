@@ -16,7 +16,6 @@ using System.Security.AccessControl;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Net;
-using Microsoft.AspNetCore.Testing.xunit;
 
 namespace AspNetCoreModule.Test.Framework
 {
@@ -451,6 +450,38 @@ namespace AspNetCoreModule.Test.Framework
             return result;
         }
 
+        public static object GetProcessWMIAttributeValue(string processFileName, string attributeName, string owner = null)
+        {
+            string query = "Select * from Win32_Process Where Name = \"" + processFileName + "\"";
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
+            ManagementObjectCollection processList = searcher.Get();
+            object result = null;
+            foreach (ManagementObject obj in processList)
+            {
+                string[] argList = new string[] { string.Empty, string.Empty };
+                bool found = true;
+
+                if (owner != null)
+                {
+                    found = false;
+                    int returnVal = Convert.ToInt32(obj.InvokeMethod("GetOwner", argList));
+                    if (returnVal == 0)
+                    {
+                        if (argList[0].ToUpper() == owner.ToUpper())
+                        {
+                            found = true;
+                        }
+                    }
+                }
+                if (found)
+                {
+                    result = obj.GetPropertyValue(attributeName);
+                    break;
+                }
+            }
+            return result;
+        }
+
         public static string GetHttpUri(string Url, TestWebSite siteContext)
         {
             string tempUrl = Url.TrimStart(new char[] { '/' });
@@ -515,7 +546,6 @@ namespace AspNetCoreModule.Test.Framework
             return builder.ToString();
         }
        
-
         public static void ResetHelper(ResetHelperMode mode)
         {
             switch (mode)

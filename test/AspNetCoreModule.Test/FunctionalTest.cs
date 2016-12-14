@@ -241,5 +241,18 @@ namespace AspNetCoreModule.Test
         {
             return DoForwardWindowsAuthTokenTest(appPoolBitness, enabledForwardWindowsAuthToken);
         }
+
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, true)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, false)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, true)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, false)]
+        public Task RecylingAppPoolTest(IISConfigUtility.AppPoolBitness appPoolBitness, bool enabledForwardWindowsAuthToken)
+        {
+            return DoRecylingAppPoolTest(appPoolBitness, enabledForwardWindowsAuthToken);
+        }
     }
 }

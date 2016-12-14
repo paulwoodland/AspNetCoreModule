@@ -658,6 +658,90 @@ namespace AspNetCoreModule.Test
             }
         }
 
+        public static async Task DoRecylingAppPoolTest(IISConfigUtility.AppPoolBitness appPoolBitness, bool enabledForwardWindowsAuthToken)
+        {
+            using (var testSite = new TestWebSite(appPoolBitness, "DoProcessPathAndArgumentsTest"))
+            {
+                using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                {
+                    // get backend process 
+                    string pocessIdBackendProcess = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                    var backendProcess = Process.GetProcessById(Convert.ToInt32(pocessIdBackendProcess));
+                    var privateMemoryKBBackend = backendProcess.PrivateMemorySize64 / 1024;
+                    var virtualMemoryKBBackend = backendProcess.VirtualMemorySize64 / 1024;
+
+                    // get process id of IIS worker process (w3wp.exe)
+                    string userName = testSite.SiteName;
+                    int processIdOfWorkerProcess = Convert.ToInt32(TestUtility.GetProcessWMIAttributeValue("w3wp.exe", "Handle", userName));
+                    var workerProcess = Process.GetProcessById(Convert.ToInt32(processIdOfWorkerProcess));
+                    var privateMemoryKB = workerProcess.PrivateMemorySize64 / 1024;
+                    var virtualMemoryKB = workerProcess.VirtualMemorySize64 / 1024;
+
+                    var totalPrivateMemoryKBAfter = privateMemoryKB + privateMemoryKBBackend;
+                    var totalVirtualMemoryKBAfter = virtualMemoryKB + virtualMemoryKBBackend;
+
+                    // terminate backend process
+                    backendProcess.Kill();
+                    backendProcess.Dispose();
+
+                    // terminate worker process
+                    workerProcess.Kill();
+                    workerProcess.Dispose();
+                    Thread.Sleep(3000);
+
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
+
+                    // set privateMemory with the median value of non aspnetcore app state and the total after aspnetcore app is started
+                    iisConfig.SetAppPoolSetting(testSite.AspNetCoreApp.AppPoolName, "privateMemory", totalPrivateMemoryKBAfter);
+                    iisConfig.SetAppPoolSetting(testSite.AspNetCoreApp.AppPoolName, "rapidFailProtectionMaxCrashes", 555);
+                    Thread.Sleep(3000);
+
+                    int x = -1;
+
+                    // initialize x
+                    for (int i = 0; i < 3; i++)
+                    {
+                        // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                        TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
+
+                        await VerifyResponseStatus(testSite.RootAppContext.GetHttpUri(), HttpStatusCode.OK);
+                        x = Convert.ToInt32(TestUtility.GetProcessWMIAttributeValue("w3wp.exe", "Handle", userName));
+                        Thread.Sleep(1000);
+                    }
+
+                    // Verify that IIS recycling does not happen while there is no memory leak
+                    for (int i = 0; i < 3; i++)
+                    {
+                        // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                        TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
+
+                        await VerifyResponseStatus(testSite.RootAppContext.GetHttpUri("small.htm"), HttpStatusCode.OK);
+                        Thread.Sleep(1000);
+                    }
+                    int y = Convert.ToInt32(TestUtility.GetProcessWMIAttributeValue("w3wp.exe", "Handle", userName));
+                    Assert.True(x == y, "worker process is not recycled after 30 seconds");
+
+                    // Verify IIS recycling happens while there is memory leak
+                    for (int i = 0; i < 5; i++)
+                    {
+                        // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                        TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
+
+                        await VerifyResponseStatus(testSite.AspNetCoreApp.GetHttpUri("MemoryLeak1024000"), HttpStatusCode.OK);
+                        Thread.Sleep(1000);
+                    }
+
+                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
+
+                    int z = Convert.ToInt32(TestUtility.GetProcessWMIAttributeValue("w3wp.exe", "Handle", userName));
+                    Assert.True(x != z, "worker process is recycled after 30 seconds after aspnetcore app is started");
+                }
+                testSite.AspNetCoreApp.RestoreFile("web.config");
+            }
+        }
+
         public static async Task DoWebSocketTest(IISConfigUtility.AppPoolBitness appPoolBitness, string testData)
         {
             using (var testSite = new TestWebSite(appPoolBitness, "DoWebSocketTest"))

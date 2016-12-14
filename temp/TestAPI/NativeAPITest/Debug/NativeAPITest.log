@@ -1,28 +1,31 @@
 ﻿  stdafx.cpp
   ProcessStarter.cpp
-c:\git\backup\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
-c:\git\backup\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 2 has type 'WCHAR *'
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 2 has type 'WCHAR *'
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
   ProcessInformation.cpp
-c:\git\backup\testapi\nativeapitest\processinformation.cpp(78): warning C4477: 'wprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'HANDLE'
+e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processinformation.cpp(118): warning C4477: 'wprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'HANDLE'
   main.cpp
-c:\git\backup\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
-c:\git\backup\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 2 has type 'WCHAR *'
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
-  c:\git\backup\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 2 has type 'WCHAR *'
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+  JobObject.cpp
+e:\git\aspnetcoremodule\temp\testapi\nativeapitest\jobobject.cpp(5): warning C4005: '_WIN32_WINNT': macro redefinition
+  c:\program files (x86)\windows kits\8.1\include\shared\sdkddkver.h(200): note: see previous definition of '_WIN32_WINNT'
   Generating Code...
-  NativeAPITest.vcxproj -> C:\git\Backup\TestAPI\Debug\NativeAPITest.exe
-  NativeAPITest.vcxproj -> C:\git\Backup\TestAPI\Debug\NativeAPITest.pdb (Full PDB)
+  NativeAPITest.vcxproj -> E:\git\AspNetCoreModule\temp\TestAPI\Debug\NativeAPITest.exe
+  NativeAPITest.vcxproj -> E:\git\AspNetCoreModule\temp\TestAPI\Debug\NativeAPITest.pdb (Full PDB)

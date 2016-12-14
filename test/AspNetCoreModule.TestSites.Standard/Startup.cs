@@ -8,6 +8,7 @@ using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.WebSockets;
@@ -22,7 +23,8 @@ namespace AspnetCoreModule.TestSites.Standard
     {
         public static int SleeptimeWhileClosing = 0;
         public static int SleeptimeWhileStarting = 0;
-        
+        public static List<byte[]> MemoryLeakList = new List<byte[]>();
+
         private async Task Echo(WebSocket webSocket)
         {
             var buffer = new byte[1024 * 4];
@@ -200,6 +202,22 @@ namespace AspnetCoreModule.TestSites.Standard
                         Thread.Sleep(sleepTime);
                     }
 
+                    action = "MemoryLeak";
+                    if (item.StartsWith(action))
+                    {
+                        parameter = "1024";
+                        if (item.Length > action.Length)
+                        {
+                            parameter = item.Substring(action.Length);                            
+                        }
+                        long size = Convert.ToInt32(parameter);                        
+                        var rnd = new Random();                        
+                        byte[] b = new byte[size*1024];
+                        b[rnd.Next(0, b.Length)] = byte.MaxValue;
+                        MemoryLeakList.Add(b); 
+                        response = "MemoryLeak, size:" + size.ToString() + " KB, total: " + MemoryLeakList.Count.ToString();
+                    }
+                    
                     action = "ExpandEnvironmentVariables";
                     if (item.StartsWith(action))
                     {
