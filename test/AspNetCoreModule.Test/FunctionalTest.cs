@@ -246,13 +246,11 @@ namespace AspNetCoreModule.Test
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
-        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, true)]
-        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, false)]
-        [InlineData(IISConfigUtility.AppPoolBitness.noChange, true)]
-        [InlineData(IISConfigUtility.AppPoolBitness.noChange, false)]
-        public Task RecylingAppPoolTest(IISConfigUtility.AppPoolBitness appPoolBitness, bool enabledForwardWindowsAuthToken)
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
+        public Task RecylingAppPoolTest(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return DoRecylingAppPoolTest(appPoolBitness, enabledForwardWindowsAuthToken);
+            return DoRecylingAppPoolTest(appPoolBitness);
         }
     }
 }

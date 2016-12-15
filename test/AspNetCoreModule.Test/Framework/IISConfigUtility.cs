@@ -128,6 +128,7 @@ namespace AspNetCoreModule.Test.Framework
                 switch (attribute)
                 {
                     case "privateMemory":
+                    case "memory":
                         ConfigurationElement recyclingElement = addElement.GetChildElement("recycling");
                         ConfigurationElement periodicRestartElement = recyclingElement.GetChildElement("periodicRestart");
                         periodicRestartElement[attribute] = value;

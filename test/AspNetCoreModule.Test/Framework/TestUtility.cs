@@ -546,40 +546,42 @@ namespace AspNetCoreModule.Test.Framework
             return builder.ToString();
         }
        
-        public static void ResetHelper(ResetHelperMode mode)
+        public static bool ResetHelper(ResetHelperMode mode)
         {
+            bool result = false;
             switch (mode)
             {
                 case ResetHelperMode.CallIISReset:
-                    CallIISReset();
+                    result = CallIISReset();
                     break;
                 case ResetHelperMode.StopHttpStartW3svc:
                     StopHttp();
-                    StartW3svc();
+                    result = StartW3svc();
                     break;
                 case ResetHelperMode.StopWasStartW3svc:
                     StopWas();
-                    StartW3svc();
+                    result = StartW3svc();
                     break;
                 case ResetHelperMode.StopW3svcStartW3svc:
                     StopW3svc();
-                    StartW3svc();
+                    result = StartW3svc();
                     break;
                 case ResetHelperMode.KillWorkerProcess:
-                    KillWorkerProcess();
-                    KillIISWorkerProcess();
+                    result = KillWorkerProcess();
                     break;
                 case ResetHelperMode.KillVSJitDebugger:
-                    KillVSJitDebugger();
+                    result = KillVSJitDebugger();
                     break;
                 case ResetHelperMode.KillIISExpress:
-                    KillIISExpress();
+                    result = KillIISExpress();
                     break;
             };
+            return result;
         }
 
-        public static void KillIISExpress()
+        public static bool KillIISExpress()
         {
+            bool result = false;
             string query = "Select * from Win32_Process Where Name = \"iisexpress.exe\"";
             ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
             ManagementObjectCollection processList = searcher.Get();
@@ -591,12 +593,15 @@ namespace AspNetCoreModule.Test.Framework
                 if (foundProcess)
                 {
                     obj.InvokeMethod("Terminate", null);
+                    result = true;
                 }
             }
+            return result;
         }
 
-        public static void KillVSJitDebugger()
+        public static bool KillVSJitDebugger()
         {
+            bool result = false;
             string query = "Select * from Win32_Process Where Name = \"vsjitdebugger.exe\"";
             ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
             ManagementObjectCollection processList = searcher.Get();
@@ -608,12 +613,16 @@ namespace AspNetCoreModule.Test.Framework
                 if (foundProcess)
                 {
                     obj.InvokeMethod("Terminate", null);
+                    result = true;
                 }
             }
+            return result;
         }
 
-        public static void KillWorkerProcess(string owner = null)
+        public static bool KillWorkerProcess(string owner = null)
         {
+            bool result = false;
+
             string query = "Select * from Win32_Process Where Name = \"w3wp.exe\"";
             ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
             ManagementObjectCollection processList = searcher.Get();
@@ -635,18 +644,23 @@ namespace AspNetCoreModule.Test.Framework
                         if (foundProcess)
                         {
                             obj.InvokeMethod("Terminate", null);
+                            result = true;
                         }
                     }
                 }
                 else
                 {
-                    obj.InvokeMethod("Terminate", null); 
+                    obj.InvokeMethod("Terminate", null);
+                    result = true;
                 }
             }
+            return result;
         }
 
-        public static void KillIISWorkerProcess(string owner = null)
+        public static bool KillIISExpressProcess(string owner = null)
         {
+            bool result = false;
+
             string query = "Select * from Win32_Process Where Name = \"iisexpress.exe\"";
             ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
             ManagementObjectCollection processList = searcher.Get();
@@ -668,14 +682,17 @@ namespace AspNetCoreModule.Test.Framework
                         if (foundProcess)
                         {
                             obj.InvokeMethod("Terminate", null);
+                            result = true;
                         }
                     }
                 }
                 else
                 {
                     obj.InvokeMethod("Terminate", null);
+                    result = true;
                 }
             }
+            return result;
         }
 
         public static int RunCommand(string fileName, string arguments = null, bool checkStandardError = true, bool waitForExit=true)
@@ -713,34 +730,40 @@ namespace AspNetCoreModule.Test.Framework
             return pid;  
         }
 
-        public static void CallIISReset()
+        public static bool CallIISReset()
         {
-            RunCommand("iisreset", null, false);            
+            int result = RunCommand("iisreset", null, false);
+            return (result != -1);
         }
 
-        public static void StopHttp()
+        public static bool StopHttp()
         {
-            RunCommand("net", "stop http /y", false);
+            int result = RunCommand("net", "stop http /y", false);
+            return (result != -1);
         }
 
-        public static void StopWas()
+        public static bool StopWas()
         {
-            RunCommand("net", "stop was /y", false);
+            int result = RunCommand("net", "stop was /y", false);
+            return (result != -1);
         }
 
-        public static void StartWas()
+        public static bool StartWas()
         {
-            RunCommand("net", "start was", false);   
+            int result = RunCommand("net", "start was", false);
+            return (result != -1);
         }
 
-        public static void StopW3svc()
+        public static bool StopW3svc()
         {
-            RunCommand("net", "stop w3svc /y", false);
+            int result = RunCommand("net", "stop w3svc /y", false);
+            return (result != -1);
         }
 
-        public static void StartW3svc()
+        public static bool StartW3svc()
         {
-            RunCommand("net", "start w3svc", false);            
+            int result = RunCommand("net", "start w3svc", false);
+            return (result != -1);
         }
 
         public static string GetApplicationPath()

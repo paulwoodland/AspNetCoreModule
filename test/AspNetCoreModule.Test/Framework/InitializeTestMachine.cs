@@ -52,6 +52,7 @@ namespace AspNetCoreModule.Test.Framework
                 {
                     TestUtility.LogInformation("Failed to restore applicationhost.config");
                 }
+
                 foreach (string directory in Directory.GetDirectories(siteRootPath))
                 {
                     bool successDeleteChildDirectory = true;
