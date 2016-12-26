@@ -1,8 +1,1 @@
-﻿  stdafx.cpp
-  NamedPipeServer.cpp
-c:\git\aspnetcoremodule\temp\namedpipeserver\namedpipeserver.cpp(20): warning C4477: 'wprintf' : format string '%s' requires an argument of type 'wchar_t *', but variadic argument 1 has type 'char *'
-  c:\git\aspnetcoremodule\temp\namedpipeserver\namedpipeserver.cpp(20): note: consider using '%hs' in the format string
-  c:\git\aspnetcoremodule\temp\namedpipeserver\namedpipeserver.cpp(20): note: consider using '%Ts' in the format string
-  c:\git\aspnetcoremodule\temp\namedpipeserver\namedpipeserver.cpp(20): note: consider defining _CRT_STDIO_ISO_WIDE_SPECIFIERS if C99 standard semantics is required
-  NamedPipeServer.vcxproj -> C:\git\AspNetCoreModule\temp\TestAPI\x64\Debug\NamedPipeServer.exe
-  NamedPipeServer.vcxproj -> C:\git\AspNetCoreModule\temp\TestAPI\x64\Debug\NamedPipeServer.pdb (Full PDB)
+﻿
