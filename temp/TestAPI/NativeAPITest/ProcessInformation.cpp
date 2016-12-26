@@ -20,29 +20,6 @@ typedef struct _UNICODE_STRING {
 
 typedef LONG KPRIORITY; // Thread priority
 
-/*
-typedef struct _SYSTEM_PROCESS_INFORMATION_DETAILD {
-    ULONG NextEntryOffset;
-    ULONG NumberOfThreads;
-    LARGE_INTEGER SpareLi1;
-    LARGE_INTEGER SpareLi2;
-    LARGE_INTEGER SpareLi3;
-    LARGE_INTEGER CreateTime;
-    LARGE_INTEGER UserTime;
-    LARGE_INTEGER KernelTime;
-    UNICODE_STRING ImageName;
-    KPRIORITY BasePriority;
-    HANDLE UniqueProcessId;
-    ULONG InheritedFromUniqueProcessId;
-    ULONG HandleCount;
-    BYTE Reserved4[4];
-    PVOID Reserved5[11];
-    SIZE_T PeakPagefileUsage;
-    SIZE_T PrivatePageCount;
-    LARGE_INTEGER Reserved6[6];
-} SYSTEM_PROCESS_INFORMATION_DETAILD, *PSYSTEM_PROCESS_INFORMATION_DETAILD;
-*/
-
 typedef struct _SYSTEM_PROCESS_INFORMATION_DETAILD {
 	ULONG NextEntryOffset;
 	ULONG NumberOfThreads;

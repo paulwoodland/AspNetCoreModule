@@ -1,0 +1,28 @@
+﻿  precomp.cpp
+c:\program files (x86)\windows kits\8.1\include\um\httpserv.h(113): warning C4091: 'typedef ': ignored on left of 'REQUEST_NOTIFICATION_STATUS' when no variable is declared
+c:\program files (x86)\windows kits\8.1\include\um\httpserv.h(125): warning C4091: 'typedef ': ignored on left of 'GLOBAL_NOTIFICATION_STATUS' when no variable is declared
+c:\program files (x86)\windows kits\8.1\include\um\httpserv.h(148): warning C4091: 'typedef ': ignored on left of 'CACHE_OPERATION' when no variable is declared
+  winhttphelper.cxx
+  websockethandler.cxx
+  serverprocess.cxx
+  responseheaderhash.cxx
+  proxymodule.cxx
+  protocolconfig.cxx
+  processmanager.cxx
+  path.cxx
+  IISModule.cpp
+  forwardinghandler.cxx
+  forwarderconnection.cxx
+  filewatcher.cxx
+  aspnetcoreutils.cxx
+  aspnetcoreconfig.cxx
+  applicationmanager.cxx
+  application.cxx
+  Generating Code...
+  dllmain.cpp
+c:\program files (x86)\windows kits\8.1\include\um\httpserv.h(113): warning C4091: 'typedef ': ignored on left of 'REQUEST_NOTIFICATION_STATUS' when no variable is declared
+c:\program files (x86)\windows kits\8.1\include\um\httpserv.h(125): warning C4091: 'typedef ': ignored on left of 'GLOBAL_NOTIFICATION_STATUS' when no variable is declared
+c:\program files (x86)\windows kits\8.1\include\um\httpserv.h(148): warning C4091: 'typedef ': ignored on left of 'CACHE_OPERATION' when no variable is declared
+     Creating library C:\git\AspNetCoreModule\temp\TestAPI\Debug\AspNetCore.lib and object C:\git\AspNetCoreModule\temp\TestAPI\Debug\AspNetCore.exp
+  AspNetCore.vcxproj -> C:\git\AspNetCoreModule\temp\TestAPI\Debug\AspNetCore.dll
+  AspNetCore.vcxproj -> C:\git\AspNetCoreModule\temp\TestAPI\Debug\AspNetCore.pdb (Full PDB)

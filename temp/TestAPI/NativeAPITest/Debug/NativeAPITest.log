@@ -1,31 +1,41 @@
 ﻿  stdafx.cpp
-  ProcessStarter.cpp
-e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
-e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 2 has type 'WCHAR *'
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
-  ProcessInformation.cpp
-e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processinformation.cpp(118): warning C4477: 'wprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'HANDLE'
-  main.cpp
-e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
-e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 2 has type 'WCHAR *'
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
-  e:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
-  JobObject.cpp
-e:\git\aspnetcoremodule\temp\testapi\nativeapitest\jobobject.cpp(5): warning C4005: '_WIN32_WINNT': macro redefinition
+c:\git\aspnetcoremodule\temp\testapi\nativeapitest\stdafx.h(8): warning C4005: 'NTDDI_VERSION': macro redefinition
+  c:\program files (x86)\windows kits\8.1\include\shared\sdkddkver.h(206): note: see previous definition of 'NTDDI_VERSION'
+c:\git\aspnetcoremodule\temp\testapi\nativeapitest\stdafx.h(9): warning C4005: '_WIN32_WINNT': macro redefinition
   c:\program files (x86)\windows kits\8.1\include\shared\sdkddkver.h(200): note: see previous definition of '_WIN32_WINNT'
+c:\program files (x86)\windows kits\8.1\include\um\httpserv.h(113): warning C4091: 'typedef ': ignored on left of 'REQUEST_NOTIFICATION_STATUS' when no variable is declared
+c:\program files (x86)\windows kits\8.1\include\um\httpserv.h(125): warning C4091: 'typedef ': ignored on left of 'GLOBAL_NOTIFICATION_STATUS' when no variable is declared
+c:\program files (x86)\windows kits\8.1\include\um\httpserv.h(148): warning C4091: 'typedef ': ignored on left of 'CACHE_OPERATION' when no variable is declared
+  ProcessStarter.cpp
+c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 2 has type 'WCHAR *'
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+  ProcessInformation.cpp
+c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processinformation.cpp(118): warning C4477: 'wprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'HANDLE'
+  main.cpp
+c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'WCHAR *'
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 2 has type 'WCHAR *'
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%lls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%Ls' in the format string
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\processstarter.h(76): note: consider using '%ws' in the format string
+  JobObject.cpp
+c:\git\aspnetcoremodule\temp\testapi\nativeapitest\jobobject.cpp(5): warning C4005: '_WIN32_WINNT': macro redefinition
+  c:\git\aspnetcoremodule\temp\testapi\nativeapitest\stdafx.h(9): note: see previous definition of '_WIN32_WINNT'
+  IISLibTest.cpp
+c:\git\aspnetcoremodule\temp\testapi\nativeapitest\iislibtest.cpp(2): warning C4067: unexpected tokens following preprocessor directive - expected a newline
   Generating Code...
-  NativeAPITest.vcxproj -> E:\git\AspNetCoreModule\temp\TestAPI\Debug\NativeAPITest.exe
-  NativeAPITest.vcxproj -> E:\git\AspNetCoreModule\temp\TestAPI\Debug\NativeAPITest.pdb (Full PDB)
+IISLibTest.obj : error LNK2019: unresolved external symbol "public: __thiscall STRU::STRU(wchar_t *,unsigned long)" (??0STRU@@QAE@PA_WK@Z) referenced in function "void __cdecl IISLibTest(void)" (?IISLibTest@@YAXXZ)
+C:\git\AspNetCoreModule\src\IISLib\x64\Debug\iislib.lib : warning LNK4272: library machine type 'x64' conflicts with target machine type 'X86'
+C:\git\AspNetCoreModule\temp\TestAPI\Debug\NativeAPITest.exe : fatal error LNK1120: 1 unresolved externals

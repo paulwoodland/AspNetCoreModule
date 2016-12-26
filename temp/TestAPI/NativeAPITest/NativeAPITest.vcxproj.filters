@@ -41,5 +41,11 @@
     <ClCompile Include="JobObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="IISLibTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Pipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

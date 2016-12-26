@@ -44,7 +44,8 @@ class CProxyModule : public CHttpModule
 
  private:
 
-    FORWARDING_HANDLER * m_pHandler;
+    //FORWARDING_HANDLER * m_pHandler;
+    TEST_HANDLER * m_pHandler;
 };
 
 class CProxyModuleFactory : public IHttpModuleFactory
