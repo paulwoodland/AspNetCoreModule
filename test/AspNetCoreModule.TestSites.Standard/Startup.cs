@@ -10,15 +10,39 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Net.WebSockets;
-using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace AspnetCoreModule.TestSites.Standard
 {
+    public class ImpersonateMiddleware
+    {
+        private readonly RequestDelegate next;
+        public ImpersonateMiddleware(RequestDelegate next)
+        {
+            this.next = next;
+        }
+        public async Task Invoke(HttpContext context)
+        {
+            var winIdent = context.User.Identity as WindowsIdentity;
+            if (winIdent == null)
+            {
+                await context.Response.WriteAsync("ImpersonateMiddleware-UserName = NoAuthentication");
+                await next.Invoke(context);
+            }
+            else
+            {
+                await WindowsIdentity.RunImpersonated(winIdent.AccessToken, async () => {
+                    string currentUserName = $"{ WindowsIdentity.GetCurrent().Name}";
+                    await context.Response.WriteAsync("ImpersonateMiddleware-UserName = " + currentUserName);
+                    await next.Invoke(context);
+                });
+            }
+        }
+    }
+
     public class Startup
     {
         public static int SleeptimeWhileClosing = 0;
@@ -175,7 +199,16 @@ namespace AspnetCoreModule.TestSites.Standard
                     context.Response.Headers[HeaderNames.TransferEncoding] = "chunked";
                     return context.Response.WriteAsync("1A\r\nManually Chunked and Close\r\n0\r\n\r\n");
                 });
-            });            
+            });
+
+            app.Map("/ImpersonateMiddleware", subApp =>
+            {
+                subApp.UseMiddleware<ImpersonateMiddleware>();                
+                subApp.Run(context =>
+                {
+                     return context.Response.WriteAsync("");
+                });
+            });
 
             app.Run(context =>
             {
@@ -274,35 +307,7 @@ namespace AspnetCoreModule.TestSites.Standard
                         {
                             response += de.Key + ":" + de.Value + "<br/>";
                         }
-                    }
-
-                    action = "GetResponseHeaderValue";
-                    if (item.StartsWith(action))
-                    {
-                        if (item.Length > action.Length)
-                        {
-                            parameter = item.Substring(action.Length);
-                            if (context.Response.Headers.ContainsKey(parameter))
-                            {
-                                response = context.Response.Headers[parameter];
-                            }
-                            else
-                            {
-                                response = "";
-                            }
-                        }
-                    }
-
-                    action = "DumpResponseHeaders";
-                    if (item.StartsWith(action))
-                    {
-                        response = String.Empty;
-
-                        foreach (var de in context.Response.Headers)
-                        {
-                            response += de.Key + ":" + de.Value + "<br/>";
-                        }
-                    }
+                    }                    
                 }
                 return context.Response.WriteAsync(response);
             });

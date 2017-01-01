@@ -630,10 +630,11 @@ namespace AspNetCoreModule.Test
             {
                 using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                 {
+                    string result = string.Empty;
                     iisConfig.SetANCMConfig(testSite.SiteName, testSite.AspNetCoreApp.Name, "forwardWindowsAuthToken", enabledForwardWindowsAuthToken);
                     string requestHeaders = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("DumpRequestHeaders"), HttpStatusCode.OK);
                     Assert.False(requestHeaders.ToUpper().Contains("MS-ASPNETCORE-WINAUTHTOKEN"));
-                    
+
                     iisConfig.EnableWindowsAuthentication(testSite.SiteName);
 
                     Thread.Sleep(500);
@@ -647,10 +648,17 @@ namespace AspNetCoreModule.Test
                     {
                         string expectedHeaderName = "MS-ASPNETCORE-WINAUTHTOKEN";
                         Assert.True(requestHeaders.ToUpper().Contains(expectedHeaderName));
+
+                        result = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("ImpersonateMiddleware"), HttpStatusCode.OK);
+                        string expectedValue = "ImpersonateMiddleware - UserName = " + Environment.ExpandEnvironmentVariables("%USERDOMAIN%") + "\\" + Environment.ExpandEnvironmentVariables("%USERNAME%");
+                        Assert.True(result.ToLower().Contains(expectedValue.ToLower()));
                     }
                     else
                     {
                         Assert.False(requestHeaders.ToUpper().Contains("MS-ASPNETCORE-WINAUTHTOKEN"));
+
+                        result = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("ImpersonateMiddleware"), HttpStatusCode.OK);
+                        Assert.True(result.Contains("ImpersonateMiddleware-UserName = NoAuthentication"));
                     }
                 }
 
