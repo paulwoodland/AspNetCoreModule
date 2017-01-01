@@ -650,7 +650,7 @@ namespace AspNetCoreModule.Test
                         Assert.True(requestHeaders.ToUpper().Contains(expectedHeaderName));
 
                         result = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("ImpersonateMiddleware"), HttpStatusCode.OK);
-                        string expectedValue = "ImpersonateMiddleware - UserName = " + Environment.ExpandEnvironmentVariables("%USERDOMAIN%") + "\\" + Environment.ExpandEnvironmentVariables("%USERNAME%");
+                        string expectedValue = "ImpersonateMiddleware-UserName = " + Environment.ExpandEnvironmentVariables("%USERDOMAIN%") + "\\" + Environment.ExpandEnvironmentVariables("%USERNAME%");
                         Assert.True(result.ToLower().Contains(expectedValue.ToLower()));
                     }
                     else
