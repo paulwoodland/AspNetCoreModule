@@ -19,8 +19,11 @@ namespace AspNetCoreModule.Test.Framework
         public static int _referenceCount = 0;
 
         private static bool _InitializeTestMachineCompleted = false;
-        private string _setupScriptPath = null;
 
+        public static bool OverwriteAspNetCoreFile = false;
+
+        private string _setupScriptPath = null;
+        
         public InitializeTestMachine()
         {
 
@@ -77,15 +80,19 @@ namespace AspNetCoreModule.Test.Framework
                         }
                     }
                 }
-                
-                PreparePrivateANCMFiles();
 
-                // update applicationhost.config for IIS server
-                if (IISConfigUtility.IsIISInstalled == true)
+                if (InitializeTestMachine.OverwriteAspNetCoreFile)
                 {
-                    using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                    PreparePrivateANCMFiles();
+
+                    // update applicationhost.config for IIS server
+                    if (IISConfigUtility.IsIISInstalled == true)
                     {
-                        iisConfig.AddModule("AspNetCoreModule", Aspnetcore_path, null);
+
+                        using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                        {
+                            iisConfig.AddModule("AspNetCoreModule", Aspnetcore_path, null);
+                        }
                     }
                 }
                 
@@ -120,18 +127,21 @@ namespace AspNetCoreModule.Test.Framework
             {
                 TestUtility.LogInformation("InitializeTestMachine::Dispose() Start");
                 TestUtility.ResetHelper(ResetHelperMode.KillIISExpress);
-                
-                if (IISConfigUtility.IsIISInstalled == true)
+
+                if (InitializeTestMachine.OverwriteAspNetCoreFile)
                 {
-                    using (var iisConfig = new IISConfigUtility(ServerType.IIS))
+                    if (IISConfigUtility.IsIISInstalled == true)
                     {
-                        try
+                        using (var iisConfig = new IISConfigUtility(ServerType.IIS))
                         {
-                            iisConfig.AddModule("AspNetCoreModule", Aspnetcore_path_original, null);
-                        }
-                        catch
-                        {
-                            TestUtility.LogInformation("Failed to restore aspnetcore.dll path!!!");
+                            try
+                            {
+                                iisConfig.AddModule("AspNetCoreModule", Aspnetcore_path_original, null);
+                            }
+                            catch
+                            {
+                                TestUtility.LogInformation("Failed to restore aspnetcore.dll path!!!");
+                            }
                         }
                     }
                 }
@@ -171,34 +181,38 @@ namespace AspNetCoreModule.Test.Framework
             }
             
             // create an extra private copy of the private file on IISExpress directory
-            bool updateSuccess = false;
-            for (int i = 0; i < 3; i++)
+            if (InitializeTestMachine.OverwriteAspNetCoreFile)
             {
-                updateSuccess = false;
-                try
-                {
-                    TestUtility.ResetHelper(ResetHelperMode.KillWorkerProcess);
-                    TestUtility.ResetHelper(ResetHelperMode.StopW3svcStartW3svc);
-                    Thread.Sleep(1000);
-                    TestUtility.FileCopy(Path.Combine(outputPath, "x64", "aspnetcore.dll"), Aspnetcore_path);
-                    if (TestUtility.IsOSAmd64)
-                    {
-                        TestUtility.FileCopy(Path.Combine(outputPath, "Win32", "aspnetcore.dll"), Aspnetcore_X86_path);
-                    }
-                    updateSuccess = true;
-                }
-                catch
+                bool updateSuccess = false;
+
+                for (int i = 0; i < 3; i++)
                 {
                     updateSuccess = false;
+                    try
+                    {
+                        TestUtility.ResetHelper(ResetHelperMode.KillWorkerProcess);
+                        TestUtility.ResetHelper(ResetHelperMode.StopW3svcStartW3svc);
+                        Thread.Sleep(1000);
+                        TestUtility.FileCopy(Path.Combine(outputPath, "x64", "aspnetcore.dll"), Aspnetcore_path);
+                        if (TestUtility.IsOSAmd64)
+                        {
+                            TestUtility.FileCopy(Path.Combine(outputPath, "Win32", "aspnetcore.dll"), Aspnetcore_X86_path);
+                        }
+                        updateSuccess = true;
+                    }
+                    catch
+                    {
+                        updateSuccess = false;
+                    }
+                    if (updateSuccess)
+                    {
+                        break;
+                    }
                 }
-                if (updateSuccess)
+                if (!updateSuccess)
                 {
-                    break;
+                    throw new System.ApplicationException("Failed to update aspnetcore.dll");
                 }
-            }
-            if (!updateSuccess)
-            {
-                throw new System.ApplicationException("Failed to update aspnetcore.dll");
             }
         }
 

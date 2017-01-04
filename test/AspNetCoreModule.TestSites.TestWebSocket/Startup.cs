@@ -42,7 +42,7 @@ namespace AspnetCoreModule.TestSites.TestWebSocket
             });
 
         }
-
+        
         private async Task Echo(WebSocket webSocket)
         {
             var buffer = new byte[1024 * 4];
