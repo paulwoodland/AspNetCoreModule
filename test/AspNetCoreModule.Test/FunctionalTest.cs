@@ -36,7 +36,7 @@ namespace AspNetCoreModule.Test
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 5)]
-        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 2)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 1)]
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 0)]
         public Task RapidFailsPerMinuteTest(IISConfigUtility.AppPoolBitness appPoolBitness, int valueOfRapidFailsPerMinute)
         {
@@ -65,7 +65,7 @@ namespace AspNetCoreModule.Test
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 10)]
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, 10)]
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 1)]
-        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 2)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 1)]
         public Task StartupTimeLimitTest(IISConfigUtility.AppPoolBitness appPoolBitness, int starupTimeLimit)
         {
             return DoStartupTimeLimitTest(appPoolBitness, starupTimeLimit);

@@ -69,7 +69,7 @@ namespace AspNetCoreModule.Test
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
-                    Thread.Sleep(500);
+                    Thread.Sleep(1000);
 
                     string backendProcessId = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
                     Assert.NotEqual(backendProcessId_old, backendProcessId);
@@ -95,7 +95,7 @@ namespace AspNetCoreModule.Test
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
-                    Thread.Sleep(500);
+                    Thread.Sleep(1000);
 
                     string backendProcessId = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
                     var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
@@ -159,7 +159,7 @@ namespace AspNetCoreModule.Test
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
-                    Thread.Sleep(500);
+                    Thread.Sleep(1000);
 
                     string urlForUrlRewrite = testSite.URLRewriteApp.URL + "/Rewrite2/" + testSite.AspNetCoreApp.URL + "/GetProcessId";
                     string backendProcessId = await GetResponse(testSite.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
