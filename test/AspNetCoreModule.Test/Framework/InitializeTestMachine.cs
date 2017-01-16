@@ -10,7 +10,7 @@ namespace AspNetCoreModule.Test.Framework
 {
     public class InitializeTestMachine : IDisposable
     {
-        public static int SiteId = 81;
+        public static int SiteId = 40000;
         public static string Aspnetcore_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "aspnetcore_private.dll");
         public static string Aspnetcore_path_original = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "system32", "inetsrv", "aspnetcore.dll");
         public static string Aspnetcore_X86_path = Path.Combine(Environment.ExpandEnvironmentVariables("%windir%"), "syswow64", "inetsrv", "aspnetcore_private.dll");

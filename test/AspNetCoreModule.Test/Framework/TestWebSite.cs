@@ -64,7 +64,7 @@ namespace AspNetCoreModule.Test.Framework
             }
         }
 
-        public int _tcpPort = 50000;
+        public int _tcpPort = 8080;
         public int TcpPort
         {
             get
