@@ -56,6 +56,11 @@ namespace AspNetCoreModule.Test.Framework
                     TestUtility.LogInformation("Failed to restore applicationhost.config");
                 }
 
+                if (!Directory.Exists(siteRootPath))
+                {
+                    Directory.CreateDirectory(siteRootPath);
+                }
+
                 foreach (string directory in Directory.GetDirectories(siteRootPath))
                 {
                     bool successDeleteChildDirectory = true;
@@ -80,7 +85,7 @@ namespace AspNetCoreModule.Test.Framework
                         }
                     }
                 }
-
+                
                 if (InitializeTestMachine.OverwriteAspNetCoreFile)
                 {
                     PreparePrivateANCMFiles();

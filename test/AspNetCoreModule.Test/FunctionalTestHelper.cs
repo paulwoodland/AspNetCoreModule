@@ -219,7 +219,7 @@ namespace AspNetCoreModule.Test
             {
                 string backendProcessId_old = null;
                 string fileContent = "BackEndAppOffline";
-                testSite.AspNetCoreApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
+                testSite.AspNetCoreApp.CreateFile(new string[] { fileContent }, "App_Offline.Htm");
 
                 for (int i = 0; i < _repeatCount; i++)
                 {
@@ -233,7 +233,7 @@ namespace AspNetCoreModule.Test
                     await VerifyResponseBody(testSite.AspNetCoreApp.GetHttpUri(), fileContent + "\r\n", HttpStatusCode.ServiceUnavailable);
 
                     // rename app_offline.htm to _app_offline.htm and verify 200
-                    testSite.AspNetCoreApp.MoveFile("app_offline.htm", "_app_offline.htm");
+                    testSite.AspNetCoreApp.MoveFile("App_Offline.Htm", "_App_Offline.Htm");
                     string backendProcessId = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
                     var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
                     Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), testSite.AspNetCoreApp.GetProcessFileName().ToLower().Replace(".exe", ""));
@@ -242,7 +242,7 @@ namespace AspNetCoreModule.Test
                     Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
 
                     // rename back to app_offline.htm
-                    testSite.AspNetCoreApp.MoveFile("_app_offline.htm", "app_offline.htm");
+                    testSite.AspNetCoreApp.MoveFile("_App_Offline.Htm", "App_Offline.Htm");
                 }
             }
         }
@@ -253,7 +253,7 @@ namespace AspNetCoreModule.Test
             {
                 string backendProcessId_old = null;
                 string fileContent = "BackEndAppOffline2";
-                testSite.AspNetCoreApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
+                testSite.AspNetCoreApp.CreateFile(new string[] { fileContent }, "App_Offline.Htm");
 
                 for (int i = 0; i < _repeatCount; i++)
                 {
@@ -268,7 +268,7 @@ namespace AspNetCoreModule.Test
                     await VerifyResponseBody(testSite.RootAppContext.GetHttpUri(urlForUrlRewrite), fileContent + "\r\n", HttpStatusCode.ServiceUnavailable);
 
                     // delete app_offline.htm and verify 200 
-                    testSite.AspNetCoreApp.DeleteFile("app_offline.htm");
+                    testSite.AspNetCoreApp.DeleteFile("App_Offline.Htm");
                     string backendProcessId = await GetResponse(testSite.RootAppContext.GetHttpUri(urlForUrlRewrite), HttpStatusCode.OK);
                     var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
                     Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), testSite.AspNetCoreApp.GetProcessFileName().ToLower().Replace(".exe", ""));
@@ -277,7 +277,7 @@ namespace AspNetCoreModule.Test
                     Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
 
                     // create app_offline.htm again
-                    testSite.AspNetCoreApp.CreateFile(new string[] { fileContent }, "app_offline.htm");
+                    testSite.AspNetCoreApp.CreateFile(new string[] { fileContent }, "App_Offline.Htm");
                 }
             }
         }

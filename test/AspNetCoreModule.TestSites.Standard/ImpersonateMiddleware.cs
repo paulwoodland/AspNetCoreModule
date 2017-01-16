@@ -14,6 +14,7 @@ namespace AspnetCoreModule.TestSites.Standard
         {
             this.next = next;
         }
+        
         public async Task Invoke(HttpContext context)
         {
             var winIdent = context.User.Identity as WindowsIdentity;
@@ -30,6 +31,6 @@ namespace AspnetCoreModule.TestSites.Standard
                     await next.Invoke(context);
                 });
             }
-        }
+        } 
     }
 }
