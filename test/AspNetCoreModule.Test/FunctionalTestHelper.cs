@@ -65,7 +65,7 @@ namespace AspNetCoreModule.Test
                 const int repeatCount = 3;
                 for (int i = 0; i < repeatCount; i++)
                 {
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
@@ -91,7 +91,7 @@ namespace AspNetCoreModule.Test
                 const int repeatCount = 3;
                 for (int i = 0; i < repeatCount; i++)
                 {
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
@@ -122,7 +122,7 @@ namespace AspNetCoreModule.Test
                 const int repeatCount = 3;
                 for (int i = 0; i < repeatCount; i++)
                 {
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
@@ -155,7 +155,7 @@ namespace AspNetCoreModule.Test
                 const int repeatCount = 3;
                 for (int i = 0; i < repeatCount; i++)
                 {
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
@@ -193,7 +193,7 @@ namespace AspNetCoreModule.Test
                     iisConfig.SetANCMConfig(testSite.SiteName, testSite.AspNetCoreApp.Name, "environmentVariable", new string[] { "ANCMTestFoo", "foo" });
                     Thread.Sleep(500);
 
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     int expectedValue = Convert.ToInt32(totalNumber) + 1;
@@ -201,7 +201,7 @@ namespace AspNetCoreModule.Test
                     iisConfig.SetANCMConfig(testSite.SiteName, testSite.AspNetCoreApp.Name, "environmentVariable", new string[] { "ANCMTestBar", "bar" });
                     Thread.Sleep(500);
 
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     expectedValue++;
@@ -223,7 +223,7 @@ namespace AspNetCoreModule.Test
 
                 for (int i = 0; i < _repeatCount; i++)
                 {
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
@@ -257,7 +257,7 @@ namespace AspNetCoreModule.Test
 
                 for (int i = 0; i < _repeatCount; i++)
                 {
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     DateTime startTime = DateTime.Now;
@@ -333,7 +333,7 @@ namespace AspNetCoreModule.Test
                     iisConfig.SetANCMConfig(testSite.SiteName, testSite.AspNetCoreApp.Name, "disableStartUpErrorPage", false);
                     Thread.Sleep(500);
 
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     responseBody = await GetResponse(testSite.AspNetCoreApp.GetHttpUri(), HttpStatusCode.BadGateway);
@@ -363,7 +363,7 @@ namespace AspNetCoreModule.Test
 
                     for (int i = 0; i < repeatCount; i++)
                     {
-                        // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                        // check JitDebugger before continuing 
                         TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                         DateTime startTimeInsideLooping = DateTime.Now;
@@ -438,7 +438,7 @@ namespace AspNetCoreModule.Test
                     iisConfig.SetANCMConfig(testSite.SiteName, testSite.AspNetCoreApp.Name, "processesPerApplication", 1);
                     Thread.Sleep(3000);
 
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
                     Thread.Sleep(500);
 
@@ -572,7 +572,7 @@ namespace AspNetCoreModule.Test
                     Thread.Sleep(500);
                     iisConfig.SetANCMConfig(testSite.SiteName, testSite.AspNetCoreApp.Name, "stdoutLogEnabled", false);
 
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     iisConfig.SetANCMConfig(testSite.SiteName, testSite.AspNetCoreApp.Name, "stdoutLogEnabled", true);
@@ -612,7 +612,7 @@ namespace AspNetCoreModule.Test
                     iisConfig.SetANCMConfig(testSite.SiteName, testSite.AspNetCoreApp.Name, "arguments", arguments);
                     Thread.Sleep(500);
 
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
                     Thread.Sleep(500);
 
@@ -639,7 +639,7 @@ namespace AspNetCoreModule.Test
 
                     Thread.Sleep(500);
 
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
                     Thread.Sleep(500);
 
@@ -714,7 +714,7 @@ namespace AspNetCoreModule.Test
                     workerProcess.Dispose();
                     Thread.Sleep(3000);
 
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     iisConfig.SetAppPoolSetting(testSite.AspNetCoreApp.AppPoolName, "privateMemory", totalPrivateMemoryKB);
@@ -732,7 +732,7 @@ namespace AspNetCoreModule.Test
                     bool foundVSJit = false;
                     for (int i = 0; i < 10; i++)
                     {
-                        // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                        // check JitDebugger before continuing 
                         foundVSJit = TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                         await VerifyResponseStatus(testSite.RootAppContext.GetHttpUri("small.htm"), HttpStatusCode.OK);
@@ -748,7 +748,7 @@ namespace AspNetCoreModule.Test
                     // Verify IIS recycling happens while there is memory leak
                     for (int i = 0; i < 10; i++)
                     {
-                        // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                        // check JitDebugger before continuing 
                         foundVSJit = TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                         // allocating 2048,000 KB
@@ -762,7 +762,7 @@ namespace AspNetCoreModule.Test
                         }
                         Thread.Sleep(3000);
                     }
-                    // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                    // check JitDebugger before continuing 
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                     int z = 0;
@@ -814,16 +814,17 @@ namespace AspNetCoreModule.Test
                     var frameReturned = websocketClient.Connect(testSite.AspNetCoreApp.GetHttpUri("websocket"), true, true);
                     Assert.True(frameReturned.Content.Contains("Connection: Upgrade"));
                     Assert.True(frameReturned.Content.Contains("HTTP/1.1 101 Switching Protocols"));
+                    Thread.Sleep(500);
 
                     VerifySendingWebSocketData(websocketClient, testData);
 
+                    Thread.Sleep(500);
                     frameReturned = websocketClient.Close();
                     Assert.True(frameReturned.FrameType == FrameType.Close, "Closing Handshake");
                 }
 
                 // send a simple request again and verify the response body
                 await VerifyResponseBody(testSite.AspNetCoreApp.GetHttpUri(), "Running", HttpStatusCode.OK);
-
             }
         }
 

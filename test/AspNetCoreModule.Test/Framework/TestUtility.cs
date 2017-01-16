@@ -612,6 +612,7 @@ namespace AspNetCoreModule.Test.Framework
                 bool foundProcess = true;
                 if (foundProcess)
                 {
+                    LogError("Jit Debugger found");
                     obj.InvokeMethod("Terminate", null);
                     result = true;
                 }

@@ -85,7 +85,7 @@ namespace AspNetCoreModule.Test.Framework
 
             if (serverType == ServerType.IIS)
             {
-                // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
+                // check JitDebugger before continuing 
                 TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
             }
 
