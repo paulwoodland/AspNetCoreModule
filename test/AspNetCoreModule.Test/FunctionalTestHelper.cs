@@ -762,12 +762,23 @@ namespace AspNetCoreModule.Test
                         }
                         Thread.Sleep(3000);
                     }
-                    Thread.Sleep(1000);
-
                     // BugBug: Private build of ANCM causes VSJitDebuger and that should be cleaned up here
                     TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
-                    int z = Convert.ToInt32(TestUtility.GetProcessWMIAttributeValue("w3wp.exe", "Handle", userName));
+                    int z = 0;
+                    for (int i = 0; i < 10; i++)
+                    {
+                        z = Convert.ToInt32(TestUtility.GetProcessWMIAttributeValue("w3wp.exe", "Handle", userName));
+                        if (x != z)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            Thread.Sleep(1000);
+                        }
+                    }
+                    z = Convert.ToInt32(TestUtility.GetProcessWMIAttributeValue("w3wp.exe", "Handle", userName));
                     Assert.True(x != z, "worker process is recycled");
 
                     newPocessIdBackendProcess = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
