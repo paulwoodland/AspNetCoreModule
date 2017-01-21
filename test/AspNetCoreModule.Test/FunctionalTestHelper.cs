@@ -359,7 +359,7 @@ namespace AspNetCoreModule.Test
                     const int repeatCount = 10;
 
                     DateTime startTime = DateTime.Now;
-                    Thread.Sleep(500);
+                    Thread.Sleep(50);
 
                     for (int i = 0; i < repeatCount; i++)
                     {
@@ -367,7 +367,7 @@ namespace AspNetCoreModule.Test
                         TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
 
                         DateTime startTimeInsideLooping = DateTime.Now;
-                        Thread.Sleep(500);
+                        Thread.Sleep(50);
 
                         var statusCode = await GetResponseStatusCode(testSite.AspNetCoreApp.GetHttpUri("GetProcessId"));
                         if (statusCode != HttpStatusCode.OK.ToString())
@@ -383,12 +383,11 @@ namespace AspNetCoreModule.Test
                         backendProcessId_old = backendProcessId;
                         var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
                         Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), testSite.AspNetCoreApp.GetProcessFileName().ToLower().Replace(".exe", ""));
-                        Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTimeInsideLooping, backendProcessId));
+                        Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTimeInsideLooping, backendProcessId), "Verifying event log of new backend process");
                         backendProcess.Kill();
-                        Thread.Sleep(500);
+                        Thread.Sleep(50);
                     }
-                    
-                    Assert.True(rapidFailsTriggered);
+                    Assert.True(rapidFailsTriggered, "Verify 503 error");
 
                     // verify event error log
                     int errorEventId = 1003;

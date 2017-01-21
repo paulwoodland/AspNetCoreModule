@@ -35,6 +35,7 @@ namespace AspNetCoreModule.Test
         [ConditionalTheory]
         [OSSkipCondition(OperatingSystems.Linux)]
         [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange, 5)]
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 5)]
         [InlineData(IISConfigUtility.AppPoolBitness.noChange, 1)]
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit, 0)]
