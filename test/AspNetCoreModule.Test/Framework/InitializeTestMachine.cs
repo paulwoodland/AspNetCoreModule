@@ -42,6 +42,7 @@ namespace AspNetCoreModule.Test.Framework
                 }
 
                 TestUtility.ResetHelper(ResetHelperMode.KillIISExpress);
+                TestUtility.ResetHelper(ResetHelperMode.KillWorkerProcess);
                 // cleanup before starting
                 string siteRootPath = Path.Combine(Environment.ExpandEnvironmentVariables("%SystemDrive%") + @"\", "inetpub", "ANCMTest");
                 try
