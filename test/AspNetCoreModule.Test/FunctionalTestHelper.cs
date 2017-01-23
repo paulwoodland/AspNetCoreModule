@@ -57,9 +57,9 @@ namespace AspNetCoreModule.Test
             }
         }
 
-        public static async Task DoRecycleApplicationAfterBeingKilled(IISConfigUtility.AppPoolBitness appPoolBitness)
+        public static async Task DoRecycleApplicationAfterBackendProcessBeingKilled(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            using (var testSite = new TestWebSite(appPoolBitness, "DoRecycleApplicationAfterBeingKilled"))
+            using (var testSite = new TestWebSite(appPoolBitness, "DoRecycleApplicationAfterBackendProcessBeingKilled"))
             {
                 string backendProcessId_old = null;
                 const int repeatCount = 3;
@@ -78,6 +78,38 @@ namespace AspNetCoreModule.Test
                     Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), testSite.AspNetCoreApp.GetProcessFileName().ToLower().Replace(".exe", ""));
                     Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
                     backendProcess.Kill();
+                    Thread.Sleep(500);
+                }
+            }
+        }
+
+        public static async Task DoRecycleApplicationAfterW3WPProcessBeingKilled(IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            using (var testSite = new TestWebSite(appPoolBitness, "DoRecycleApplicationAfterW3WPProcessBeingKilled"))
+            {
+                string backendProcessId_old = null;
+                const int repeatCount = 3;
+                for (int i = 0; i < repeatCount; i++)
+                {
+                    // check JitDebugger before continuing 
+                    TestUtility.ResetHelper(ResetHelperMode.KillVSJitDebugger);
+
+                    DateTime startTime = DateTime.Now;
+                    Thread.Sleep(1000);
+
+                    string backendProcessId = await GetResponse(testSite.AspNetCoreApp.GetHttpUri("GetProcessId"), HttpStatusCode.OK);
+                    Assert.NotEqual(backendProcessId_old, backendProcessId);
+                    backendProcessId_old = backendProcessId;
+                    var backendProcess = Process.GetProcessById(Convert.ToInt32(backendProcessId));
+                    Assert.Equal(backendProcess.ProcessName.ToLower().Replace(".exe", ""), testSite.AspNetCoreApp.GetProcessFileName().ToLower().Replace(".exe", ""));
+                    Assert.True(TestUtility.RetryHelper((arg1, arg2) => VerifyANCMStartEvent(arg1, arg2), startTime, backendProcessId));
+
+                    // get process id of IIS worker process (w3wp.exe)
+                    string userName = testSite.SiteName;
+                    int processIdOfWorkerProcess = Convert.ToInt32(TestUtility.GetProcessWMIAttributeValue("w3wp.exe", "Handle", userName));
+                    var workerProcess = Process.GetProcessById(Convert.ToInt32(processIdOfWorkerProcess));
+                    workerProcess.Kill();
+
                     Thread.Sleep(500);
                 }
             }

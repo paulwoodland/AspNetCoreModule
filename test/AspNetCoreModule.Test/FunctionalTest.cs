@@ -89,9 +89,20 @@ namespace AspNetCoreModule.Test
         [OSSkipCondition(OperatingSystems.MacOSX)]
         [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
         [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
-        public Task RecycleApplicationAfterBeingKilled(IISConfigUtility.AppPoolBitness appPoolBitness)
+        public Task RecycleApplicationAfterBackendProcessBeingKilled(IISConfigUtility.AppPoolBitness appPoolBitness)
         {
-            return DoRecycleApplicationAfterBeingKilled(appPoolBitness);
+            return DoRecycleApplicationAfterBackendProcessBeingKilled(appPoolBitness);
+        }
+
+        [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
+        [ConditionalTheory]
+        [OSSkipCondition(OperatingSystems.Linux)]
+        [OSSkipCondition(OperatingSystems.MacOSX)]
+        [InlineData(IISConfigUtility.AppPoolBitness.enable32Bit)]
+        [InlineData(IISConfigUtility.AppPoolBitness.noChange)]
+        public Task RecycleApplicationAfterW3WPProcessBeingKilled(IISConfigUtility.AppPoolBitness appPoolBitness)
+        {
+            return DoRecycleApplicationAfterW3WPProcessBeingKilled(appPoolBitness);
         }
 
         [EnvironmentVariableTestCondition("IIS_VARIATIONS_ENABLED")]
