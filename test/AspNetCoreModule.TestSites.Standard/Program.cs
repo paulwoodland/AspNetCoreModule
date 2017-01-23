@@ -16,7 +16,7 @@ namespace AspnetCoreModule.TestSites.Standard
             var config = new ConfigurationBuilder()
                 .AddCommandLine(args)
                 .Build();
-
+            
             string startUpClassString = Environment.GetEnvironmentVariable("ANCMTestStartupClassName");
             IWebHostBuilder builder = null;
             if (!string.IsNullOrEmpty(startUpClassString))

@@ -3,6 +3,7 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
@@ -21,6 +22,15 @@ namespace AspnetCoreModule.TestSites.Standard
         public static int SleeptimeWhileClosing = 0;
         public static int SleeptimeWhileStarting = 0;
         public static List<byte[]> MemoryLeakList = new List<byte[]>();
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.Configure<IISOptions>(options => {
+                // Considering the default value of ForwardWindowsAuthentication is true,
+                // the below line is not required at present, however keeping in case the default value is changed later.
+                options.ForwardWindowsAuthentication = true; 
+            });
+        } 
 
         private async Task Echo(WebSocket webSocket)
         {
