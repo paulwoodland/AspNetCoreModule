@@ -121,25 +121,23 @@ private:
     //
     // we currently limit the size of m_pstrErrorInfo to 5000, be careful if you want to change its payload
     // 
-    APPLICATION_MANAGER() : m_pApplicationHash(NULL), m_pFileWatcher(NULL), m_pHttp502ErrorPage(NULL), m_pstrErrorInfo(
-        "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"> \
+	APPLICATION_MANAGER() : m_pApplicationHash(NULL), m_pFileWatcher(NULL), m_pHttp502ErrorPage(NULL), m_pstrErrorInfo(
+		"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"> \
         <html xmlns=\"http://www.w3.org/1999/xhtml\"> \
         <head> \
         <meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\" /> \
-        <title> IIS 502.5 Error </title><style type=\"text/css\"></style></head> \
+        <title>ASP.Net Core Not Available</title><style type=\"text/css\"></style></head> \
         <body> <div id = \"content\"> \
-          <div class = \"content-container\"><h3> HTTP Error 502.5 - Process Failure </h3></div>  \
+          <div class = \"content-container\"><h3>ASP.Net Core Not Available</h3></div>  \
           <div class = \"content-container\"> \
-           <fieldset> <h4> Common causes of this issue: </h4> \
+		   <fieldset> <h4> Ensure ASP.Net Core is available on this domain</h4> \
+            <ul><li> This can be selected from the &quot;Website Settings&quot; icon in your hosting control panel</ul></fieldset> \
+           <fieldset> <h4> Other possible causes of this issue: </h4> \
             <ul><li> The application process failed to start </li> \
              <li> The application process started but then stopped </li> \
              <li> The application process started but failed to listen on the configured port </li></ul></fieldset> \
           </div> \
           <div class = \"content-container\"> \
-            <fieldset><h4> Troubleshooting steps: </h4> \
-             <ul><li> Check the system event log for error messages </li> \
-             <li> Enable logging the application process' stdout messages </li> \
-             <li> Attach a debugger to the application process and inspect </li></ul></fieldset> \
              <fieldset><h4> For more information visit: \
              <a href=\"https://go.microsoft.com/fwlink/?linkid=808681\"> <cite> https://go.microsoft.com/fwlink/?LinkID=808681 </cite></a></h4> \
              </fieldset> \
